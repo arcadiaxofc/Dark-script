@@ -23,9 +23,9 @@ A key é gerada automaticamente pelo sistema Platoboost.
 
 ## 📥 Comando
 
-```lua
+
 loadstring(game:HttpGet("https://raw.githubusercontent.com/arcadiaxofc/Dark-script/refs/heads/main/main.lua"))()
-` ` `
+
 
 ⚙️ Funções
 
