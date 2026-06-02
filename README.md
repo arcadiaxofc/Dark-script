@@ -77,7 +77,6 @@ Krnl ✅
 
 ⚠️ Aviso
 
-Este script é para fins educacionais. Use por sua conta e risco.
 O uso de scripts no Roblox viola os Termos de Serviço e pode resultar em banimento.
 
 
