@@ -12,22 +12,16 @@ local VirtualUser = game:GetService("VirtualUser")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local PathfindingService = game:GetService("PathfindingService")
 local CollectionService = game:GetService("CollectionService")
-local Debris = game:GetService("Debris")
-local ContentProvider = game:GetService("ContentProvider")
 local TeleportService = game:GetService("TeleportService")
 local Stats = game:GetService("Stats")
 local StarterGui = game:GetService("StarterGui")
 
 -- ==================== CONFIGURAÇÕES ====================
-local SERVICE_ID = 25665
-local SECRET = "c0bd6633-0e6b-4b49-824f-d1837f1f14c1"
 local verified = false
 local isOwner = false
-
 local OWNER_PASSWORD = "NEXUS-2026-ADMIN"
 local OWNER_KEY = "NEXUS-OWNER-SUPREME"
 
--- ESTADOS DO SCRIPT
 local farmEnabled = false
 local espEnabled = false
 local godmodeEnabled = false
@@ -51,7 +45,6 @@ local currentTarget = nil
 local scriptLoaded = false
 local scriptRunning = false
 
--- CONFIGURAÇÕES
 local farmConfig = {
     Range = 300,
     AttackDelay = 0.2,
@@ -61,7 +54,6 @@ local farmConfig = {
     SafeMode = true
 }
 
--- CONFIGURAÇÕES DE MOVIMENTO
 local movementConfig = {
     UseSmartTeleport = true,
     SpeedMode = "Variable",
@@ -74,13 +66,11 @@ local movementConfig = {
     SwoopChance = 0.3
 }
 
--- CONFIGURAÇÕES DE OTIMIZAÇÃO
 local optimizationConfig = {
     FreezeGameOnStart = true,
-    FreezeDuration = 3,
+    FreezeDuration = 2,
     RemoveEffects = true,
     RemoveDecals = true,
-    RemoveTextures = false,
     RemoveShadows = true,
     RemoveReflections = true,
     RemoveGrass = true,
@@ -91,9 +81,6 @@ local optimizationConfig = {
     DisablePostProcessing = true,
     AutoCleanMemory = true,
     CleanInterval = 30,
-    MaxParticles = 100,
-    MaxDecals = 50,
-    TargetFPS = 60,
     ReducePhysics = true,
     DisableWind = true,
     DisableWaterWaves = true,
@@ -109,36 +96,34 @@ local function safeInvoke(remote, ...)
         return remote:InvokeServer(...)
     end)
     if not success then
-        warn("[NEXUS DEBUG] Falha no remote:", tostring(remote), result)
+        warn("[DEBUG] Remote error:", result)
     end
     return result
 end
 
--- ==================== BYPASS MELHORADO ====================
+-- ==================== BYPASS ====================
 local function antiAFK()
     task.spawn(function()
         while true do
-            local waitTime = math.random(180, 300) / 100
-            task.wait(waitTime)
-            
-            local vu = VirtualUser
-            local camera = workspace.CurrentCamera
-            
-            local randomX = math.random(-2, 2)
-            local randomY = math.random(-2, 2)
-            vu:Button2Down(Vector2.new(randomX, randomY), camera.CFrame)
-            task.wait(0.05)
-            vu:Button2Up(Vector2.new(randomX, randomY), camera.CFrame)
-            
-            if player.Character and player.Character:FindFirstChild("Humanoid") then
-                local humanoid = player.Character.Humanoid
-                if humanoid.MoveDirection.Magnitude < 1 then
-                    local randomMove = Vector3.new(math.random(-1, 1), 0, math.random(-1, 1))
-                    humanoid:Move(randomMove, true)
-                    task.wait(0.1)
-                    humanoid:Move(Vector3.new(0, 0, 0), true)
+            task.wait(math.random(180, 300) / 100)
+            pcall(function()
+                local vu = VirtualUser
+                local camera = workspace.CurrentCamera
+                local rx = math.random(-2, 2)
+                local ry = math.random(-2, 2)
+                vu:Button2Down(Vector2.new(rx, ry), camera.CFrame)
+                task.wait(0.05)
+                vu:Button2Up(Vector2.new(rx, ry), camera.CFrame)
+                if player.Character and player.Character:FindFirstChild("Humanoid") then
+                    local hum = player.Character.Humanoid
+                    if hum.MoveDirection.Magnitude < 1 then
+                        local mv = Vector3.new(math.random(-1, 1), 0, math.random(-1, 1))
+                        hum:Move(mv, true)
+                        task.wait(0.1)
+                        hum:Move(Vector3.zero, true)
+                    end
                 end
-            end
+            end)
         end
     end)
 end
@@ -148,91 +133,64 @@ local function antiBan()
         local mt = getrawmetatable(game)
         local old = mt.__namecall
         setreadonly(mt, false)
-        
         mt.__namecall = newcclosure(function(self, ...)
             local method = getnamecallmethod()
             local args = {...}
-            
             if method == "FireServer" then
-                local blockedRemotes = {"Teleport", "LoadChunk", "DetectSpeed", "FlagPlayer"}
-                for _, blocked in pairs(blockedRemotes) do
-                    if tostring(args[1]):find(blocked) then
-                        return nil
-                    end
+                local blocked = {"Teleport", "LoadChunk", "DetectSpeed", "FlagPlayer"}
+                for _, b in pairs(blocked) do
+                    if tostring(args[1]):find(b) then return nil end
                 end
             end
-            
-            if method == "Kick" then
-                return nil
-            end
-            
+            if method == "Kick" then return nil end
             return old(self, ...)
         end)
         setreadonly(mt, true)
     end)
 end
 
--- ==================== SISTEMA DE OTIMIZAÇÃO PESADA ====================
+-- ==================== OTIMIZAÇÃO ====================
 local function freezeGame(duration)
-    print("❄️ Congelando jogo por " .. duration .. " segundos...")
-    
+    print("❄️ Freezing game for " .. duration .. "s...")
     pcall(function()
         Workspace.PhysicsSteppingMethod = Enum.PhysicsSteppingMethod.Fixed
         Workspace:SetPhysicsThrottleEnabled(true)
     end)
-    
-    for _, sound in pairs(Workspace:GetDescendants()) do
-        if sound:IsA("Sound") then
-            pcall(function() sound.Playing = false end)
-        end
+    for _, s in pairs(Workspace:GetDescendants()) do
+        if s:IsA("Sound") then pcall(function() s.Playing = false end) end
     end
-    
     pcall(function()
         Lighting.GlobalShadows = false
-        Lighting.OutdoorAmbient = Color3.fromRGB(0, 0, 0)
         Lighting.Brightness = 0
-        Lighting.ClockTime = 0
         Lighting.FogEnd = 1
     end)
-    
     task.wait(duration)
-    print("✅ Descongelando jogo...")
+    print("✅ Game unfrozen")
 end
 
 local function removeGameEffects()
-    local removedCount = 0
-    
+    local count = 0
     if optimizationConfig.RemoveEffects then
         for _, obj in pairs(Workspace:GetDescendants()) do
             if obj:IsA("ParticleEmitter") or obj:IsA("Fire") or obj:IsA("Smoke") or obj:IsA("Sparkles") then
-                pcall(function() obj.Enabled = false; removedCount = removedCount + 1 end)
+                pcall(function() obj.Enabled = false; count = count + 1 end)
             end
             if obj:IsA("Beam") or obj:IsA("Trail") then
-                pcall(function() obj.Enabled = false; removedCount = removedCount + 1 end)
+                pcall(function() obj.Enabled = false; count = count + 1 end)
             end
         end
     end
-    
     if optimizationConfig.RemoveDecals then
         for _, obj in pairs(Workspace:GetDescendants()) do
-            if obj:IsA("Decal") and not obj.Parent:IsA("Part") then
-                pcall(function() obj:Destroy(); removedCount = removedCount + 1 end)
-            end
+            if obj:IsA("Decal") then pcall(function() obj:Destroy(); count = count + 1 end) end
         end
     end
-    
     if optimizationConfig.RemoveShadows then
-        pcall(function()
-            Lighting.GlobalShadows = false
-            Lighting.ShadowSoftness = 0
-        end)
+        pcall(function() Lighting.GlobalShadows = false; Lighting.ShadowSoftness = 0 end)
         for _, obj in pairs(Workspace:GetDescendants()) do
-            if obj:IsA("BasePart") then
-                pcall(function() obj.CastShadow = false end)
-            end
+            if obj:IsA("BasePart") then pcall(function() obj.CastShadow = false end) end
         end
     end
-    
     if optimizationConfig.RemoveReflections then
         pcall(function()
             Lighting.Reflection = 0
@@ -240,43 +198,33 @@ local function removeGameEffects()
             Lighting.EnvironmentSpecularScale = 0
         end)
     end
-    
     if optimizationConfig.RemoveGrass then
-        pcall(function()
-            if Workspace.Terrain then Workspace.Terrain.GrassLength = 0 end
-        end)
+        pcall(function() if Workspace.Terrain then Workspace.Terrain.GrassLength = 0 end end)
         for _, obj in pairs(Workspace:GetDescendants()) do
             if obj:IsA("GrassPart") or obj.Name:find("Grass") then
-                pcall(function() obj:Destroy(); removedCount = removedCount + 1 end)
+                pcall(function() obj:Destroy(); count = count + 1 end)
             end
         end
     end
-    
     if optimizationConfig.RemoveClouds then
-        pcall(function()
-            if Workspace.Terrain then Workspace.Terrain.CloudsEnabled = false end
-        end)
+        pcall(function() if Workspace.Terrain then Workspace.Terrain.CloudsEnabled = false end end)
         for _, obj in pairs(Workspace:GetDescendants()) do
             if obj.Name:find("Cloud") and obj:IsA("BasePart") then
                 pcall(function() obj.Transparency = 1 end)
             end
         end
     end
-    
-    print("🧹 Limpeza: " .. removedCount .. " objetos removidos/desativados")
-    return removedCount
+    print("🧹 Cleaned: " .. count .. " objects")
 end
 
 local function optimizeGraphics()
     pcall(function()
         settings().Rendering.QualityLevel = optimizationConfig.GraphicsLevel
     end)
-    
     pcall(function()
         Workspace.StreamingMinRadius = optimizationConfig.RenderDistance
         Workspace.StreamingTargetRadius = optimizationConfig.RenderDistance
     end)
-    
     if optimizationConfig.LowQualityTerrain and Workspace.Terrain then
         pcall(function()
             Workspace.Terrain.WaterWaveSize = 0
@@ -285,7 +233,6 @@ local function optimizeGraphics()
             Workspace.Terrain.WaterTransparency = 0.5
         end)
     end
-    
     if optimizationConfig.DisablePostProcessing then
         pcall(function()
             Lighting.BloomEffect = false
@@ -294,37 +241,31 @@ local function optimizeGraphics()
             Lighting.ColorCorrectionEffect = false
         end)
     end
-    
     pcall(function()
-        Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
         Lighting.Brightness = 2
         Lighting.FogEnd = optimizationConfig.RenderDistance
         Lighting.FogStart = optimizationConfig.RenderDistance * 0.7
     end)
-    
-    print("🎨 Gráficos otimizados para performance")
+    print("🎨 Graphics optimized")
 end
 
 local function cleanMemory()
-    local startMemory = Stats:GetTotalMemoryUsageMb()
-    
+    local startMem = Stats:GetTotalMemoryUsageMb()
     for _, obj in pairs(Workspace:GetDescendants()) do
         if (obj:IsA("Part") or obj:IsA("MeshPart")) and obj.Transparency > 0.9 then
             pcall(function() obj:Destroy() end)
         end
     end
-    
     if optimizationConfig.ReducePhysics then
-        local playerPos = player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character.HumanoidRootPart.Position or Vector3.zero
+        local pp = player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character.HumanoidRootPart.Position or Vector3.zero
         for _, obj in pairs(Workspace:GetDescendants()) do
-            if obj:IsA("BasePart") and (obj.Position - playerPos).Magnitude > optimizationConfig.RenderDistance then
+            if obj:IsA("BasePart") and (obj.Position - pp).Magnitude > optimizationConfig.RenderDistance then
                 pcall(function() obj.Anchored = true; obj.CanCollide = false end)
             end
         end
     end
-    
-    local endMemory = Stats:GetTotalMemoryUsageMb()
-    print("💾 Memória: " .. math.floor(endMemory) .. "MB (liberado " .. math.floor(math.max(0, startMemory - endMemory)) .. "MB)")
+    local endMem = Stats:GetTotalMemoryUsageMb()
+    print("💾 Memory: " .. math.floor(endMem) .. "MB")
 end
 
 local function optimizePerformance()
@@ -335,67 +276,50 @@ local function optimizePerformance()
             end
         end
     end
-    
     if optimizationConfig.DisableWaterWaves and Workspace.Terrain then
         pcall(function()
             Workspace.Terrain.WaterWaveSize = 0
             Workspace.Terrain.WaterWaveSpeed = 0
         end)
     end
-    
-    local soundCount = 0
-    for _, sound in pairs(Workspace:GetDescendants()) do
-        if sound:IsA("Sound") then
-            soundCount = soundCount + 1
-            if soundCount > 30 then
-                pcall(function() sound.Volume = 0; sound.Playing = false end)
-            end
+    local sc = 0
+    for _, s in pairs(Workspace:GetDescendants()) do
+        if s:IsA("Sound") then
+            sc = sc + 1
+            if sc > 30 then pcall(function() s.Volume = 0; s.Playing = false end) end
         end
     end
-    
     if optimizationConfig.ReducePhysics then
-        pcall(function()
-            Workspace.PhysicsSteppingMethod = Enum.PhysicsSteppingMethod.Adaptive
-        end)
+        pcall(function() Workspace.PhysicsSteppingMethod = Enum.PhysicsSteppingMethod.Adaptive end)
     end
-    
-    print("⚡ Performance otimizada")
+    print("⚡ Performance optimized")
 end
 
 local function preventMobileCrash()
     task.spawn(function()
         while true do
-            local memory = Stats:GetTotalMemoryUsageMb()
-            
-            if memory > 500 then
-                print("⚠️ Memória alta: " .. math.floor(memory) .. "MB - Forçando limpeza")
+            local mem = Stats:GetTotalMemoryUsageMb()
+            if mem > 500 then
+                print("⚠️ High memory: " .. math.floor(mem) .. "MB - Cleaning")
                 cleanMemory()
-                local wasFarming = farmEnabled
+                local wasFarm = farmEnabled
                 farmEnabled = false
                 task.wait(2)
-                farmEnabled = wasFarming
+                farmEnabled = wasFarm
             end
-            
             task.wait(10)
         end
     end)
-    
-    pcall(function()
-        StarterGui:SetCore("TopbarEnabled", false)
-    end)
+    pcall(function() StarterGui:SetCore("TopbarEnabled", false) end)
 end
 
 local function safeLoadScript()
-    if scriptLoaded then
-        print("⚠️ Script já foi carregado! Ignorando...")
-        return
-    end
-    
+    if scriptLoaded then print("⚠️ Script already loaded!"); return end
     scriptLoaded = true
     
     StarterGui:SetCore("SendNotification", {
         Title = "NEXUS OPTIMIZER",
-        Text = "Iniciando otimização do jogo...",
+        Text = "Starting game optimization...",
         Duration = 5
     })
     
@@ -403,24 +327,23 @@ local function safeLoadScript()
     print("🔧 NEXUS OPTIMIZATION SYSTEM v5.0")
     print("=" .. string.rep("=", 50))
     
-    print("\n📌 FASE 1: Congelamento inicial")
+    print("\n📌 Phase 1: Freezing")
     freezeGame(optimizationConfig.FreezeDuration)
     
-    print("\n📌 FASE 2: Limpeza de efeitos")
+    print("\n📌 Phase 2: Cleaning effects")
     removeGameEffects()
     
-    print("\n📌 FASE 3: Otimização gráfica")
+    print("\n📌 Phase 3: Graphics optimization")
     optimizeGraphics()
     
-    print("\n📌 FASE 4: Performance")
+    print("\n📌 Phase 4: Performance")
     optimizePerformance()
     
-    print("\n📌 FASE 5: Limpeza de memória")
+    print("\n📌 Phase 5: Memory cleanup")
     cleanMemory()
     
-    print("\n📌 FASE 6: Restaurando iluminação")
+    print("\n📌 Phase 6: Restoring lighting")
     pcall(function()
-        Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
         Lighting.Brightness = 3
         Lighting.FogEnd = optimizationConfig.RenderDistance
         Lighting.ClockTime = 14
@@ -438,39 +361,23 @@ local function safeLoadScript()
     scriptRunning = true
     
     print("\n" .. string.rep("=", 50))
-    print("✅ OTIMIZAÇÃO CONCLUÍDA!")
-    print("📱 Celular otimizado para máxima performance")
-    print("🚀 Script pronto para uso")
+    print("✅ OPTIMIZATION COMPLETE!")
+    print("📱 Mobile optimized for max performance")
     print(string.rep("=", 50) .. "\n")
     
     StarterGui:SetCore("SendNotification", {
         Title = "NEXUS OPTIMIZER",
-        Text = "✅ Otimização concluída! Jogo fluindo.",
+        Text = "✅ Optimization complete! Game running smooth.",
         Duration = 3
     })
 end
 
--- ==================== HWID & VERIFICAÇÃO ====================
+-- ==================== VERIFICATION ====================
 local function getHWID()
     return http:GenerateGUID(false) .. player.UserId .. player.AccountAge .. game.GameId .. tostring(workspace:GetServerTimeNow())
 end
 
 local function verifyKey(key)
-    local hwid = getHWID()
-    local success, res = pcall(function()
-        return http:RequestAsync({
-            Url = "https://api.platoboost.com/public/whitelist/" .. SERVICE_ID .. "?identifier=" .. hwid .. "&key=" .. key,
-            Method = "GET"
-        })
-    end)
-    
-    if success and res.Success then
-        local data = http:JSONDecode(res.Body)
-        if data and data.success then
-            return data.data.valid == true
-        end
-    end
-    
     local demoKeys = {
         ["NEXUS-VIP-2026"] = true,
         ["FREE-TRIAL"] = true,
@@ -481,35 +388,31 @@ local function verifyKey(key)
     return demoKeys[key] == true
 end
 
--- ==================== SISTEMA DE MOVIMENTAÇÃO AVANÇADO ====================
+-- ==================== MOVEMENT SYSTEM ====================
 local islandSpawnPoints = {
-    ["Marine Starter"] = {safePoint = Vector3.new(1280, 15, 4180), radius = 30, type = "Dock"},
-    ["Jungle"] = {safePoint = Vector3.new(-1240, 20, 3840), radius = 40, type = "Beach"},
-    ["Pirate Village"] = {safePoint = Vector3.new(-380, 20, 720), radius = 25, type = "Dock"},
-    ["Desert"] = {safePoint = Vector3.new(960, 15, 1090), radius = 35, type = "Entrance"},
-    ["Frozen Village"] = {safePoint = Vector3.new(1140, 30, 4340), radius = 30, type = "Shore"},
-    ["Sky Islands"] = {safePoint = Vector3.new(-4840, 755, 1940), radius = 20, type = "Cloud"},
-    ["Graveyard"] = {safePoint = Vector3.new(-3550, 245, -70), radius = 35, type = "Entrance"},
-    ["Snow Mountain"] = {safePoint = Vector3.new(-5390, 20, -1690), radius = 30, type = "Dock"},
-    ["Hot and Cold"] = {safePoint = Vector3.new(-3410, 15, -2690), radius = 25, type = "Beach"},
-    ["Cafe"] = {safePoint = Vector3.new(-560, 315, -1210), radius = 20, type = "Island"},
-    ["Kingdom of Rose"] = {safePoint = Vector3.new(-1390, 15, -1390), radius = 30, type = "Dock"},
-    ["Castle on the Sea"] = {safePoint = Vector3.new(4490, 55, 1190), radius = 35, type = "Dock"},
-    ["Hydra Island"] = {safePoint = Vector3.new(6190, 85, 2490), radius = 30, type = "Beach"},
-    ["Great Tree"] = {safePoint = Vector3.new(8490, 125, 4490), radius = 25, type = "Entrance"},
-    ["Port Town"] = {safePoint = Vector3.new(7190, 105, 3490), radius = 30, type = "Dock"},
-    ["Tiki Outpost"] = {safePoint = Vector3.new(5490, -45, 1990), radius = 25, type = "Shore"}
+    ["Marine Starter"] = {safePoint = Vector3.new(1280, 15, 4180), radius = 30},
+    ["Jungle"] = {safePoint = Vector3.new(-1240, 20, 3840), radius = 40},
+    ["Pirate Village"] = {safePoint = Vector3.new(-380, 20, 720), radius = 25},
+    ["Desert"] = {safePoint = Vector3.new(960, 15, 1090), radius = 35},
+    ["Frozen Village"] = {safePoint = Vector3.new(1140, 30, 4340), radius = 30},
+    ["Sky Islands"] = {safePoint = Vector3.new(-4840, 755, 1940), radius = 20},
+    ["Graveyard"] = {safePoint = Vector3.new(-3550, 245, -70), radius = 35},
+    ["Snow Mountain"] = {safePoint = Vector3.new(-5390, 20, -1690), radius = 30},
+    ["Hot and Cold"] = {safePoint = Vector3.new(-3410, 15, -2690), radius = 25},
+    ["Cafe"] = {safePoint = Vector3.new(-560, 315, -1210), radius = 20},
+    ["Kingdom of Rose"] = {safePoint = Vector3.new(-1390, 15, -1390), radius = 30},
+    ["Castle on the Sea"] = {safePoint = Vector3.new(4490, 55, 1190), radius = 35},
+    ["Hydra Island"] = {safePoint = Vector3.new(6190, 85, 2490), radius = 30},
+    ["Great Tree"] = {safePoint = Vector3.new(8490, 125, 4490), radius = 25},
+    ["Port Town"] = {safePoint = Vector3.new(7190, 105, 3490), radius = 30},
+    ["Tiki Outpost"] = {safePoint = Vector3.new(5490, -45, 1990), radius = 25}
 }
 
 local function findNearestSafePoint(targetPos)
-    local nearest = nil
-    local shortestDist = math.huge
+    local nearest, shortestDist = nil, math.huge
     for _, data in pairs(islandSpawnPoints) do
         local dist = (data.safePoint - targetPos).Magnitude
-        if dist < shortestDist then
-            shortestDist = dist
-            nearest = data
-        end
+        if dist < shortestDist then shortestDist = dist; nearest = data end
     end
     return nearest
 end
@@ -522,17 +425,14 @@ end
 local function walkTo(targetPos)
     local char = player.Character
     if not char or not char:FindFirstChild("Humanoid") then return false end
-    
     local humanoid = char.Humanoid
     local hrp = char.HumanoidRootPart
-    
     local path = PathfindingService:CreatePath()
-    local success, _ = pcall(function() path:ComputeAsync(hrp.Position, targetPos) end)
-    
+    local success = pcall(function() path:ComputeAsync(hrp.Position, targetPos) end)
     if success and path.Status == Enum.PathStatus.Success then
-        for _, waypoint in pairs(path:GetWaypoints()) do
-            if waypoint.Action == Enum.PathWaypointAction.Jump then humanoid.Jump = true end
-            humanoid:MoveTo(waypoint.Position)
+        for _, wp in pairs(path:GetWaypoints()) do
+            if wp.Action == Enum.PathWaypointAction.Jump then humanoid.Jump = true end
+            humanoid:MoveTo(wp.Position)
             humanoid.MoveToFinished:Wait()
         end
         return true
@@ -543,14 +443,9 @@ end
 local function humanizedFlyToTarget(startPos, endPos)
     local char = player.Character
     if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-    
     local hrp = char.HumanoidRootPart
     local distance = (endPos - startPos).Magnitude
-    
-    if distance < 50 then
-        walkTo(endPos)
-        return
-    end
+    if distance < 50 then walkTo(endPos); return end
     
     local segments = math.max(math.floor(distance / 80), 3)
     local useZigZag = math.random() < movementConfig.ZigZagChance
@@ -582,8 +477,7 @@ local function humanizedFlyToTarget(startPos, endPos)
         
         local tween = TweenService:Create(hrp, 
             TweenInfo.new(duration, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
-            {CFrame = CFrame.new(currentTarget)}
-        )
+            {CFrame = CFrame.new(currentTarget)})
         tween:Play()
         tween.Completed:Wait()
         
@@ -594,8 +488,7 @@ local function humanizedFlyToTarget(startPos, endPos)
     
     local finalTween = TweenService:Create(hrp,
         TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-        {CFrame = CFrame.new(endPos)}
-    )
+        {CFrame = CFrame.new(endPos)})
     finalTween:Play()
 end
 
@@ -604,17 +497,14 @@ local function smartTeleport(targetPos)
         player.Character.HumanoidRootPart.CFrame = CFrame.new(targetPos)
         return
     end
-    
     local safeData = findNearestSafePoint(targetPos)
     if not safeData then
         player.Character.HumanoidRootPart.CFrame = CFrame.new(targetPos)
         return
     end
-    
     local spawnPos = getRandomSafePosition(safeData)
     local currentDist = (player.Character.HumanoidRootPart.Position - targetPos).Magnitude
     local safeDist = (spawnPos - targetPos).Magnitude
-    
     if currentDist < safeDist and currentDist < 500 then
         humanizedFlyToTarget(player.Character.HumanoidRootPart.Position, targetPos)
     else
@@ -624,7 +514,7 @@ local function smartTeleport(targetPos)
     end
 end
 
--- ==================== DADOS DO JOGO ====================
+-- ==================== GAME DATA ====================
 local fruits = {
     "Kitsune-Fruit", "Dragon-Fruit", "Leopard-Fruit", "Dough-Fruit",
     "Spirit-Fruit", "Venom-Fruit", "Control-Fruit", "Shadow-Fruit",
@@ -635,41 +525,30 @@ local fruits = {
 }
 
 local bosses = {
-    {name = "Dough King", level = 2000, pos = Vector3.new(6200, 80, 2500)},
-    {name = "Kitsune", level = 2300, pos = Vector3.new(7200, 100, 3500)},
-    {name = "Rip Indra", level = 2500, pos = Vector3.new(8500, 120, 4500)},
-    {name = "Cake Queen", level = 1800, pos = Vector3.new(5500, -50, 2000)},
-    {name = "Tide Keeper", level = 1500, pos = Vector3.new(6800, 30, 3000)},
-    {name = "Don Swan", level = 1000, pos = Vector3.new(-1400, 10, -1400)}
+    {name = "Dough King", pos = Vector3.new(6200, 80, 2500)},
+    {name = "Kitsune", pos = Vector3.new(7200, 100, 3500)},
+    {name = "Rip Indra", pos = Vector3.new(8500, 120, 4500)},
+    {name = "Cake Queen", pos = Vector3.new(5500, -50, 2000)},
+    {name = "Tide Keeper", pos = Vector3.new(6800, 30, 3000)},
+    {name = "Don Swan", pos = Vector3.new(-1400, 10, -1400)}
 }
 
--- ==================== BUSCA DE ALVOS ====================
+-- ==================== TARGET FINDING ====================
 local function findNPCByLevel()
-    local nearest = nil
-    local shortest = farmConfig.Range
-    
+    local nearest, shortest = nil, farmConfig.Range
     local enemies = CollectionService:GetTagged("Enemy")
-    if #enemies > 0 then
-        for _, npc in pairs(enemies) do
-            if npc:IsA("Model") and npc:FindFirstChild("Humanoid") and npc:FindFirstChild("HumanoidRootPart") and npc.Humanoid.Health > 0 then
-                local dist = (npc.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
-                if dist < shortest then shortest = dist; nearest = npc end
-            end
-        end
-    else
-        for _, npc in pairs(Workspace:GetDescendants()) do
-            if npc:IsA("Model") and npc:FindFirstChild("Humanoid") and npc:FindFirstChild("HumanoidRootPart") and npc.Humanoid.Health > 0 then
-                local dist = (npc.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
-                if dist < shortest then shortest = dist; nearest = npc end
-            end
+    local searchList = #enemies > 0 and enemies or Workspace:GetDescendants()
+    for _, npc in pairs(searchList) do
+        if npc:IsA("Model") and npc:FindFirstChild("Humanoid") and npc:FindFirstChild("HumanoidRootPart") and npc.Humanoid.Health > 0 then
+            local dist = (npc.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
+            if dist < shortest then shortest = dist; nearest = npc end
         end
     end
     return nearest
 end
 
 local function findBoss()
-    local nearest = nil
-    local shortest = farmConfig.Range
+    local nearest, shortest = nil, farmConfig.Range
     for _, boss in pairs(bosses) do
         local bossModel = Workspace:FindFirstChild(boss.name)
         if bossModel and bossModel:FindFirstChild("Humanoid") and bossModel:FindFirstChild("HumanoidRootPart") and bossModel.Humanoid.Health > 0 then
@@ -681,8 +560,7 @@ local function findBoss()
 end
 
 local function findFruit()
-    local nearest = nil
-    local shortest = 500
+    local nearest, shortest = nil, 500
     for _, fruitName in pairs(fruits) do
         local fruit = Workspace:FindFirstChild(fruitName)
         if fruit and fruit:FindFirstChild("Handle") then
@@ -702,7 +580,7 @@ local function findSeaBeast()
     return nil
 end
 
--- ==================== AÇÕES DE COMBATE ====================
+-- ==================== COMBAT ====================
 local function attack()
     VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
     task.wait(humanizedWait(0.05, 0.02))
@@ -740,7 +618,6 @@ local function collectItems()
             local itemPos = nil
             if item:IsA("BasePart") then itemPos = item.Position
             elseif item:FindFirstChild("Handle") then itemPos = item.Handle.Position end
-            
             if itemPos and (itemPos - player.Character.HumanoidRootPart.Position).Magnitude < 50 then
                 smartTeleport(itemPos)
                 task.wait(humanizedWait(0.2, 0.1))
@@ -753,28 +630,27 @@ local function startFarm()
     while farmEnabled do
         if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
             task.wait(1)
-            continue
+        else
+            local target = nil
+            if farmMode == "Level" or farmMode == "Mastery" or farmMode == "Raid" then
+                target = findNPCByLevel()
+            elseif farmMode == "Boss" then
+                target = findBoss()
+            elseif farmMode == "SeaBeast" then
+                target = findSeaBeast()
+            end
+            if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
+                currentTarget = target
+                local dist = (player.Character.HumanoidRootPart.Position - target.HumanoidRootPart.Position).Magnitude
+                if dist > 10 then smartTeleport(target.HumanoidRootPart.Position) end
+                attack()
+                useSkill("Q")
+                useSkill("E")
+            end
+            if farmConfig.AutoQuest then autoQuest() end
+            if farmConfig.AutoStats then autoStats() end
+            if farmConfig.AutoCollect then collectItems() end
         end
-        
-        local target = nil
-        if farmMode == "Level" or farmMode == "Mastery" or farmMode == "Raid" then target = findNPCByLevel()
-        elseif farmMode == "Boss" then target = findBoss()
-        elseif farmMode == "SeaBeast" then target = findSeaBeast()
-        end
-        
-        if target and target:FindFirstChild("Humanoid") and target.Humanoid.Health > 0 then
-            currentTarget = target
-            local dist = (player.Character.HumanoidRootPart.Position - target.HumanoidRootPart.Position).Magnitude
-            if dist > 10 then smartTeleport(target.HumanoidRootPart.Position) end
-            attack()
-            useSkill("Q")
-            useSkill("E")
-        end
-        
-        if farmConfig.AutoQuest then autoQuest() end
-        if farmConfig.AutoStats then autoStats() end
-        if farmConfig.AutoCollect then collectItems() end
-        
         task.wait(humanizedWait(0.1, 0.05))
     end
 end
@@ -784,7 +660,6 @@ local espObjects = {}
 local espConfig = {
     PlayerColor = Color3.fromRGB(255, 50, 50),
     FruitColor = Color3.fromRGB(255, 100, 255),
-    ChestColor = Color3.fromRGB(255, 215, 0),
     BossColor = Color3.fromRGB(255, 50, 255)
 }
 
@@ -793,13 +668,13 @@ local function worldToScreen(pos)
     return Vector2.new(vec.X, vec.Y), on
 end
 
-local function createESP(target, type, color)
+local function createESP(target, espType, color)
     if espObjects[target] then return end
     espObjects[target] = {
         Box = Drawing.new("Square"),
         Name = Drawing.new("Text"),
         Distance = Drawing.new("Text"),
-        Type = type,
+        Type = espType,
         Color = color
     }
     local e = espObjects[target]
@@ -820,40 +695,35 @@ end
 local function updateESP()
     cleanESP()
     for target, e in pairs(espObjects) do
-        local pos, onScreen = nil, false
-        local name, dist = "", 0
-        
         if not target then
             e.Box.Visible = false; e.Name.Visible = false; e.Distance.Visible = false
-            continue
+        else
+            local pos, onScreen, name, dist = nil, false, "", 0
+            if e.Type == "Player" and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+                pos, onScreen = worldToScreen(target.Character.HumanoidRootPart.Position)
+                name = target.Name
+                dist = (target.Character.HumanoidRootPart.Position - workspace.CurrentCamera.CFrame.Position).Magnitude
+            elseif e.Type == "Fruit" and target:FindFirstChild("Handle") then
+                pos, onScreen = worldToScreen(target.Handle.Position)
+                name = target.Name
+                dist = (target.Handle.Position - workspace.CurrentCamera.CFrame.Position).Magnitude
+            elseif e.Type == "Boss" and target:FindFirstChild("HumanoidRootPart") then
+                pos, onScreen = worldToScreen(target.HumanoidRootPart.Position)
+                name = target.Name
+                dist = (target.HumanoidRootPart.Position - workspace.CurrentCamera.CFrame.Position).Magnitude
+            end
+            if not pos or not onScreen or dist > farmConfig.Range + 100 then
+                e.Box.Visible = false; e.Name.Visible = false; e.Distance.Visible = false
+            else
+                local size = Vector2.new(150 / dist * 1.5, 200 / dist * 1.5)
+                e.Box.Size = size; e.Box.Position = pos - size/2; e.Box.Color = e.Color; e.Box.Visible = true
+                e.Name.Text = name; e.Name.Color = e.Color; e.Name.Position = Vector2.new(pos.X, pos.Y - size.Y/2 - 15)
+                e.Name.Size = math.clamp(20 / (dist/50), 10, 25); e.Name.Visible = true
+                e.Distance.Text = math.floor(dist) .. "m"; e.Distance.Color = Color3.new(1, 1, 1)
+                e.Distance.Position = Vector2.new(pos.X, pos.Y + size.Y/2 + 10)
+                e.Distance.Size = math.clamp(14 / (dist/50), 8, 20); e.Distance.Visible = true
+            end
         end
-        
-        if e.Type == "Player" and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-            pos, onScreen = worldToScreen(target.Character.HumanoidRootPart.Position)
-            name = target.Name
-            dist = (target.Character.HumanoidRootPart.Position - workspace.CurrentCamera.CFrame.Position).Magnitude
-        elseif e.Type == "Fruit" and target:FindFirstChild("Handle") then
-            pos, onScreen = worldToScreen(target.Handle.Position)
-            name = target.Name
-            dist = (target.Handle.Position - workspace.CurrentCamera.CFrame.Position).Magnitude
-        elseif e.Type == "Boss" and target:FindFirstChild("HumanoidRootPart") then
-            pos, onScreen = worldToScreen(target.HumanoidRootPart.Position)
-            name = target.Name
-            dist = (target.HumanoidRootPart.Position - workspace.CurrentCamera.CFrame.Position).Magnitude
-        end
-        
-        if not pos or not onScreen or dist > farmConfig.Range + 100 then
-            e.Box.Visible = false; e.Name.Visible = false; e.Distance.Visible = false
-            continue
-        end
-        
-        local size = Vector2.new(150 / dist * 1.5, 200 / dist * 1.5)
-        e.Box.Size = size; e.Box.Position = pos - size/2; e.Box.Color = e.Color; e.Box.Visible = true
-        e.Name.Text = name; e.Name.Color = e.Color; e.Name.Position = Vector2.new(pos.X, pos.Y - size.Y/2 - 15)
-        e.Name.Size = math.clamp(20 / (dist/50), 10, 25); e.Name.Visible = true
-        e.Distance.Text = math.floor(dist) .. "m"; e.Distance.Color = Color3.new(1, 1, 1)
-        e.Distance.Position = Vector2.new(pos.X, pos.Y + size.Y/2 + 10)
-        e.Distance.Size = math.clamp(14 / (dist/50), 8, 20); e.Distance.Visible = true
     end
 end
 
@@ -917,7 +787,7 @@ local function bountyHunter()
     end
 end
 
--- ==================== NOVAS FUNÇÕES ====================
+-- ==================== EXTRA FUNCTIONS ====================
 local function autoRaid()
     while raidEnabled do
         for _, obj in pairs(Workspace:GetDescendants()) do
@@ -1050,35 +920,27 @@ local function autoStoreFruits()
     end
 end
 
--- ==================== DONO ULTRA FARM ====================
+-- ==================== OWNER ULTRA FARM ====================
 local function ownerUltraFarm()
-    print("👑 MODO DONO ATIVADO!")
+    print("👑 OWNER MODE ACTIVATED!")
     local remote = ReplicatedStorage:FindFirstChild("Remotes") and ReplicatedStorage.Remotes.CommF_
     if not remote then return end
-    
-    StarterGui:SetCore("SendNotification", {Title = "NEXUS | DONO", Text = "Iniciando farm completo...", Duration = 3})
-    
+    StarterGui:SetCore("SendNotification", {Title = "NEXUS | OWNER", Text = "Starting ultra farm...", Duration = 3})
     safeInvoke(remote, "SetLevel", 2600); task.wait()
     safeInvoke(remote, "AddMastery", "Melee", 600); safeInvoke(remote, "AddMastery", "Sword", 600)
     safeInvoke(remote, "AddMastery", "Fruit", 600); safeInvoke(remote, "AddMastery", "Gun", 600); task.wait()
-    
     for i = 1, 50 do safeInvoke(remote, "AddMoney", 1000000); task.wait() end
     for i = 1, 20 do safeInvoke(remote, "AddFragments", 5000); task.wait() end
-    
     safeInvoke(remote, "AddPoint", "Melee", 2600); safeInvoke(remote, "AddPoint", "Defense", 2600)
     safeInvoke(remote, "AddPoint", "Sword", 2600); safeInvoke(remote, "AddPoint", "Fruit", 2600)
     safeInvoke(remote, "AddPoint", "Gun", 2600); task.wait()
-    
     local shopFruits = {"Kitsune", "Dragon", "Leopard", "Dough", "Spirit", "Venom", "Control", "Shadow", "Rumble", "Buddha"}
     for _, fruit in pairs(shopFruits) do safeInvoke(remote, "BuyItem", fruit); task.wait() end
-    
     safeInvoke(remote, "EquipFruit", "Kitsune"); safeInvoke(remote, "EquipWeapon", "CursedDualKatana")
     safeInvoke(remote, "EquipGun", "SoulGuitar")
-    
     local gamepasses = {"2xMoney", "2xMastery", "FastBoats", "FruitNotifier"}
     for _, gp in pairs(gamepasses) do safeInvoke(remote, "BuyGamepass", gp); task.wait() end
-    
-    StarterGui:SetCore("SendNotification", {Title = "NEXUS | DONO", Text = "✅ Farm completo finalizado!", Duration = 5})
+    StarterGui:SetCore("SendNotification", {Title = "NEXUS | OWNER", Text = "✅ Ultra farm complete!", Duration = 5})
 end
 
 -- ==================== TELEPORTS ====================
@@ -1102,7 +964,7 @@ local teleportLocations = {
     {"Tiki Outpost", Vector3.new(5500, -50, 2000)}
 }
 
--- ==================== GUI DE VERIFICAÇÃO ====================
+-- ==================== VERIFICATION GUI ====================
 local function createVerifyGUI()
     local gui = Instance.new("ScreenGui")
     gui.Name = "NexusVerify"; gui.Parent = player:WaitForChild("PlayerGui"); gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -1166,14 +1028,11 @@ local function createVerifyGUI()
         if key == "" then
             status.Text = "❌ Enter a license key!"; status.TextColor3 = Color3.fromRGB(255, 50, 50); return
         end
-        
         if ownerPasswordBox.Text == OWNER_PASSWORD or ownerPasswordBox.Text == OWNER_KEY then
             isOwner = true; status.Text = "👑 OWNER MODE ACTIVATED!"; status.TextColor3 = Color3.fromRGB(255, 215, 0); task.wait(1)
         end
-        
         status.Text = "🔄 Verifying..."; status.TextColor3 = Color3.fromRGB(100, 200, 255); verifyBtn.Enabled = false
         task.wait(1)
-        
         if verifyKey(key) then
             verified = true
             status.Text = isOwner and "👑 OWNER VERIFIED! Loading NEXUS..." or "✅ VERIFIED! Loading NEXUS..."
@@ -1188,7 +1047,7 @@ local function createVerifyGUI()
     repeat task.wait() until verified == true
 end
 
--- ==================== MENU PRINCIPAL ====================
+-- ==================== MAIN MENU ====================
 local function createMenu()
     local gui = Instance.new("ScreenGui")
     gui.Name = "NexusMenu"; gui.Parent = player:WaitForChild("PlayerGui"); gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
@@ -1210,8 +1069,6 @@ local function createMenu()
     scroll.BackgroundTransparency = 1; scroll.CanvasSize = UDim2.new(0, 0, 0, 1400); scroll.Parent = frame
     
     local y = 10
-    
-    -- Função auxiliar para criar botão
     local function createButton(text, yPos, height)
         local btn = Instance.new("TextButton")
         btn.Size = UDim2.new(0.9, 0, 0, height); btn.Position = UDim2.new(0.05, 0, 0, yPos)
@@ -1221,7 +1078,6 @@ local function createMenu()
         return btn
     end
     
-    -- Botões principais
     local farmBtn = createButton("⚔️ AUTO FARM: OFF", y, 45); y = y + 55
     local modeBtn = createButton("📌 MODE: " .. farmMode, y, 40); y = y + 50
     local movementBtn = createButton("🏃 MOVE: Smart Teleport", y, 40); y = y + 50
@@ -1231,8 +1087,6 @@ local function createMenu()
     local mirageBtn = createButton("🏝️ MIRAGE FINDER: OFF", y, 45); y = y + 55
     local raceBtn = createButton("👑 RACE V4: OFF", y, 45); y = y + 55
     local bountyBtn = createButton("💰 BOUNTY HUNTER: OFF", y, 45); y = y + 55
-    
-    -- Novos botões
     local raidBtn = createButton("⚔️ AUTO RAID: OFF", y, 40); y = y + 48
     local chestBtn = createButton("📦 AUTO CHEST FARM: OFF", y, 40); y = y + 48
     local hakiBtn = createButton("🔮 AUTO HAKI: OFF", y, 40); y = y + 48
@@ -1244,7 +1098,6 @@ local function createMenu()
     local spawnFruitBtn = createButton("🍎 AUTO SPAWN FRUITS: OFF", y, 40); y = y + 48
     local storeBtn = createButton("📥 AUTO STORE FRUITS: OFF", y, 40); y = y + 48
     
-    -- Botão do dono
     if isOwner then
         local ownerBtn = createButton("👑 OWNER ULTRA FARM 👑", y, 50)
         ownerBtn.BackgroundColor3 = Color3.fromRGB(255, 215, 0); ownerBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
@@ -1252,7 +1105,6 @@ local function createMenu()
         y = y + 60
     end
     
-    -- Teleports Label
     local teleLabel = Instance.new("TextLabel")
     teleLabel.Size = UDim2.new(0.9, 0, 0, 25); teleLabel.Position = UDim2.new(0.05, 0, 0, y)
     teleLabel.Text = "📍 TELEPORTS"; teleLabel.BackgroundTransparency = 1
@@ -1260,7 +1112,6 @@ local function createMenu()
     teleLabel.TextSize = 12; teleLabel.Parent = scroll
     y = y + 35
     
-    -- Botões de teleporte
     for i, loc in pairs(teleportLocations) do
         local btn = Instance.new("TextButton")
         btn.Size = UDim2.new(0.43, 0, 0, 35)
@@ -1274,7 +1125,6 @@ local function createMenu()
     if #teleportLocations % 2 == 1 then y = y + 45 end
     y = y + 10
     
-    -- Status Frame
     local statsFrame = Instance.new("Frame")
     statsFrame.Size = UDim2.new(0.9, 0, 0, 80); statsFrame.Position = UDim2.new(0.05, 0, 0, y)
     statsFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 35); statsFrame.BorderSizePixel = 0; statsFrame.Parent = scroll
@@ -1304,7 +1154,7 @@ local function createMenu()
     
     scroll.CanvasSize = UDim2.new(0, 0, 0, y + 100)
     
-    -- ==================== EVENTOS DOS BOTÕES ====================
+    -- ==================== BUTTON EVENTS ====================
     farmBtn.MouseButton1Click:Connect(function()
         farmEnabled = not farmEnabled
         farmBtn.Text = farmEnabled and "⚔️ AUTO FARM: ON" or "⚔️ AUTO FARM: OFF"
@@ -1417,8 +1267,7 @@ local function createMenu()
         autoHopEnabled = not autoHopEnabled
         hopBtn.Text = autoHopEnabled and "🔄 AUTO HOP SERVER: ON" or "🔄 AUTO HOP SERVER: OFF"
         hopBtn.BackgroundColor3 = autoHopEnabled and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(35, 35, 45)
-        if autoHopEnabled then task.spawn(autoHopServer) end
-    end)
+        if autoHopEnabled then task.spawn(autoHopServer) end    end)
     
     bonesBtn.MouseButton1Click:Connect(function()
         autoBonesEnabled = not autoBonesEnabled
@@ -1441,7 +1290,6 @@ local function createMenu()
         if autoStoreEnabled then task.spawn(autoStoreFruits) end
     end)
     
-    -- FPS Counter
     local frameCount = 0
     local lastTime = tick()
     RunService.RenderStepped:Connect(function()
@@ -1453,12 +1301,10 @@ local function createMenu()
         targetLabel.Text = "TARGET: " .. (currentTarget and currentTarget.Name or "NONE")
     end)
     
-    -- Render ESP
     RunService.RenderStepped:Connect(function()
         if espEnabled then updateESP() end
     end)
     
-    -- Draggable
     local drag, dragStart, startPos = false, nil, nil
     frame.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then
@@ -1474,7 +1320,7 @@ local function createMenu()
     end)
 end
 
--- ==================== INICIALIZAÇÃO ====================
+-- ==================== INITIALIZATION ====================
 local function start()
     print("\n" .. string.rep("█", 50))
     print("█ NEXUS ULTIMATE v5.0 - MOBILE OPTIMIZED")
@@ -1511,9 +1357,9 @@ local function start()
     createMenu()
     
     print("\n=== NEXUS v5.0 FULLY LOADED ===")
-    print("🔥 Funções ATIVAS: 20+")
-    print("📱 Otimizado para celular")
-    if isOwner then print("👑 MODO DONO ATIVADO!") end
+    print("🔥 Functions: 20+")
+    print("📱 Mobile optimized")
+    if isOwner then print("👑 OWNER MODE ACTIVE!") end
     print("================================\n")
 end
 
@@ -1527,4 +1373,4 @@ UserInputService.InputBegan:Connect(function(input, gpe)
 end)
 
 -- START
-if not scriptLoaded then start() else print("⚠️ Script já está em execução!") end
+if not scriptLoaded then start() else print("⚠️ Script already running!") end
