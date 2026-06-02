@@ -7,6 +7,8 @@
 
 > Script multi-função para Blox Fruits com sistema de key gerada, UI moderna e 12+ funções automáticas.
 
+---
+
 ## 🔑 Sistema de Key
 
 A key é gerada automaticamente pelo sistema Platoboost.
@@ -23,9 +25,11 @@ A key é gerada automaticamente pelo sistema Platoboost.
 
 ## 📥 Comando
 
-
+```lua
 loadstring(game:HttpGet("https://raw.githubusercontent.com/arcadiaxofc/Dark-script/refs/heads/main/main.lua"))()
+```
 
+---
 
 ⚙️ Funções
 
@@ -42,6 +46,7 @@ Função Descrição
 🔄 Auto Hop Troca de servidor
 🦴 Auto Bones Coleta ossos automaticamente
 
+---
 
 🌐 Idiomas
 
@@ -56,7 +61,7 @@ Função Descrição
 Tecla Ação
 END Desliga todas as funções
 
----
+
 
 📱 Executores Compatíveis
 
@@ -68,14 +73,14 @@ Fluxus ✅
 Codex ✅
 Krnl ✅
 
----
+
 
 ⚠️ Aviso
 
 Este script é para fins educacionais. Use por sua conta e risco.
 O uso de scripts no Roblox viola os Termos de Serviço e pode resultar em banimento.
 
----
+
 
 📱 Requisitos
 
@@ -83,7 +88,9 @@ O uso de scripts no Roblox viola os Termos de Serviço e pode resultar em banime
 · Executor compatível
 · Android 7.0+ ou Windows 10+
 
+
 🔗 Links
 
 · GitHub
 · Discord
+
