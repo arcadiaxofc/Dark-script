@@ -1,137 +1,109 @@
--- ==================== PLATOBOOST LIBRARY (OFICIAL) ====================
-local a=2^32;local b=a-1;local function c(d,e)local f,g=0,1;while d~=0 or e~=0 do local h,i=d%2,e%2;local j=(h+i)%2;f=f+j*g;d=math.floor(d/2)e=math.floor(e/2)g=g*2 end;return f%a end;local function k(d,e,l,...)local m;if e then d=d%a;e=e%a;m=c(d,e)if l then m=k(m,l,...)end;return m elseif d then return d%a else return 0 end end;local function n(d,e,l,...)local m;if e then d=d%a;e=e%a;m=(d+e-c(d,e))/2;if l then m=n(m,l,...)end;return m elseif d then return d%a else return b end end;local function o(p)return b-p end;local function q(d,r)if r<0 then return lshift(d,-r)end;return math.floor(d%2^32/2^r)end;local function s(p,r)if r>31 or r<-31 then return 0 end;return q(p%a,r)end;local function lshift(d,r)if r<0 then return s(d,-r)end;return d*2^r%2^32 end;local function t(p,r)p=p%a;r=r%32;local u=n(p,2^r-1)return s(p,r)+lshift(u,32-r)end;local v={0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2}local function w(x)return string.gsub(x,".",function(l)return string.format("%02x",string.byte(l))end)end;local function y(z,A)local x=""for B=1,A do local C=z%256;x=string.char(C)..x;z=(z-C)/256 end;return x end;local function D(x,B)local A=0;for B=B,B+3 do A=A*256+string.byte(x,B)end;return A end;local function E(F,G)local H=64-(G+9)%64;G=y(8*G,8)F=F.."\128"..string.rep("\0",H)..G;assert(#F%64==0)return F end;local function I(J)J[1]=0x6a09e667;J[2]=0xbb67ae85;J[3]=0x3c6ef372;J[4]=0xa54ff53a;J[5]=0x510e527f;J[6]=0x9b05688c;J[7]=0x1f83d9ab;J[8]=0x5be0cd19;return J end;local function K(F,B,J)local L={}for M=1,16 do L[M]=D(F,B+(M-1)*4)end;for M=17,64 do local N=L[M-15]local O=k(t(N,7),t(N,18),s(N,3))N=L[M-2]L[M]=(L[M-16]+O+L[M-7]+k(t(N,17),t(N,19),s(N,10)))%a end;local d,e,l,P,Q,R,S,T=J[1],J[2],J[3],J[4],J[5],J[6],J[7],J[8]for B=1,64 do local O=k(t(d,2),t(d,13),t(d,22))local U=k(n(d,e),n(d,l),n(e,l))local V=(O+U)%a;local W=k(t(Q,6),t(Q,11),t(Q,25))local X=k(n(Q,R),n(o(Q),S))local Y=(T+W+X+v[B]+L[B])%a;T=S;S=R;R=Q;Q=(P+Y)%a;P=l;l=e;e=d;d=(Y+V)%a end;J[1]=(J[1]+d)%a;J[2]=(J[2]+e)%a;J[3]=(J[3]+l)%a;J[4]=(J[4]+P)%a;J[5]=(J[5]+Q)%a;J[6]=(J[6]+R)%a;J[7]=(J[7]+S)%a;J[8]=(J[8]+T)%a end;local function Z(F)F=E(F,#F)local J=I({})for B=1,#F,64 do K(F,B,J)end;return w(y(J[1],4)..y(J[2],4)..y(J[3],4)..y(J[4],4)..y(J[5],4)..y(J[6],4)..y(J[7],4)..y(J[8],4))end;local e;local l={["\\"]="\\",["\""]="\"",["\b"]="b",["\f"]="f",["\n"]="n",["\r"]="r",["\t"]="t"}local P={["/"]="/"}for Q,R in pairs(l)do P[R]=Q end;local S=function(T)return"\\"..(l[T]or string.format("u%04x",T:byte()))end;local B=function(M)return"null"end;local v=function(M,z)local _={}z=z or{}if z[M]then error("circular reference")end;z[M]=true;if rawget(M,1)~=nil or next(M)==nil then local A=0;for Q in pairs(M)do if type(Q)~="number"then error("invalid table: mixed or invalid key types")end;A=A+1 end;if A~=#M then error("invalid table: sparse array")end;for a0,R in ipairs(M)do table.insert(_,e(R,z))end;z[M]=nil;return"["..table.concat(_,",").."]"else for Q,R in pairs(M)do if type(Q)~="string"then error("invalid table: mixed or invalid key types")end;table.insert(_,e(Q,z)..":"..e(R,z))end;z[M]=nil;return"{"..table.concat(_,",").."}"end end;local g=function(M)return'"'..M:gsub('[%z\1-\31\\"]',S)..'"'end;local a1=function(M)if M~=M or M<=-math.huge or M>=math.huge then error("unexpected number value '"..tostring(M).."'")end;return string.format("%.14g",M)end;local j={["nil"]=B,["table"]=v,["string"]=g,["number"]=a1,["boolean"]=tostring}e=function(M,z)local x=type(M)local a2=j[x]if a2 then return a2(M,z)end;error("unexpected type '"..x.."'")end;local a3=function(M)return e(M)end;local a4;local N=function(...)local _={}for a0=1,select("#",...)do _[select(a0,...)]=true end;return _ end;local L=N(" ","\t","\r","\n")local p=N(" ","\t","\r","\n","]","}",",")local a5=N("\\","/",'"',"b","f","n","r","t","u")local m=N("true","false","null")local a6={["true"]=true,["false"]=false,["null"]=nil}local a7=function(a8,a9,aa,ab)for a0=a9,#a8 do if aa[a8:sub(a0,a0)]~=ab then return a0 end end;return#a8+1 end;local ac=function(a8,a9,J)local ad=1;local ae=1;for a0=1,a9-1 do ae=ae+1;if a8:sub(a0,a0)=="\n"then ad=ad+1;ae=1 end end;error(string.format("%s at line %d col %d",J,ad,ae))end;local af=function(A)local a2=math.floor;if A<=0x7f then return string.char(A)elseif A<=0x7ff then return string.char(a2(A/64)+192,A%64+128)elseif A<=0xffff then return string.char(a2(A/4096)+224,a2(A%4096/64)+128,A%64+128)elseif A<=0x10ffff then return string.char(a2(A/262144)+240,a2(A%262144/4096)+128,a2(A%4096/64)+128,A%64+128)end;error(string.format("invalid unicode codepoint '%x'",A))end;local ag=function(ah)local ai=tonumber(ah:sub(1,4),16)local aj=tonumber(ah:sub(7,10),16)if aj then return af((ai-0xd800)*0x400+aj-0xdc00+0x10000)else return af(ai)end end;local ak=function(a8,a0)local _=""local al=a0+1;local Q=al;while al<=#a8 do local am=a8:byte(al)if am<32 then ac(a8,al,"control character in string")elseif am==92 then _=_..a8:sub(Q,al-1)al=al+1;local T=a8:sub(al,al)if T=="u"then local an=a8:match("^[dD][89aAbB]%x%x\\u%x%x%x%x",al+1)or a8:match("^%x%x%x%x",al+1)or ac(a8,al-1,"invalid unicode escape in string")_=_..ag(an)al=al+#an else if not a5[T]then ac(a8,al-1,"invalid escape char '"..T.."' in string")end;_=_..P[T]end;Q=al+1 elseif am==34 then _=_..a8:sub(Q,al-1)return _,al+1 end;al=al+1 end;ac(a8,a0,"expected closing quote for string")end;local ao=function(a8,a0)local am=a7(a8,a0,p)local ah=a8:sub(a0,am-1)local A=tonumber(ah)if not A then ac(a8,a0,"invalid number '"..ah.."'")end;return A,am end;local ap=function(a8,a0)local am=a7(a8,a0,p)local aq=a8:sub(a0,am-1)if not m[aq]then ac(a8,a0,"invalid literal '"..aq.."'")end;return a6[aq],am end;local ar=function(a8,a0)local _={}local A=1;a0=a0+1;while 1 do local am;a0=a7(a8,a0,L,true)if a8:sub(a0,a0)=="]"then a0=a0+1;break end;am,a0=a4(a8,a0)_[A]=am;A=A+1;a0=a7(a8,a0,L,true)local as=a8:sub(a0,a0)a0=a0+1;if as=="]"then break end;if as~=","then ac(a8,a0,"expected ']' or ','")end end;return _,a0 end;local at=function(a8,a0)local _={}a0=a0+1;while 1 do local au,M;a0=a7(a8,a0,L,true)if a8:sub(a0,a0)=="}"then a0=a0+1;break end;if a8:sub(a0,a0)~='"'then ac(a8,a0,"expected string for key")end;au,a0=a4(a8,a0)a0=a7(a8,a0,L,true)if a8:sub(a0,a0)~=":"then ac(a8,a0,"expected ':' after key")end;a0=a7(a8,a0+1,L,true)M,a0=a4(a8,a0)_[au]=M;a0=a7(a8,a0,L,true)local as=a8:sub(a0,a0)a0=a0+1;if as=="}"then break end;if as~=","then ac(a8,a0,"expected '}' or ','")end end;return _,a0 end;local av={['"']=ak,["0"]=ao,["1"]=ao,["2"]=ao,["3"]=ao,["4"]=ao,["5"]=ao,["6"]=ao,["7"]=ao,["8"]=ao,["9"]=ao,["-"]=ao,["t"]=ap,["f"]=ap,["n"]=ap,["["]=ar,["{"]=at}a4=function(a8,a9)local as=a8:sub(a9,a9)local a2=av[as]if a2 then return a2(a8,a9)end;ac(a8,a9,"unexpected character '"..as.."'")end;local aw=function(a8)if type(a8)~="string"then error("expected argument of type string, got "..type(a8))end;local _,a9=a4(a8,a7(a8,1,L,true))a9=a7(a8,a9,L,true)if a9<=#a8 then ac(a8,a9,"trailing garbage")end;return _ end;
-local lEncode, lDecode, lDigest = a3, aw, Z;
+-- ==================== NEXUS v7.0 - COMPLETO E CORRIGIDO ====================
 
--- ==================== CONFIGURAÇÃO PLATOBOOST ====================
-local service = 25665;
-local secret = "c0bd6633-0e6b-4b49-824f-d1837f1f14c1";
-local useNonce = true;
-local onMessage = function(message) end;
-
-local requestSending = false;
-local fSetClipboard = setclipboard or toclipboard;
-local fRequest = request or http_request or syn_request or function(url) return game:HttpGet(url.Url) end;
-local fStringChar, fToString, fStringSub = string.char, tostring, string.sub;
-local fOsTime, fMathRandom, fMathFloor = os.time, math.random, math.floor;
-local fGetHwid = function() 
-    local success, result = pcall(function() return game:GetService("Players").LocalPlayer.UserId end)
-    if success then return result else return "HWID_" .. math.random(100000, 999999) end
-end;
-local cachedLink, cachedTime = "", 0;
-
-local host = "https://api.platoboost.com";
-
-function cacheLink()
-    pcall(function()
-        if cachedTime + (10*60) < fOsTime() then
-            local response = fRequest({
-                Url = host .. "/public/start",
-                Method = "POST",
-                Body = lEncode({service = service, identifier = lDigest(fGetHwid())}),
-                Headers = {["Content-Type"] = "application/json"}
-            });
-            if type(response) == "string" then
-                local decoded = lDecode(response);
-                if decoded.success == true then
-                    cachedLink = decoded.data.url;
-                    cachedTime = fOsTime();
-                end
-            end
-        end
-    end)
-end
-
-cacheLink();
-
-local generateNonce = function()
-    local str = ""
-    for _ = 1, 16 do
-        str = str .. fStringChar(fMathFloor(fMathRandom() * (122 - 97 + 1)) + 97)
-    end
-    return str
-end
-
-local copyLink = function()
-    cacheLink();
-    if cachedLink ~= "" then 
-        pcall(function() fSetClipboard(cachedLink) end)
-    else
-        pcall(function() fSetClipboard("NEXUS-VIP-2026") end)
-    end
-end
-
-local verifyKeyPlatoboost = function(key)
-    -- Fallback para chaves demo
-    local demoKeys = {
-        ["NEXUS-VIP-2026"] = true,
-        ["FREE-TRIAL"] = true,
-        ["BLOX-ADMIN"] = true,
-        ["KITSUNE-777"] = true,
-        ["OWNER-TEST"] = true
-    }
-    if demoKeys[key] then return true end
-    
-    -- Tenta verificação online
-    local success = pcall(function()
-        if requestSending then return false end
-        requestSending = true;
-        local nonce = generateNonce();
-        local endpoint = host .. "/public/whitelist/" .. fToString(service) .. "?identifier=" .. lDigest(fGetHwid()) .. "&key=" .. key;
-        if useNonce then endpoint = endpoint .. "&nonce=" .. nonce end
-        local response = fRequest({Url = endpoint, Method = "GET"});
-        requestSending = false;
-        if type(response) == "string" then
-            local decoded = lDecode(response);
-            if decoded.success and decoded.data.valid then
-                return true;
-            end
-        end
-        return false;
-    end)
-    
-    if success then return success end
-    return false;
-end
-
--- ==================== SERVIÇOS ROBLOX ====================
+-- Serviços
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
-local Lighting = game:GetService("Lighting")
-local TeleportService = game:GetService("TeleportService")
 local StarterGui = game:GetService("StarterGui")
 local CoreGui = game:GetService("CoreGui")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local Lighting = game:GetService("Lighting")
+local Stats = game:GetService("Stats")
 
--- ==================== IDIOMAS ====================
+-- Key System
+local verified = false
+local isOwner = false
+local keyData = nil
+
+local demoKeys = {
+    ["NEXUS-VIP-2026"] = {type = "vip", level = 3, expires = "2027-12-31"},
+    ["FREE-TRIAL"] = {type = "trial", level = 1, expires = "2026-12-31"},
+    ["BLOX-ADMIN"] = {type = "admin", level = 5, expires = "2027-12-31"},
+    ["KITSUNE-777"] = {type = "vip", level = 4, expires = "2027-12-31"},
+    ["OWNER-TEST"] = {type = "owner", level = 10, expires = "2027-12-31"}
+}
+
+-- Idiomas
 local Languages = {
-    pt = {flag = "🇧🇷", name = "Português", title = "NEXUS v5.0", subtitle = "DIGITE SUA CHAVE", placeholder = "XXXX-XXXX-XXXX-XXXX", verifyBtn = "VERIFICAR", getKeyBtn = "OBTER CHAVE", waiting = "Aguardando...", copied = "✅ COPIADO!", verifying = "🔄 Verificando...", verified = "✅ VERIFICADO!", invalid = "❌ INVALIDA!", enterKey = "❌ Digite a chave!"},
-    en = {flag = "🇺🇸", name = "English", title = "NEXUS v5.0", subtitle = "ENTER YOUR KEY", placeholder = "XXXX-XXXX-XXXX-XXXX", verifyBtn = "VERIFY", getKeyBtn = "GET KEY", waiting = "Waiting...", copied = "✅ COPIED!", verifying = "🔄 Verifying...", verified = "✅ VERIFIED!", invalid = "❌ INVALID!", enterKey = "❌ Enter the key!"},
-    es = {flag = "🇪🇸", name = "Español", title = "NEXUS v5.0", subtitle = "INGRESA TU LLAVE", placeholder = "XXXX-XXXX-XXXX-XXXX", verifyBtn = "VERIFICAR", getKeyBtn = "OBTENER", waiting = "Esperando...", copied = "✅ COPIADO!", verifying = "🔄 Verificando...", verified = "✅ VERIFICADO!", invalid = "❌ INVALIDA!", enterKey = "❌ Ingresa la llave!"}
+    pt = {
+        flag = "🇧🇷", title = "NEXUS v7.0", subtitle = "DIGITE SUA CHAVE", placeholder = "XXXX-XXXX-XXXX-XXXX",
+        verify = "VERIFICAR", getkey = "OBTER CHAVE", waiting = "Aguardando...", copied = "✅ COPIADO!",
+        verifying = "🔄 Verificando...", verifiedText = "✅ VERIFICADO!", invalid = "❌ INVALIDA!",
+        enterKey = "❌ Digite a chave!", autoVerified = "✅ AUTO-VERIFICADO",
+        farm = "⚔️ AUTO FARM", godmode = "🛡️ GODMODE", esp = "👁️ ESP",
+        sniper = "🍎 FRUIT SNIPER", bounty = "💰 BOUNTY HUNTER", tp = "📍 TP TO TARGET",
+        on = "ON", off = "OFF", allOff = "Todas as funções desligadas!"
+    },
+    en = {
+        flag = "🇺🇸", title = "NEXUS v7.0", subtitle = "ENTER YOUR KEY", placeholder = "XXXX-XXXX-XXXX-XXXX",
+        verify = "VERIFY", getkey = "GET KEY", waiting = "Waiting...", copied = "✅ COPIED!",
+        verifying = "🔄 Verifying...", verifiedText = "✅ VERIFIED!", invalid = "❌ INVALID!",
+        enterKey = "❌ Enter the key!", autoVerified = "✅ AUTO-VERIFIED",
+        farm = "⚔️ AUTO FARM", godmode = "🛡️ GODMODE", esp = "👁️ ESP",
+        sniper = "🍎 FRUIT SNIPER", bounty = "💰 BOUNTY HUNTER", tp = "📍 TP TO TARGET",
+        on = "ON", off = "OFF", allOff = "All functions disabled!"
+    },
+    es = {
+        flag = "🇪🇸", title = "NEXUS v7.0", subtitle = "INGRESA TU LLAVE", placeholder = "XXXX-XXXX-XXXX-XXXX",
+        verify = "VERIFICAR", getkey = "OBTENER", waiting = "Esperando...", copied = "✅ COPIADO!",
+        verifying = "🔄 Verificando...", verifiedText = "✅ VERIFICADO!", invalid = "❌ INVALIDA!",
+        enterKey = "❌ Ingresa la llave!", autoVerified = "✅ AUTO-VERIFICADO",
+        farm = "⚔️ AUTO FARM", godmode = "🛡️ GODMODE", esp = "👁️ ESP",
+        sniper = "🍎 FRUIT SNIPER", bounty = "💰 BOUNTY HUNTER", tp = "📍 TP TO TARGET",
+        on = "ON", off = "OFF", allOff = "¡Todas las funciones apagadas!"
+    }
 }
 
 local currentLang = "pt"
 local Lang = Languages[currentLang]
 
--- ==================== VARIÁVEIS ====================
-local verified = false
-local isOwner = false
-local OWNER_PASSWORD = "NEXUS-2026-ADMIN"
-
+-- Variáveis
 local farmEnabled = false
-local espEnabled = false
 local godmodeEnabled = false
+local espEnabled = false
 local fruitSniperEnabled = false
 local bountyHunterEnabled = false
-local farmMode = "Level"
+local autoRaidEnabled = false
+local autoChestEnabled = false
+local autoHakiEnabled = false
+local autoDashEnabled = false
+local autoBuyEnabled = false
+local autoSkillEnabled = false
+local autoHopEnabled = false
+local autoBonesEnabled = false
 local currentTarget = nil
-
 local farmConfig = {Range = 300, AttackDelay = 0.3}
+local espBills = {}
 
--- ==================== UI DE VERIFICAÇÃO ====================
+-- Funções de verificação
+local function validateKey(key)
+    if not key or type(key) ~= "string" then return false end
+    return #key >= 8 and string.match(key, "^[%w%-]+$") ~= nil
+end
+
+local function checkExpiration(date)
+    if not date then return true end
+    local year, month, day = date:match("^(%d+)-(%d+)-(%d+)$")
+    if not year then return true end
+    local expireTime = os.time({year=tonumber(year), month=tonumber(month), day=tonumber(day), hour=23, min=59, sec=59})
+    return os.time() <= expireTime
+end
+
+local function verifyKey(key)
+    if not validateKey(key) then return false, "FORMATO_INVALIDO", nil end
+    local data = demoKeys[key]
+    if data then
+        if not checkExpiration(data.expires) then return false, "KEY_EXPIRADA", nil end
+        return true, data.type, data
+    end
+    return false, "KEY_INVALIDA", nil
+end
+
+-- UI de Verificação
 local function createVerifyGUI()
     local gui = Instance.new("ScreenGui")
     gui.Name = "NexusVerify"
@@ -139,20 +111,24 @@ local function createVerifyGUI()
     gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 400, 0, 380)
-    frame.Position = UDim2.new(0.5, -200, 0.5, -190)
+    frame.Size = UDim2.new(0, 400, 0, 340)
+    frame.Position = UDim2.new(0.5, -200, 0.5, -170)
     frame.BackgroundColor3 = Color3.fromRGB(13, 13, 19)
     frame.BorderSizePixel = 0
     frame.Parent = gui
-    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 14)
-    Instance.new("UIStroke", frame).Color = Color3.fromRGB(210, 60, 48)
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
     
-    -- Topo
     local topBar = Instance.new("Frame")
-    topBar.Size = UDim2.new(1, 0, 0, 45)
+    topBar.Size = UDim2.new(1, 0, 0, 42)
     topBar.BackgroundColor3 = Color3.fromRGB(18, 18, 27)
     topBar.BorderSizePixel = 0
     topBar.Parent = frame
+    
+    local accent = Instance.new("Frame")
+    accent.Size = UDim2.new(1, 0, 0, 3)
+    accent.BackgroundColor3 = Color3.fromRGB(230, 65, 50)
+    accent.BorderSizePixel = 0
+    accent.Parent = topBar
     
     local titleLabel = Instance.new("TextLabel")
     titleLabel.Position = UDim2.new(0, 15, 0.5, -10)
@@ -165,9 +141,8 @@ local function createVerifyGUI()
     titleLabel.Text = "🔑 " .. Lang.title
     titleLabel.Parent = topBar
     
-    -- Botão idioma
     local langBtn = Instance.new("TextButton")
-    langBtn.Size = UDim2.new(0, 70, 0, 30)
+    langBtn.Size = UDim2.new(0, 60, 0, 28)
     langBtn.AnchorPoint = Vector2.new(1, 0.5)
     langBtn.Position = UDim2.new(1, -10, 0.5, 0)
     langBtn.BackgroundColor3 = Color3.fromRGB(26, 26, 38)
@@ -189,15 +164,14 @@ local function createVerifyGUI()
         titleLabel.Text = "🔑 " .. Lang.title
         subtitleLabel.Text = Lang.subtitle
         keyBox.PlaceholderText = Lang.placeholder
-        verifyBtn.Text = Lang.verifyBtn
-        getKeyBtn.Text = Lang.getKeyBtn
+        verifyBtn.Text = Lang.verify
+        getKeyBtn.Text = Lang.getkey
         statusLabel.Text = Lang.waiting
     end)
     
-    -- Conteúdo
     local content = Instance.new("Frame")
-    content.Size = UDim2.new(1, -30, 1, -60)
-    content.Position = UDim2.new(0, 15, 0, 55)
+    content.Size = UDim2.new(1, -30, 1, -55)
+    content.Position = UDim2.new(0, 15, 0, 50)
     content.BackgroundTransparency = 1
     content.BorderSizePixel = 0
     content.Parent = frame
@@ -213,9 +187,8 @@ local function createVerifyGUI()
     subtitleLabel.TextXAlignment = Enum.TextXAlignment.Center
     subtitleLabel.Parent = content
     
-    -- Key box
     local keyBoxFrame = Instance.new("Frame")
-    keyBoxFrame.Size = UDim2.new(1, 0, 0, 42)
+    keyBoxFrame.Size = UDim2.new(1, 0, 0, 40)
     keyBoxFrame.Position = UDim2.new(0, 0, 0, 35)
     keyBoxFrame.BackgroundColor3 = Color3.fromRGB(21, 21, 31)
     keyBoxFrame.BorderSizePixel = 0
@@ -235,24 +208,22 @@ local function createVerifyGUI()
     keyBox.TextXAlignment = Enum.TextXAlignment.Center
     keyBox.Parent = keyBoxFrame
     
-    -- Botão verificar
     local verifyBtn = Instance.new("TextButton")
-    verifyBtn.Size = UDim2.new(1, 0, 0, 40)
-    verifyBtn.Position = UDim2.new(0, 0, 0, 90)
+    verifyBtn.Size = UDim2.new(1, 0, 0, 38)
+    verifyBtn.Position = UDim2.new(0, 0, 0, 88)
     verifyBtn.BackgroundColor3 = Color3.fromRGB(210, 58, 45)
     verifyBtn.BorderSizePixel = 0
     verifyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
     verifyBtn.TextSize = 14
     verifyBtn.Font = Enum.Font.GothamBold
-    verifyBtn.Text = Lang.verifyBtn
+    verifyBtn.Text = Lang.verify
     verifyBtn.AutoButtonColor = false
     verifyBtn.Parent = content
     Instance.new("UICorner", verifyBtn).CornerRadius = UDim.new(0, 7)
     
-    -- Status
     local statusLabel = Instance.new("TextLabel")
     statusLabel.Size = UDim2.new(1, 0, 0, 25)
-    statusLabel.Position = UDim2.new(0, 0, 0, 140)
+    statusLabel.Position = UDim2.new(0, 0, 0, 135)
     statusLabel.BackgroundTransparency = 1
     statusLabel.TextColor3 = Color3.fromRGB(255, 200, 0)
     statusLabel.TextSize = 12
@@ -261,38 +232,21 @@ local function createVerifyGUI()
     statusLabel.TextXAlignment = Enum.TextXAlignment.Center
     statusLabel.Parent = content
     
-    -- Botão get key
     local getKeyBtn = Instance.new("TextButton")
-    getKeyBtn.Size = UDim2.new(0.48, 0, 0, 35)
-    getKeyBtn.Position = UDim2.new(0, 0, 0, 175)
+    getKeyBtn.Size = UDim2.new(1, 0, 0, 33)
+    getKeyBtn.Position = UDim2.new(0, 0, 0, 170)
     getKeyBtn.BackgroundColor3 = Color3.fromRGB(38, 38, 54)
     getKeyBtn.BorderSizePixel = 0
     getKeyBtn.TextColor3 = Color3.fromRGB(230, 230, 236)
     getKeyBtn.TextSize = 13
     getKeyBtn.Font = Enum.Font.GothamBold
-    getKeyBtn.Text = Lang.getKeyBtn
+    getKeyBtn.Text = Lang.getkey
     getKeyBtn.AutoButtonColor = false
     getKeyBtn.Parent = content
     Instance.new("UICorner", getKeyBtn).CornerRadius = UDim.new(0, 6)
     
-    -- Owner box
-    local ownerBox = Instance.new("TextBox")
-    ownerBox.Size = UDim2.new(0.48, 0, 0, 35)
-    ownerBox.Position = UDim2.new(0.52, 0, 0, 175)
-    ownerBox.BackgroundColor3 = Color3.fromRGB(21, 21, 31)
-    ownerBox.BorderSizePixel = 0
-    ownerBox.PlaceholderText = "🔒 OWNER"
-    ownerBox.TextColor3 = Color3.fromRGB(230, 230, 236)
-    ownerBox.PlaceholderColor3 = Color3.fromRGB(100, 100, 120)
-    ownerBox.TextSize = 12
-    ownerBox.Font = Enum.Font.Gotham
-    ownerBox.TextXAlignment = Enum.TextXAlignment.Center
-    ownerBox.Parent = content
-    Instance.new("UICorner", ownerBox).CornerRadius = UDim.new(0, 6)
-    
-    -- Eventos
     getKeyBtn.MouseButton1Click:Connect(function()
-        copyLink()
+        pcall(function() setclipboard("NEXUS-VIP-2026") end)
         statusLabel.Text = Lang.copied
         statusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
         task.wait(2)
@@ -301,47 +255,53 @@ local function createVerifyGUI()
     end)
     
     verifyBtn.MouseButton1Click:Connect(function()
-        local key = keyBox.Text
+        local key = keyBox.Text:gsub("%s+", ""):upper()
         if key == "" then
             statusLabel.Text = Lang.enterKey
             statusLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
             return
         end
-        
-        if ownerBox.Text == OWNER_PASSWORD then
-            isOwner = true
-            statusLabel.Text = "👑 OWNER!"
-            statusLabel.TextColor3 = Color3.fromRGB(255, 215, 0)
-            task.wait(1)
-        end
-        
         statusLabel.Text = Lang.verifying
         statusLabel.TextColor3 = Color3.fromRGB(100, 200, 255)
         verifyBtn.Enabled = false
-        
-        task.wait(0.5)
-        
-        if verifyKeyPlatoboost(key) then
+        task.wait(0.3)
+        local success, msg, data = verifyKey(key)
+        if success then
             verified = true
-            statusLabel.Text = Lang.verified
+            keyData = data
+            if data.type == "owner" then isOwner = true end
+            local levelText = " [" .. data.type:upper() .. "]"
+            if data.level then levelText = levelText .. " Lv." .. data.level end
+            statusLabel.Text = Lang.verifiedText .. levelText
             statusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-            task.wait(1)
+            task.wait(1.5)
             gui:Destroy()
         else
-            statusLabel.Text = Lang.invalid
+            local errorMsg = Lang.invalid
+            if msg == "KEY_EXPIRADA" then errorMsg = "⏰ KEY EXPIRADA"
+            elseif msg == "FORMATO_INVALIDO" then errorMsg = "❌ FORMATO INVALIDO" end
+            statusLabel.Text = errorMsg
             statusLabel.TextColor3 = Color3.fromRGB(255, 50, 50)
             verifyBtn.Enabled = true
         end
     end)
     
-    repeat task.wait() until verified == true
+    local timeout = 120
+    while not verified and timeout > 0 do
+        task.wait(1)
+        timeout = timeout - 1
+    end
+    if not verified then gui:Destroy() verified = true end
 end
 
--- ==================== FUNÇÕES DO JOGO ====================
+-- Funções do Jogo
 local function teleportTo(pos)
     pcall(function()
         if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            player.Character.HumanoidRootPart.CFrame = CFrame.new(pos)
+            local hrp = player.Character.HumanoidRootPart
+            hrp.CFrame = CFrame.new(pos + Vector3.new(0, 5, 0))
+            task.wait(0.08)
+            hrp.CFrame = CFrame.new(pos)
         end
     end)
 end
@@ -353,10 +313,7 @@ local function findTarget()
             if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
                 if obj.Humanoid.Health > 0 and obj ~= player.Character then
                     local dist = (obj.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
-                    if dist < shortest then
-                        shortest = dist
-                        nearest = obj
-                    end
+                    if dist < shortest then shortest = dist nearest = obj end
                 end
             end
         end)
@@ -364,29 +321,27 @@ local function findTarget()
     return nearest
 end
 
+local function attackTarget()
+    pcall(function()
+        local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+        if remotes and remotes:FindFirstChild("CommF_") then
+            remotes.CommF_:InvokeServer("Click")
+        end
+    end)
+end
+
 local function startFarm()
     while farmEnabled do
         pcall(function()
             if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
-                task.wait(1)
-                return
+                task.wait(1) return
             end
-            
             local target = findTarget()
             if target then
                 currentTarget = target
                 local dist = (player.Character.HumanoidRootPart.Position - target.HumanoidRootPart.Position).Magnitude
-                if dist > 15 then
-                    teleportTo(target.HumanoidRootPart.Position + Vector3.new(0, 3, 0))
-                end
-                
-                -- Ataque via remotes
-                pcall(function()
-                    local remotes = ReplicatedStorage:FindFirstChild("Remotes")
-                    if remotes and remotes:FindFirstChild("CommF_") then
-                        remotes.CommF_:InvokeServer("Click")
-                    end
-                end)
+                if dist > 15 then teleportTo(target.HumanoidRootPart.Position) end
+                attackTarget()
             end
         end)
         task.wait(farmConfig.AttackDelay)
@@ -398,16 +353,184 @@ local function startGodmode()
         pcall(function()
             if player.Character then
                 local hum = player.Character:FindFirstChildOfClass("Humanoid")
-                if hum then
-                    hum.Health = hum.MaxHealth
-                end
+                if hum then hum.Health = hum.MaxHealth end
             end
         end)
         task.wait(0.1)
     end
 end
 
--- ==================== MENU ====================
+local function toggleESP(state)
+    if state then
+        task.spawn(function()
+            while espEnabled do
+                pcall(function()
+                    for _, obj in pairs(Workspace:GetDescendants()) do
+                        if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
+                            if obj.Humanoid.Health > 0 and obj ~= player.Character and not espBills[obj] then
+                                local dist = (obj.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
+                                if dist <= farmConfig.Range then
+                                    local bill = Instance.new("BillboardGui")
+                                    bill.Size = UDim2.new(0, 80, 0, 25)
+                                    bill.AlwaysOnTop = true
+                                    bill.MaxDistance = farmConfig.Range
+                                    local label = Instance.new("TextLabel")
+                                    label.Size = UDim2.new(1, 0, 1, 0)
+                                    label.BackgroundTransparency = 0.7
+                                    label.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+                                    label.TextColor3 = Color3.fromRGB(255, 255, 255)
+                                    label.TextSize = 11
+                                    label.Font = Enum.Font.GothamBold
+                                    label.Text = obj.Name .. " ❤" .. math.floor(obj.Humanoid.Health)
+                                    label.Parent = bill
+                                    bill.Parent = obj.HumanoidRootPart
+                                    espBills[obj] = bill
+                                end
+                            end
+                        end
+                    end
+                    for obj, bill in pairs(espBills) do
+                        if not obj.Parent or obj.Humanoid.Health <= 0 then
+                            bill:Destroy() espBills[obj] = nil
+                        end
+                    end
+                end)
+                task.wait(2)
+            end
+        end)
+    else
+        for obj, bill in pairs(espBills) do
+            pcall(function() bill:Destroy() end) espBills[obj] = nil
+        end
+    end
+end
+
+local function startFruitSniper()
+    local fruits = {"Kitsune-Fruit", "Dragon-Fruit", "Leopard-Fruit", "Dough-Fruit", "Spirit-Fruit", "Venom-Fruit", "Control-Fruit", "Shadow-Fruit", "Rumble-Fruit", "Buddha-Fruit"}
+    while fruitSniperEnabled do
+        pcall(function()
+            for _, name in pairs(fruits) do
+                local fruit = Workspace:FindFirstChild(name)
+                if fruit and fruit:FindFirstChild("Handle") then
+                    teleportTo(fruit.Handle.Position) task.wait(0.3) break
+                end
+            end
+        end)
+        task.wait(3)
+    end
+end
+
+local function startBountyHunter()
+    while bountyHunterEnabled do
+        pcall(function()
+            local best, bestBounty = nil, 0
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    pcall(function()
+                        local bounty = p.Data and p.Data:FindFirstChild("Bounty") and p.Data.Bounty.Value or 0
+                        if bounty > bestBounty then bestBounty = bounty best = p end
+                    end)
+                end
+            end
+            if best then teleportTo(best.Character.HumanoidRootPart.Position) attackTarget() end
+        end)
+        task.wait(5)
+    end
+end
+
+local function startAutoRaid()
+    while autoRaidEnabled do
+        pcall(function()
+            for _, obj in pairs(Workspace:GetDescendants()) do
+                if obj.Name:find("Raid") and obj:FindFirstChild("TouchInterest") then
+                    teleportTo(obj.Position) task.wait(0.5)
+                    firetouchinterest(obj, player.Character.HumanoidRootPart, 0)
+                    firetouchinterest(obj, player.Character.HumanoidRootPart, 1)
+                end
+            end
+        end)
+        task.wait(30)
+    end
+end
+
+local function startAutoChest()
+    while autoChestEnabled do
+        pcall(function()
+            for _, obj in pairs(Workspace:GetDescendants()) do
+                if obj.Name:find("Chest") and obj:FindFirstChild("TouchInterest") then
+                    teleportTo(obj:FindFirstChildOfClass("BasePart").Position) task.wait(0.3)
+                    firetouchinterest(obj, player.Character.HumanoidRootPart, 0)
+                    firetouchinterest(obj, player.Character.HumanoidRootPart, 1)
+                end
+            end
+        end)
+        task.wait(5)
+    end
+end
+
+local function startAutoHaki()
+    while autoHakiEnabled do
+        pcall(function()
+            local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+            if remotes and remotes:FindFirstChild("CommF_") then
+                remotes.CommF_:InvokeServer("ActivateHaki", "Ken")
+                remotes.CommF_:InvokeServer("ActivateHaki", "Buso")
+            end
+        end)
+        task.wait(30)
+    end
+end
+
+local function startAutoBuy()
+    while autoBuyEnabled do
+        pcall(function()
+            local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+            if remotes and remotes:FindFirstChild("CommF_") then
+                local items = {"Kitsune", "Dragon", "Leopard", "Dough", "Spirit", "Venom"}
+                for _, item in pairs(items) do
+                    remotes.CommF_:InvokeServer("BuyItem", item) task.wait(0.5)
+                end
+            end
+        end)
+        task.wait(300)
+    end
+end
+
+local function startAutoHop()
+    while autoHopEnabled do
+        pcall(function()
+            local hasRare = false
+            local rareFruits = {"Kitsune-Fruit", "Dragon-Fruit", "Leopard-Fruit"}
+            for _, name in pairs(rareFruits) do
+                if Workspace:FindFirstChild(name) then hasRare = true break end
+            end
+            if not hasRare then
+                local servers = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.GameId .. "/servers/Public?limit=10"))
+                if #servers.data > 0 then
+                    TeleportService:TeleportToPlaceInstance(game.GameId, servers.data[math.random(1, #servers.data)].id, player)
+                end
+            end
+        end)
+        task.wait(60)
+    end
+end
+
+local function startAutoBones()
+    while autoBonesEnabled do
+        pcall(function()
+            for _, obj in pairs(Workspace:GetDescendants()) do
+                if obj.Name:find("Bone") and obj:IsA("BasePart") then
+                    teleportTo(obj.Position) task.wait(0.2)
+                    firetouchinterest(obj, player.Character.HumanoidRootPart, 0)
+                    firetouchinterest(obj, player.Character.HumanoidRootPart, 1)
+                end
+            end
+        end)
+        task.wait(3)
+    end
+end
+
+-- Menu
 local function createMenu()
     local gui = Instance.new("ScreenGui")
     gui.Name = "NexusMenu"
@@ -415,7 +538,7 @@ local function createMenu()
     gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 350, 0, 400)
+    frame.Size = UDim2.new(0, 360, 0, 500)
     frame.Position = UDim2.new(0, 10, 0, 50)
     frame.BackgroundColor3 = Color3.fromRGB(13, 13, 19)
     frame.BorderSizePixel = 0
@@ -423,48 +546,48 @@ local function createMenu()
     Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
     
     local title = Instance.new("TextLabel")
-    title.Size = UDim2.new(1, 0, 0, 35)
+    title.Size = UDim2.new(1, 0, 0, 32)
     title.BackgroundColor3 = Color3.fromRGB(18, 18, 27)
     title.TextColor3 = Color3.fromRGB(230, 65, 50)
     title.Font = Enum.Font.GothamBold
-    title.TextSize = 14
-    title.Text = "NEXUS v5.0"
+    title.TextSize = 13
+    title.Text = Lang.title .. (isOwner and " 👑" or "")
     title.Parent = frame
     
     local scroll = Instance.new("ScrollingFrame")
-    scroll.Size = UDim2.new(1, 0, 1, -35)
-    scroll.Position = UDim2.new(0, 0, 0, 35)
+    scroll.Size = UDim2.new(1, 0, 1, -32)
+    scroll.Position = UDim2.new(0, 0, 0, 32)
     scroll.BackgroundTransparency = 1
-    scroll.CanvasSize = UDim2.new(0, 0, 0, 500)
+    scroll.CanvasSize = UDim2.new(0, 0, 0, 900)
     scroll.Parent = frame
     
-    local y = 10
-    
-    local function createBtn(text, yPos, height)
-        local btn = Instance.new("TextButton")
-        btn.Size = UDim2.new(0.9, 0, 0, height)
-        btn.Position = UDim2.new(0.05, 0, 0, yPos)
-        btn.Text = text
-        btn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-        btn.TextColor3 = Color3.new(1, 1, 1)
-        btn.Font = Enum.Font.GothamBold
-        btn.TextSize = 12
-        btn.Parent = scroll
-        Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-        return btn
+    local function btn(t, y, h)
+        local b = Instance.new("TextButton")
+        b.Size = UDim2.new(0.9, 0, 0, h)
+        b.Position = UDim2.new(0.05, 0, 0, y)
+        b.Text = t
+        b.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+        b.TextColor3 = Color3.new(1, 1, 1)
+        b.Font = Enum.Font.GothamBold
+        b.TextSize = 12
+        b.Parent = scroll
+        Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+        return b
     end
     
-    local farmBtn = createBtn("⚔️ AUTO FARM: OFF", y, 40)
-    y = y + 48
-    local modeBtn = createBtn("📌 MODO: Level", y, 35)
-    y = y + 43
-    local espBtn = createBtn("👁️ ESP: OFF", y, 40)
-    y = y + 48
-    local godBtn = createBtn("🛡️ GODMODE: OFF", y, 40)
-    y = y + 48
-    local sniperBtn = createBtn("🍎 FRUIT SNIPER: OFF", y, 40)
-    y = y + 48
-    local bountyBtn = createBtn("💰 BOUNTY HUNTER: OFF", y, 40)
+    local y = 10
+    local farmBtn = btn(Lang.farm .. ": " .. Lang.off, y, 36) y = y + 42
+    local godBtn = btn(Lang.godmode .. ": " .. Lang.off, y, 36) y = y + 42
+    local espBtn = btn(Lang.esp .. ": " .. Lang.off, y, 36) y = y + 42
+    local sniperBtn = btn(Lang.sniper .. ": " .. Lang.off, y, 36) y = y + 42
+    local bountyBtn = btn(Lang.bounty .. ": " .. Lang.off, y, 36) y = y + 42
+    local raidBtn = btn("⚔️ AUTO RAID: " .. Lang.off, y, 36) y = y + 42
+    local chestBtn = btn("📦 AUTO CHEST: " .. Lang.off, y, 36) y = y + 42
+    local hakiBtn = btn("🔮 AUTO HAKI: " .. Lang.off, y, 36) y = y + 42
+    local buyBtn = btn("🛒 AUTO BUY: " .. Lang.off, y, 36) y = y + 42
+    local hopBtn = btn("🔄 AUTO HOP: " .. Lang.off, y, 36) y = y + 42
+    local bonesBtn = btn("🦴 AUTO BONES: " .. Lang.off, y, 36) y = y + 42
+    local tpBtn = btn(Lang.tp, y, 35)
     
     local fpsLabel = Instance.new("TextLabel")
     fpsLabel.Size = UDim2.new(0.9, 0, 0, 18)
@@ -482,67 +605,123 @@ local function createMenu()
     -- Eventos
     farmBtn.MouseButton1Click:Connect(function()
         farmEnabled = not farmEnabled
-        farmBtn.Text = farmEnabled and "⚔️ AUTO FARM: ON" or "⚔️ AUTO FARM: OFF"
+        farmBtn.Text = Lang.farm .. ": " .. (farmEnabled and Lang.on or Lang.off)
         farmBtn.BackgroundColor3 = farmEnabled and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(35, 35, 45)
         if farmEnabled then task.spawn(startFarm) end
     end)
     
-    local modes = {"Level", "Mastery", "Boss", "Raid", "SeaBeast"}
-    local modeIndex = 1
-    modeBtn.MouseButton1Click:Connect(function()
-        modeIndex = modeIndex % #modes + 1
-        farmMode = modes[modeIndex]
-        modeBtn.Text = "📌 MODO: " .. farmMode
-    end)
-    
-    espBtn.MouseButton1Click:Connect(function()
-        espEnabled = not espEnabled
-        espBtn.Text = espEnabled and "👁️ ESP: ON" or "👁️ ESP: OFF"
-        espBtn.BackgroundColor3 = espEnabled and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(35, 35, 45)
-    end)
-    
     godBtn.MouseButton1Click:Connect(function()
         godmodeEnabled = not godmodeEnabled
-        godBtn.Text = godmodeEnabled and "🛡️ GODMODE: ON" or "🛡️ GODMODE: OFF"
+        godBtn.Text = Lang.godmode .. ": " .. (godmodeEnabled and Lang.on or Lang.off)
         godBtn.BackgroundColor3 = godmodeEnabled and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(35, 35, 45)
         if godmodeEnabled then task.spawn(startGodmode) end
     end)
     
-    -- FPS
-    local frameCount = 0
-    local lastTime = tick()
+    espBtn.MouseButton1Click:Connect(function()
+        espEnabled = not espEnabled
+        espBtn.Text = Lang.esp .. ": " .. (espEnabled and Lang.on or Lang.off)
+        espBtn.BackgroundColor3 = espEnabled and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(35, 35, 45)
+        toggleESP(espEnabled)
+    end)
+    
+    sniperBtn.MouseButton1Click:Connect(function()
+        fruitSniperEnabled = not fruitSniperEnabled
+        sniperBtn.Text = Lang.sniper .. ": " .. (fruitSniperEnabled and Lang.on or Lang.off)
+        sniperBtn.BackgroundColor3 = fruitSniperEnabled and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(35, 35, 45)
+        if fruitSniperEnabled then task.spawn(startFruitSniper) end
+    end)
+    
+    bountyBtn.MouseButton1Click:Connect(function()
+        bountyHunterEnabled = not bountyHunterEnabled
+        bountyBtn.Text = Lang.bounty .. ": " .. (bountyHunterEnabled and Lang.on or Lang.off)
+        bountyBtn.BackgroundColor3 = bountyHunterEnabled and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(35, 35, 45)
+        if bountyHunterEnabled then task.spawn(startBountyHunter) end
+    end)
+    
+    raidBtn.MouseButton1Click:Connect(function()
+        autoRaidEnabled = not autoRaidEnabled
+        raidBtn.Text = "⚔️ AUTO RAID: " .. (autoRaidEnabled and Lang.on or Lang.off)
+        raidBtn.BackgroundColor3 = autoRaidEnabled and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(35, 35, 45)
+        if autoRaidEnabled then task.spawn(startAutoRaid) end
+    end)
+    
+    chestBtn.MouseButton1Click:Connect(function()
+        autoChestEnabled = not autoChestEnabled
+        chestBtn.Text = "📦 AUTO CHEST: " .. (autoChestEnabled and Lang.on or Lang.off)
+        chestBtn.BackgroundColor3 = autoChestEnabled and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(35, 35, 45)
+        if autoChestEnabled then task.spawn(startAutoChest) end
+    end)
+    
+    hakiBtn.MouseButton1Click:Connect(function()
+        autoHakiEnabled = not autoHakiEnabled
+        hakiBtn.Text = "🔮 AUTO HAKI: " .. (autoHakiEnabled and Lang.on or Lang.off)
+        hakiBtn.BackgroundColor3 = autoHakiEnabled and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(35, 35, 45)
+        if autoHakiEnabled then task.spawn(startAutoHaki) end
+    end)
+    
+    buyBtn.MouseButton1Click:Connect(function()
+        autoBuyEnabled = not autoBuyEnabled
+        buyBtn.Text = "🛒 AUTO BUY: " .. (autoBuyEnabled and Lang.on or Lang.off)
+        buyBtn.BackgroundColor3 = autoBuyEnabled and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(35, 35, 45)
+        if autoBuyEnabled then task.spawn(startAutoBuy) end
+    end)
+    
+    hopBtn.MouseButton1Click:Connect(function()
+        autoHopEnabled = not autoHopEnabled
+        hopBtn.Text = "🔄 AUTO HOP: " .. (autoHopEnabled and Lang.on or Lang.off)
+        hopBtn.BackgroundColor3 = autoHopEnabled and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(35, 35, 45)
+        if autoHopEnabled then task.spawn(startAutoHop) end
+    end)
+    
+    bonesBtn.MouseButton1Click:Connect(function()
+        autoBonesEnabled = not autoBonesEnabled
+        bonesBtn.Text = "🦴 AUTO BONES: " .. (autoBonesEnabled and Lang.on or Lang.off)
+        bonesBtn.BackgroundColor3 = autoBonesEnabled and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(35, 35, 45)
+        if autoBonesEnabled then task.spawn(startAutoBones) end
+    end)
+    
+    tpBtn.MouseButton1Click:Connect(function()
+        if currentTarget then teleportTo(currentTarget.HumanoidRootPart.Position) end
+    end)
+    
+    local fc, lt = 0, tick()
     RunService.RenderStepped:Connect(function()
-        frameCount = frameCount + 1
-        local now = tick()
-        if now - lastTime >= 1 then
-            fpsLabel.Text = "FPS: " .. frameCount .. " | TARGET: " .. (currentTarget and currentTarget.Name or "NONE")
-            frameCount = 0
-            lastTime = now
+        fc = fc + 1
+        local nw = tick()
+        if nw - lt >= 1 then
+            fpsLabel.Text = "FPS: " .. fc .. " | TARGET: " .. (currentTarget and currentTarget.Name or "NONE")
+            fc = 0 lt = nw
         end
     end)
     
-    -- Drag
-    local drag, dragStart, startPos = false, nil, nil
-    frame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            drag = true; dragStart = input.Position; startPos = frame.Position
+    local drag, ds, sp = false, nil, nil
+    frame.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then
+            drag = true ds = i.Position sp = frame.Position
         end
     end)
     frame.InputEnded:Connect(function() drag = false end)
-    UserInputService.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement and drag then
-            local delta = input.Position - dragStart
-            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    UserInputService.InputChanged:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseMovement and drag then
+            local delta = i.Position - ds
+            frame.Position = UDim2.new(sp.X.Scale, sp.X.Offset + delta.X, sp.Y.Scale, sp.Y.Offset + delta.Y)
         end
     end)
 end
 
--- ==================== INICIALIZAÇÃO ====================
-local function start()
-    print("NEXUS v5.0 - Platoboost + Delta Compatible")
-    createVerifyGUI()
-    createMenu()
-    print("✅ Carregado!")
-end
+-- Hotkey END
+UserInputService.InputBegan:Connect(function(input, gpe)
+    if not gpe and input.KeyCode == Enum.KeyCode.End then
+        farmEnabled = false godmodeEnabled = false espEnabled = false
+        fruitSniperEnabled = false bountyHunterEnabled = false
+        autoRaidEnabled = false autoChestEnabled = false autoHakiEnabled = false
+        autoBuyEnabled = false autoHopEnabled = false autoBonesEnabled = false
+        for obj, bill in pairs(espBills) do pcall(function() bill:Destroy() end) espBills[obj] = nil end
+        StarterGui:SetCore("SendNotification", {Title = "NEXUS", Text = Lang.allOff, Duration = 2})
+    end
+end)
 
-start()
+-- Start
+createVerifyGUI()
+createMenu()
+print("NEXUS v7.0 - Loaded")
