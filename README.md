@@ -7,22 +7,6 @@
 
 > Script multi-função para Blox Fruits com sistema de key gerada, UI moderna e 12+ funções automáticas.
 
----
-
-## 🔑 Sistema de Key
-
-A key é gerada automaticamente pelo sistema Platoboost.
-
-### Como obter:
-1. Abra o script no jogo
-2. Clique em **"OBTER CHAVE"**
-3. O link será copiado para sua área de transferência
-4. Cole no navegador e complete a verificação
-5. Volte ao jogo e cole a key gerada
-6. Clique em **"VERIFICAR"**
-
----
-
 ## 📥 Comando
 
 ```lua
