@@ -1,5 +1,5 @@
 -- ============================================================
--- NEXUS v7.0.9 PRO - COM DEBUG NO AUTO FARM
+-- NEXUS v7.0.9 PRO - COMPLETO COM TODOS OS NPCs REAIS
 -- ============================================================
 local NexusUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/arcadiaxofc/Dark-script/refs/heads/main/ui.lua"))()
 
@@ -18,6 +18,54 @@ local UserInputService = game:GetService("UserInputService")
 
 local function notify(t, txt, d) pcall(function() StarterGui:SetCore("SendNotification", {Title = t or "NEXUS", Text = txt or "", Duration = d or 3}) end) end
 pcall(function() settings().Rendering.QualityLevel = 1 Lighting.GlobalShadows = false Lighting.Brightness = 2 end)
+
+-- ============================================================
+-- LISTA COMPLETA DE NPCs DE QUEST (TODOS OS MARES)
+-- ============================================================
+local QUEST_NPCS = {
+    [1] = {
+        "Bandit Quest Giver","Trainee Quest Giver","Desert Adventurer","Marine Leader",
+        "Sky Adventurer","Head Jailer","Jail Keeper","Colosseum Quest Giver",
+        "Submerged Quest Giver 1","Submerged Quest Giver 2","Sky Quest Giver 2",
+        "Dark Step Teacher","Ability Teacher","Colors Specialist","Water Kung Fu Teacher",
+        "Instinct Teacher","Aura Editor","Sick Man","Blox Fruit Dealer","Sword Dealer",
+        "Boat Dealer","Sword Dealer of the West","Sword Dealer of the East",
+        "Weapon Dealer","Advanced Weapon Dealer","Master Sword Dealer","Rich Man",
+        "Hasan","Living Skeleton","Parlus","Yoshi","Mad Scientist","Robotmega",
+        "Experienced Captain","Angler","Blacksmith","Remove Blox Fruit","Cousin",
+        "Blox Fruit Gacha","Dog House","Teach","Bobby","Avalanche",
+    },
+    [2] = {
+        "Colosseum Quest Giver","Deep Forest Quest Giver","Graveyard Quest Giver",
+        "Snow Quest Giver","Fire Quest Giver","Ice Quest Giver","Forgotten Quest Giver",
+        "Tort","Barista","Bounty Expert","Honor Expert","Bartilo","Awakenings Expert",
+        "Titles Specialist","Nerd","Plokster","Mysterious Man","Mr. Captain","Angler",
+        "Alchemist","Crew Captain","Martial Arts Master","Arlthmetic","Mysterious Scientist",
+        "El Rodolfo","El Admin","El Perro","Experimic","Guashiem","Phoeyu The Reformed",
+        "Daigrock The Sharkman","The Strongest God","Cyborg","Sabi","Mysterious Entity",
+        "Aura Editor","Blacksmith","Sea Captain","Trevor","Arowe","King Red Head",
+        "Don Swan","Jeremy","Diamond","Captain Elephant","Stone","Venus","Buddha","Mace",
+    },
+    [3] = {
+        "Pirate Port Quest Giver","Hydra Town Quest Giver","Dragon Crew Quest Giver",
+        "Marine Tree Quest Giver","Turtle Adventure Quest Giver","Haunted Castle Quest Giver 1",
+        "Haunted Castle Quest Giver 2","Cake Quest Giver","Chocolate Quest Giver",
+        "Ice Cream Quest Giver","Peanut Quest Giver","Candy Cane Quest Giver",
+        "Tiki Quest Giver 1","Tiki Quest Giver 2","Tiki Quest Giver 3","Frost Quest Giver",
+        "Elite Hunter","Player Hunter","Blox Fruit Dealer","Experienced Captain","Blacksmith",
+        "Fisherman","Arena Trainer","Angler","Dojo Trainer","Dragon Wizard","Dragon Hunter",
+        "Uzoth","Crew Captain","Mysterious Force","Crypt Master","Ancient Monk",
+        "Previous Hero","Mysterious Entity","Citizen","Hungry Man","Horned Man",
+        "Ghost","Gravestone","Death King","Weird Machine","Sick Scientist","Cake Scientist",
+        "drip_mama","Sweet Crafter","Mysterious Scientist","Aura Editor","Phoeyu The Reformed",
+        "Water Kung Fu Teacher","Dark Step Teacher","Daigrock The Sharkman","Martial Arts Master",
+        "Sabi","Lunoven","Plokster","Butler","Tacomura","Mad Scientist","Beast Hunter",
+        "Shark Hunter","Dragon Talon Sage","Shipwright Teacher","Submarine Worker","Shafi",
+        "Spy","Advanced Fruit Dealer","Kitsune Shrine","Ancient Relic","Frozen Watcher",
+        "Remove Blox Fruit","Barista","Rip_indra","Soul Reaper","Dragon","Cake Prince",
+        "Frost Sorcerer","Kitsune","Dough King","Sea Beast",
+    },
+}
 
 -- ============================================================
 -- PAINEL DE STATUS
@@ -71,17 +119,18 @@ StatusPanel.create()
 task.spawn(function() while true do task.wait(180) pcall(function() if player.Character and player.Character:FindFirstChild("Humanoid") then player.Character.Humanoid:Move(Vector3.new(1,0,0),true) task.wait(0.3) player.Character.Humanoid:Move(Vector3.zero,true) end end) end end)
 
 -- ============================================================
--- DADOS
+-- DADOS DOS SEAS
 -- ============================================================
 local SEA_DATA = {
-    [1] = {name="First Sea", islands={{"Pirate Starter",Vector3.new(1289,11,4191)},{"Jungle",Vector3.new(-1250,15,3850)},{"Desert",Vector3.new(966,10,1100)},{"Frozen Village",Vector3.new(1150,25,4350)},{"Prison",Vector3.new(-5400,15,-1700)},{"Skylands",Vector3.new(-4850,750,1950)}}, bosses={"Gorilla King","Yeti","Vice Admiral","Saber Expert","Swan","Magma Admiral","Fishman Lord"}, fruits={"Flame-Fruit","Ice-Fruit","Dark-Fruit","Light-Fruit","Magma-Fruit","Rumble-Fruit"}},
-    [2] = {name="Second Sea", islands={{"Kingdom of Rose",Vector3.new(-1400,10,-1400)},{"Green Zone",Vector3.new(6200,80,2500)},{"Ice Castle",Vector3.new(7200,100,3500)},{"Forgotten Island",Vector3.new(8500,120,4500)},{"Cafe",Vector3.new(-570,310,-1220)}}, bosses={"Diamond","Jeremy","Don Swan","Tide Keeper"}, fruits={"Buddha-Fruit","Portal-Fruit","Blizzard-Fruit","Phoenix-Fruit"}},
-    [3] = {name="Third Sea", islands={{"Port Town",Vector3.new(7200,100,3500)},{"Hydra Island",Vector3.new(6200,80,2500)},{"Great Tree",Vector3.new(8500,120,4500)},{"Castle on the Sea",Vector3.new(4500,50,1200)},{"Haunted Castle",Vector3.new(9800,60,5500)},{"Dark Arena",Vector3.new(10500,100,6000)}}, bosses={"Dough King","Soul Reaper","Rip Indra","Darkbeard","Stone","Island Empress","Hydra","Leviathan"}, fruits={"Kitsune-Fruit","Dragon-Fruit","Leopard-Fruit","Dough-Fruit","Spirit-Fruit","Venom-Fruit","Control-Fruit"}},
+    [1] = {name="First Sea", islands={{"Pirate Starter",Vector3.new(1289,11,4191)},{"Jungle",Vector3.new(-1250,15,3850)},{"Desert",Vector3.new(966,10,1100)},{"Frozen Village",Vector3.new(1150,25,4350)},{"Marine Fortress",Vector3.new(-1500,10,5300)},{"Skylands",Vector3.new(-4850,750,1950)},{"Prison",Vector3.new(-5400,15,-1700)},{"Colosseum",Vector3.new(-3560,240,-80)},{"Magma Village",Vector3.new(-3420,10,-2700)},{"Underwater City",Vector3.new(5500,-50,2000)},{"Fountain City",Vector3.new(4500,50,1200)}}, bosses={"Gorilla King","Yeti","Vice Admiral","Saber Expert","Swan","Magma Admiral","Fishman Lord","Wysper","Thunder God","Cyborg","Ice Admiral"}, fruits={"Flame-Fruit","Ice-Fruit","Dark-Fruit","Light-Fruit","Magma-Fruit","Rumble-Fruit","Sand-Fruit","Barrier-Fruit"}},
+    [2] = {name="Second Sea", islands={{"Kingdom of Rose",Vector3.new(-1400,10,-1400)},{"Green Zone",Vector3.new(6200,80,2500)},{"Hot and Cold",Vector3.new(-3420,10,-2700)},{"Ice Castle",Vector3.new(7200,100,3500)},{"Forgotten Island",Vector3.new(8500,120,4500)},{"Cafe",Vector3.new(-570,310,-1220)},{"Mansion",Vector3.new(-390,45,-800)}}, bosses={"Diamond","Jeremy","Orbitus","Don Swan","Smoke Admiral","Awakened Ice Admiral","Tide Keeper"}, fruits={"Buddha-Fruit","Portal-Fruit","Blizzard-Fruit","Phoenix-Fruit","Spider-Fruit","Sound-Fruit","Pain-Fruit"}},
+    [3] = {name="Third Sea", islands={{"Port Town",Vector3.new(7200,100,3500)},{"Hydra Island",Vector3.new(6200,80,2500)},{"Great Tree",Vector3.new(8500,120,4500)},{"Castle on the Sea",Vector3.new(4500,50,1200)},{"Haunted Castle",Vector3.new(9800,60,5500)},{"Dark Arena",Vector3.new(10500,100,6000)},{"Floating Turtle",Vector3.new(11200,90,6500)},{"Prehistoric Island",Vector3.new(12500,80,7000)},{"Desert Kingdom",Vector3.new(13800,100,7500)}}, bosses={"Cake Prince","Dough King","Soul Reaper","Rip Indra","Darkbeard","Stone","Island Empress","Hydra","Leviathan","Beautiful Pirate","Elite Pirates","Pharaoh Akshan","Fossil Expert"}, fruits={"Kitsune-Fruit","Dragon-Fruit","Leopard-Fruit","Dough-Fruit","Spirit-Fruit","Venom-Fruit","Control-Fruit","Shadow-Fruit","T-Rex-Fruit"}},
 }
+
 local currentSea = 1
 local function detectSea() local lvl=1 pcall(function() if player.Data and player.Data:FindFirstChild("Level") then lvl=player.Data.Level.Value end end) if lvl<=700 then currentSea=1 elseif lvl<=1500 then currentSea=2 else currentSea=3 end end
 detectSea()
-StatusPanel.info("Sea: "..SEA_DATA[currentSea].name)
+StatusPanel.info("Sea: "..SEA_DATA[currentSea].name.." | "..#QUEST_NPCS[currentSea].." NPCs cadastrados")
 
 -- ============================================================
 -- VARIÁVEIS
@@ -92,63 +141,43 @@ local masteryType = "Fruit"
 local espBills = {}
 local threads = {}
 
-local function stopThread(name)
-    if threads[name] then threads[name].enabled = false task.cancel(threads[name].thread) threads[name] = nil end
-end
-local function startThread(name, loopFunc, delay)
-    stopThread(name)
-    local data = {enabled = true}
-    data.thread = task.spawn(function() while data.enabled do pcall(loopFunc) task.wait(delay or 0.1) end end)
-    threads[name] = data
-end
+local function stopThread(name) if threads[name] then threads[name].enabled = false task.cancel(threads[name].thread) threads[name] = nil end end
+local function startThread(name, loopFunc, delay) stopThread(name) local data = {enabled = true} data.thread = task.spawn(function() while data.enabled do pcall(loopFunc) task.wait(delay or 0.1) end end) threads[name] = data end
 
 -- ============================================================
 -- TELEPORTE
 -- ============================================================
-local function tp(pos)
-    pcall(function()
-        if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-            local hrp = player.Character.HumanoidRootPart
-            hrp.CFrame = CFrame.new(pos + Vector3.new(0, 25, 0)) task.wait(0.1)
-            hrp.CFrame = CFrame.new(pos + Vector3.new(0, 5, 0)) task.wait(0.05)
-            hrp.CFrame = CFrame.new(pos)
-        end
-    end)
-end
+local function tp(pos) pcall(function() if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then local hrp=player.Character.HumanoidRootPart hrp.CFrame=CFrame.new(pos+Vector3.new(0,25,0)) task.wait(0.1) hrp.CFrame=CFrame.new(pos+Vector3.new(0,5,0)) task.wait(0.05) hrp.CFrame=CFrame.new(pos) end end) end
 
 -- ============================================================
 -- ATAQUE
 -- ============================================================
-local function attack()
-    pcall(function()
-        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0) task.wait(0.05)
-        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
-        kills = kills + 1
-    end)
-end
+local function attack() pcall(function() VirtualInputManager:SendMouseButtonEvent(0,0,0,true,game,0) task.wait(0.05) VirtualInputManager:SendMouseButtonEvent(0,0,0,false,game,0) kills=kills+1 end) end
 
-local function findBoss(name)
-    local b = Workspace:FindFirstChild(name)
-    if b and b:FindFirstChild("Humanoid") and b:FindFirstChild("HumanoidRootPart") and b.Humanoid.Health > 0 then return b end
-    for _, o in pairs(Workspace:GetDescendants()) do
-        if o:IsA("Model") and o.Name:find(name) and o:FindFirstChild("Humanoid") and o:FindFirstChild("HumanoidRootPart") and o.Humanoid.Health > 0 then return o end
-    end
-    return nil
+local function findBoss(name) local b=Workspace:FindFirstChild(name) if b and b:FindFirstChild("Humanoid") and b:FindFirstChild("HumanoidRootPart") and b.Humanoid.Health>0 then return b end for _,o in pairs(Workspace:GetDescendants()) do if o:IsA("Model") and o.Name:find(name) and o:FindFirstChild("Humanoid") and o:FindFirstChild("HumanoidRootPart") and o.Humanoid.Health>0 then return o end end return nil end
+
+-- ============================================================
+-- VERIFICAÇÃO DE NPC DE QUEST
+-- ============================================================
+local function isQuestNPC(obj)
+    for _, name in pairs(QUEST_NPCS[currentSea]) do if obj.Name == name then return true end end
+    if obj:FindFirstChild("Talk") then return true end
+    if obj.Name:find("Quest") or obj.Name:find("Giver") or obj.Name:find("Master") then return true end
+    local head = obj:FindFirstChild("Head")
+    if head then for _, child in pairs(head:GetChildren()) do if child:IsA("BillboardGui") then for _, element in pairs(child:GetDescendants()) do if element:IsA("TextLabel") and (element.Text:find("Quest") or element.Text:find("!")) then return true end end end end end
+    return false
 end
 
 -- ============================================================
--- SUPER FARM COM DEBUG
+-- SUPER FARM COM NPCs REAIS
 -- ============================================================
 local SuperFarm = {boxPart=nil, collectedMobs={}, phase="quest", mobsKilled=0, mobsNeeded=10, lastQuestTime=0, debugCount=0}
 
 function startSuperFarm()
     StatusPanel.success("Super Farm INICIADO")
-    StatusPanel.info("Fase: "..SuperFarm.phase.." | Mobs: "..SuperFarm.mobsKilled.."/"..SuperFarm.mobsNeeded)
-    
     startThread("superFarm", function()
         SuperFarm.debugCount = SuperFarm.debugCount + 1
         if SuperFarm.debugCount % 20 == 0 then StatusPanel.info("Ciclo #"..SuperFarm.debugCount.." | Fase: "..SuperFarm.phase.." | Mobs: "..SuperFarm.mobsKilled) end
-        
         if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
         local hrp = player.Character.HumanoidRootPart
         
@@ -156,7 +185,6 @@ function startSuperFarm()
             local part = Instance.new("Part", Workspace)
             part.Name="FarmBox" part.Size=Vector3.new(5,3,5) part.Anchored=true part.CanCollide=false part.Transparency=1
             SuperFarm.boxPart=part
-            StatusPanel.info("Caixa criada")
         end
         
         SuperFarm.boxPart.CFrame = CFrame.new(hrp.Position + Vector3.new(0, 1.5, 0))
@@ -164,28 +192,31 @@ function startSuperFarm()
         local hum = player.Character:FindFirstChildOfClass("Humanoid")
         if hum then hum:ChangeState(Enum.HumanoidStateType.Freefall) hum.Health = hum.MaxHealth end
         
-        -- FASE QUEST
+        -- FASE QUEST (com NPCs reais)
         if SuperFarm.phase == "quest" and tick() - SuperFarm.lastQuestTime > 45 then
-            local found = false
+            local nearest, shortest = nil, 500
             for _, obj in pairs(Workspace:GetDescendants()) do
-                if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and (obj:FindFirstChild("Quest") or obj:FindFirstChild("QuestGiver")) then
-                    if obj:FindFirstChild("HumanoidRootPart") then
-                        StatusPanel.info("NPC encontrado: "..obj.Name)
-                        tp(obj.HumanoidRootPart.Position + Vector3.new(3, 0, 0))
-                        task.wait(1)
-                        local r = ReplicatedStorage:FindFirstChild("Remotes")
-                        if r and r:FindFirstChild("CommF_") then r.CommF_:InvokeServer("StartQuest", obj.Name) end
-                        SuperFarm.lastQuestTime = tick() SuperFarm.mobsKilled = 0 SuperFarm.phase = "collect"
-                        StatusPanel.success("Quest: "..obj.Name)
-                        found = true
-                        break
+                if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and obj:FindFirstChild("HumanoidRootPart") then
+                    if isQuestNPC(obj) then
+                        local dist = (obj.HumanoidRootPart.Position - hrp.Position).Magnitude
+                        if dist < shortest then shortest = dist nearest = obj end
                     end
                 end
             end
-            if not found then StatusPanel.warn("Nenhum NPC de quest por perto") end
+            if nearest then
+                StatusPanel.success("NPC: "..nearest.Name)
+                tp(nearest.HumanoidRootPart.Position + Vector3.new(3, 0, 0))
+                task.wait(1)
+                local r = ReplicatedStorage:FindFirstChild("Remotes")
+                if r and r:FindFirstChild("CommF_") then r.CommF_:InvokeServer("StartQuest", nearest.Name) end
+                SuperFarm.lastQuestTime = tick() SuperFarm.mobsKilled = 0 SuperFarm.phase = "collect"
+                StatusPanel.success("Quest: "..nearest.Name)
+            else
+                StatusPanel.warn("Nenhum NPC encontrado (procurando entre "..#QUEST_NPCS[currentSea].." nomes)")
+            end
         end
         
-        -- FASE COLECT
+        -- FASE COLLECT
         if SuperFarm.phase == "collect" then
             local count = 0
             local boxPos = SuperFarm.boxPart.Position
@@ -193,7 +224,7 @@ function startSuperFarm()
                 if obj:IsA("Model") and obj ~= player.Character then
                     local mHrp = obj:FindFirstChild("HumanoidRootPart")
                     local mHum = obj:FindFirstChild("Humanoid")
-                    if mHrp and mHum and mHum.Health > 0 and not (obj:FindFirstChild("Quest") or obj:FindFirstChild("QuestGiver")) then
+                    if mHrp and mHum and mHum.Health > 0 and not isQuestNPC(obj) then
                         if (mHrp.Position - hrp.Position).Magnitude <= range and not SuperFarm.collectedMobs[obj] then
                             mHrp.CFrame = CFrame.new(boxPos + Vector3.new(math.random(-2,2), 0, math.random(-2,2)))
                             SuperFarm.collectedMobs[obj] = true count = count + 1
@@ -321,7 +352,7 @@ end
 -- ============================================================
 -- UI
 -- ============================================================
-local win = NexusUI:CreateWindow({Title="NEXUS v7.0.9 PRO", Subtitle=SEA_DATA[currentSea].name.." | Debug Mode", Width=580, Height=500})
+local win = NexusUI:CreateWindow({Title="NEXUS v7.0.9 PRO", Subtitle=SEA_DATA[currentSea].name.." | "..#QUEST_NPCS[currentSea].." NPCs", Width=580, Height=500})
 local tabs={}
 for _,t in pairs({{"⚔️ Farm"},{"🎯 Bosses"},{"💎 Farms"},{"🏃 Move"},{"⚙️ Auto"},{"👀 Visual"},{"🎮 Extra"},{"🏝️ Ilhas"}}) do tabs[t[1]]=NexusUI:CreateTab(win,{Name=t[1]}) end
 
@@ -366,6 +397,6 @@ for _,il in pairs(SEA_DATA[currentSea].islands) do
     NexusUI:CreateButton(tabs["🏝️ Ilhas"],{Title="🏝️ "..il[1],Callback=function()tp(il[2])StatusPanel.info("TP: "..il[1])notify("🏝️",il[1],2)end})
 end
 
-StatusPanel.success("Tudo carregado!")
-notify("NEXUS v7.0.9 PRO","Debug Mode ON | Veja o painel de status!",8)
-print("NEXUS v7.0.9 PRO - Debug Mode - Loaded")
+StatusPanel.success("Tudo carregado! "..#QUEST_NPCS[currentSea].." NPCs cadastrados")
+notify("NEXUS v7.0.9 PRO","NPCs reais | Painel de Status | "..SEA_DATA[currentSea].name,8)
+print("NEXUS v7.0.9 PRO - NPCs Reais - Loaded")
