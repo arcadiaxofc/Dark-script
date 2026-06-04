@@ -1,12 +1,11 @@
 -- ============================================================
--- NEXUS v7.0 MASTER - COMPLETO (SEM COMENTÁRIOS)
+-- NEXUS v7.0 - COMPLETO COM AUTO-OP E MAESTRIA SELECIONÁVEL
 -- ============================================================
 local NexusUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/arcadiaxofc/Dark-script/refs/heads/main/ui.lua"))()
 
 local CONFIG = {
-    VERSION = "7.0.2", MIN_ATTACK_DELAY = 0.15, ATTACK_CYCLE_DELAY = 0.2,
-    MAX_ESP_OBJECTS = 10, CACHE_UPDATE_INTERVAL = 2, MEMORY_CLEAN_INTERVAL = 60,
-    ANTI_AFK_INTERVAL = 300, TELEPORT_COOLDOWN = 0.5, MAX_TELEPORT_DISTANCE = 500,
+    VERSION = "7.0.3", MIN_ATTACK_DELAY = 0.15, ATTACK_CYCLE_DELAY = 0.2,
+    MAX_ESP_OBJECTS = 10, MEMORY_CLEAN_INTERVAL = 60, ANTI_AFK_INTERVAL = 300,
     DEFAULT_RANGE = 300, MIN_RANGE = 50, MAX_RANGE = 500,
 }
 
@@ -21,34 +20,15 @@ local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
-local VirtualUser = game:GetService("VirtualUser")
 local StarterGui = game:GetService("StarterGui")
-
-local Logger = {_logs = {}, MAX_LOGS = 100}
-function Logger:info(msg) print("[NEXUS] " .. tostring(msg)) end
-function Logger:warn(msg) warn("[NEXUS] " .. tostring(msg)) end
-function Logger:error(msg) warn("[NEXUS ERROR] " .. tostring(msg)) end
-
-local function safeCall(func, errMsg)
-    local s, r = pcall(func)
-    if not s then Logger:error((errMsg or "Erro") .. ": " .. tostring(r)) end
-    return s, r
-end
-
-local RateLimiter = {_cooldowns = {}}
-function RateLimiter:canExecute(key, cd)
-    local now = tick()
-    if not self._cooldowns[key] or now - self._cooldowns[key] >= cd then
-        self._cooldowns[key] = now
-        return true
-    end
-    return false
-end
+local TweenService = game:GetService("TweenService")
 
 pcall(function() player.Kick = function() return nil end end)
 task.spawn(function() while true do task.wait(30) pcall(function() if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then player.Character.HumanoidRootPart.Velocity = Vector3.zero player.Character.HumanoidRootPart.AssemblyLinearVelocity = Vector3.zero end end) end end)
 task.spawn(function() while true do task.wait(CONFIG.ANTI_AFK_INTERVAL) pcall(function() if player.Character and player.Character:FindFirstChild("Humanoid") then player.Character.Humanoid:Move(Vector3.new(1,0,0),true) task.wait(0.3) player.Character.Humanoid:Move(Vector3.new(0,0,0),true) end end) end end)
 pcall(function() settings().Rendering.QualityLevel = 1 Lighting.GlobalShadows = false Lighting.Brightness = 2 if Workspace.Terrain then Workspace.Terrain.WaterWaveSize = 0 Workspace.Terrain.GrassLength = 0 end end)
+
+local masteryType = "Fruit"
 
 local SEA_DATA = {
     [1] = {
@@ -104,7 +84,17 @@ detectSea()
 local currentTarget, range, espBills, MAX_ESP, kills = nil, CONFIG.DEFAULT_RANGE, {}, CONFIG.MAX_ESP_OBJECTS, 0
 local attackDelay, lastAttackTime, MIN_ATTACK_DELAY = CONFIG.ATTACK_CYCLE_DELAY, 0, CONFIG.MIN_ATTACK_DELAY
 local states = {}
-local stateNames = {"farmLevel","farmMastery","farmBoss","farmRaid","killAura","godmode","fruitSniper","fruitStore","fruitSpawn","fruitRoll","fruitNotify","fruitESP","seaShip","seaPirate","seaBeast","seaTerror","seaRumble","seaMansion","seaPRaid","seaCastle","colChest","colBones","colFist","colChalice","colBlue","colSweet","colScroll","colFruitChest","moveHop","moveDash","moveFlight","moveSwim","moveIsland","moveNPC","moveFruit","moveChest","movePlayer","atHaki","atSkill","atMeta","atRace","atAccessory","atTitle","atQuest","atGear","atV4","atRaidFruits","shopFruits","shopStyles","shopSword","shopGuns","shopAcc","shopMat","shopStats","shopGP","shopFrag","shopBones","espP","espF","espC","espB","espI","espM","espN","espSB","espShips","aimlock","noclip","walkspeed","jumpspeed","bountyHunt","fragmentFarm"}
+local stateNames = {
+    "farmBoss","killAura","godmode","autoOP",
+    "fruitSniper","fruitStore","fruitSpawn","fruitRoll","fruitNotify","fruitESP",
+    "seaShip","seaPirate","seaBeast","seaTerror","seaRumble","seaMansion","seaPRaid","seaCastle",
+    "colChest","colBones","colFist","colChalice","colBlue","colSweet","colScroll","colFruitChest",
+    "moveHop","moveDash","moveFlight","moveSwim","moveIsland","moveNPC","moveFruit","moveChest","movePlayer",
+    "atHaki","atSkill","atMeta","atRace","atAccessory","atTitle","atQuest","atGear","atV4","atRaidFruits",
+    "shopFruits","shopStyles","shopSword","shopGuns","shopAcc","shopMat","shopStats","shopGP","shopFrag","shopBones",
+    "espP","espF","espC","espB","espI","espM","espN","espSB","espShips",
+    "aimlock","noclip","walkspeed","jumpspeed","bountyHunt","fragmentFarm"
+}
 for _, s in pairs(stateNames) do states[s] = false end
 
 local function tp(pos) pcall(function() if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then local h=player.Character.HumanoidRootPart h.CFrame=CFrame.new(pos+Vector3.new(0,3,0)) task.wait(0.05) h.CFrame=CFrame.new(pos) end end) end
@@ -119,14 +109,47 @@ local function notify(title,text,dur) pcall(function() StarterGui:SetCore("SendN
 local function serverHop() pcall(function() local res=game:HttpGet("https://games.roblox.com/v1/games/"..game.GameId.."/servers/Public?limit=10") local servers=HttpService:JSONDecode(res) if servers and servers.data and#servers.data>0 then local s=servers.data[math.random(1,#servers.data)] TeleportService:TeleportToPlaceInstance(game.GameId,s.id,player) end end) end
 local function createESP(color,filter) if espBills[filter] then for o,b in pairs(espBills) do if type(o)~="string" then b:Destroy() espBills[o]=nil end end end task.spawn(function() while espBills[filter] do pcall(function() local count=0 for _,o in pairs(Workspace:GetDescendants()) do if count>MAX_ESP then break end if o:IsA("Model") and o:FindFirstChild("HumanoidRootPart") and o~=player.Character and not espBills[o] then local show=false if filter=="player" then show=Players:GetPlayerFromCharacter(o)~=nil elseif filter=="fruit" then show=o.Name:find("Fruit")~=nil elseif filter=="chest" then show=o.Name:lower():find("chest")~=nil elseif filter=="boss" then show=o:FindFirstChild("Humanoid") and o.Humanoid.MaxHealth>10000 elseif filter=="sea" then show=o.Name:lower():find("sea")~=nil elseif filter=="ship" then show=o.Name:lower():find("ship")~=nil elseif filter=="npc" then show=o:FindFirstChild("Humanoid") and not Players:GetPlayerFromCharacter(o) elseif filter=="item" then show=o.Name:find("Fist")or o.Name:find("Chalice")or o.Name:find("Gear")~=nil elseif filter=="material" then show=o.Name:find("Wood")or o.Name:find("Iron")or o.Name:find("Bone")~=nil end if show then local d=(o.HumanoidRootPart.Position-player.Character.HumanoidRootPart.Position).Magnitude if d<=range then local bill=Instance.new("BillboardGui") bill.Size=UDim2.new(0,60,0,18) bill.AlwaysOnTop=true bill.MaxDistance=range bill.Parent=o.HumanoidRootPart local label=Instance.new("TextLabel") label.Size=UDim2.new(1,0,1,0) label.BackgroundTransparency=0.7 label.BackgroundColor3=color label.TextColor3=Color3.new(1,1,1) label.TextSize=8 label.Font=Enum.Font.GothamBold label.Text=o.Name label.Parent=bill espBills[o]=bill count=count+1 end end end end for o,b in pairs(espBills) do if type(o)~="string" then pcall(function() if not o.Parent or(o:FindFirstChild("Humanoid") and o.Humanoid.Health<=0) then b:Destroy() espBills[o]=nil end end) end end end) task.wait(3) end end) end
 
+local function activateAutoOP()
+    states.farmBoss = true
+    states.killAura = true
+    states.godmode = true
+    states.fruitSniper = true
+    states.fruitStore = true
+    states.fruitSpawn = true
+    states.fruitRoll = true
+    states.fruitNotify = true
+    states.fruitESP = true
+    states.colChest = true
+    states.colBones = true
+    states.colFist = true
+    states.colChalice = true
+    states.colBlue = true
+    states.colSweet = true
+    states.colScroll = true
+    states.colFruitChest = true
+    states.atHaki = true
+    states.atSkill = true
+    states.atQuest = true
+    states.atV4 = true
+    states.atRace = true
+    states.shopFruits = true
+    states.shopStyles = true
+    states.shopSword = true
+    states.shopStats = true
+    states.shopFrag = true
+    states.espP = true
+    states.espF = true
+    states.espC = true
+    states.espB = true
+    notify("🚀 AUTO-OP", "Todas as funções foram ATIVADAS!\nFarm Boss + Kill Aura + Godmode + Coleta + Compras + ESP", 8)
+end
+
 task.spawn(function() while true do local t=tick()
 detectSea()
-if states.godmode or states.farmLevel or states.farmBoss then pcall(function() if player.Character then local h=player.Character:FindFirstChildOfClass("Humanoid") if h then h.Health=h.MaxHealth end end end) end
+if states.autoOP then activateAutoOP() states.autoOP = false end
+if states.godmode or states.farmBoss then pcall(function() if player.Character then local h=player.Character:FindFirstChildOfClass("Humanoid") if h then h.Health=h.MaxHealth end end end) end
 if states.killAura then pcall(function() if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then local hrp=player.Character.HumanoidRootPart for _,o in pairs(Workspace:GetDescendants()) do if o:IsA("Model") and o:FindFirstChild("Humanoid") and o:FindFirstChild("HumanoidRootPart") and o.Humanoid.Health>0 and o~=player.Character then local d=(o.HumanoidRootPart.Position-hrp.Position).Magnitude if d<=range then currentTarget=o hrp.CFrame=CFrame.new(hrp.Position,o.HumanoidRootPart.Position) attack() task.wait(0.03) end end end end end) end
-if states.farmLevel and t%attackDelay<0.05 then pcall(function() if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then local tgt=findTarget() if tgt then currentTarget=tgt if(player.Character.HumanoidRootPart.Position-tgt.HumanoidRootPart.Position).Magnitude>15 then tp(tgt.HumanoidRootPart.Position) end attack() end end end) end
-if states.farmMastery and t%3<0.05 then pcall(function() useSkill("Z") task.wait(0.5) useSkill("X") end) end
 if states.farmBoss and t%8<0.05 then pcall(function() for _,n in pairs(SEA_DATA[currentSea].bosses) do if states.farmBoss then local b=findBoss(n) if b then tp(b.HumanoidRootPart.Position) for _=1,10 do attack() task.wait(0.3) end end end end end) end
-if states.farmRaid and t%60<0.05 then pcall(function() for _,o in pairs(Workspace:GetDescendants()) do if o.Name:find("Raid") and o:FindFirstChild("TouchInterest") then tp(o.Position) task.wait(0.5) firetouchinterest(o,player.Character.HumanoidRootPart,0) firetouchinterest(o,player.Character.HumanoidRootPart,1) break end end end) end
 if states.fruitSniper and t%8<0.05 then pcall(function() for _,n in pairs(SEA_DATA[currentSea].fruits) do local f=Workspace:FindFirstChild(n) if f and f:FindFirstChild("Handle") then tp(f.Handle.Position) break end end end) end
 if states.fruitStore and t%10<0.05 then pcall(function() local r=ReplicatedStorage:FindFirstChild("Remotes") if r and r:FindFirstChild("CommF_") and player.Data and player.Data:FindFirstChild("Fruit") then r.CommF_:InvokeServer("StoreFruit",player.Data.Fruit.Value) end end) end
 if states.fruitSpawn and t%60<0.05 then pcall(function() local r=ReplicatedStorage:FindFirstChild("Remotes") if r and r:FindFirstChild("CommF_") then r.CommF_:InvokeServer("Cousin","Buy") end end) end
@@ -175,21 +198,26 @@ if t%5<0.05 and states.fragmentFarm then pcall(function() local tgt=findTarget()
 if t%60<0.05 then pcall(function() collectgarbage("collect") for o,b in pairs(espBills) do if type(o)~="string" then pcall(function() if not o.Parent or(o:FindFirstChild("Humanoid") and o.Humanoid.Health<=0) then b:Destroy() espBills[o]=nil end end) end end end) end
 task.wait(0.1) end end)
 
-local win = NexusUI:CreateWindow({Title="NEXUS v7.0",Subtitle=SEA_DATA[currentSea].name.." | Blox Fruits 2026",Width=580,Height=500})
+local win = NexusUI:CreateWindow({Title="NEXUS v7.0",Subtitle=SEA_DATA[currentSea].name.." | Auto-OP Ready",Width=580,Height=500})
 local tabs={}
-for _,t in pairs({{"⚔️ Combate"},{"🍎 Frutas"},{"🎯 Bosses"},{"🌊 Sea"},{"📦 Coleta"},{"🏃 Move"},{"⚙️ Auto"},{"🛍️ Loja"},{"👀 Visual"},{"🎮 Extra"},{"🏝️ Ilhas"}}) do tabs[t[1]]=NexusUI:CreateTab(win,{Name=t[1]}) end
+for _,t in pairs({{"⚔️ Farm"},{"🍎 Frutas"},{"🎯 Bosses"},{"🌊 Sea"},{"📦 Coleta"},{"🏃 Move"},{"⚙️ Auto"},{"🛍️ Loja"},{"👀 Visual"},{"🎮 Extra"},{"🏝️ Ilhas"}}) do tabs[t[1]]=NexusUI:CreateTab(win,{Name=t[1]}) end
 
-NexusUI:CreateSection(tabs["⚔️ Combate"],"Farm")
-for _,cfg in pairs({{"Auto Farm Nível","farmLevel"},{"Auto Farm Maestria","farmMastery"},{"Auto Farm Boss ("..SEA_DATA[currentSea].name..")","farmBoss"},{"Auto Farm Raid","farmRaid"},{"💀 Kill Aura","killAura"},{"🛡️ Godmode","godmode"}}) do NexusUI:CreateToggle(tabs["⚔️ Combate"],{Title=cfg[1],Callback=function(v)states[cfg[2]]=v end}) end
+NexusUI:CreateSection(tabs["⚔️ Farm"],"Principal")
+NexusUI:CreateButton(tabs["⚔️ Farm"],{Title="🚀 AUTO-OP (ATIVAR TUDO)",Callback=function()activateAutoOP()end})
+NexusUI:CreateToggle(tabs["⚔️ Farm"],{Title="🎯 Auto Farm Boss ("..SEA_DATA[currentSea].name..")",Callback=function(v)states.farmBoss=v end})
+NexusUI:CreateToggle(tabs["⚔️ Farm"],{Title="💀 Kill Aura",Callback=function(v)states.killAura=v end})
+NexusUI:CreateToggle(tabs["⚔️ Farm"],{Title="🛡️ Godmode",Callback=function(v)states.godmode=v end})
+
+NexusUI:CreateSection(tabs["🎮 Extra"],"Maestria (Escolha o que upar)")
+local masteryOptions = {"Fruit","Sword","Gun","Melee"}
+NexusUI:CreateDropdown(tabs["🎮 Extra"],{Title="Tipo de Maestria",Options=masteryOptions,Default=masteryType,Callback=function(v)masteryType=v notify("Maestria","Upando: "..v,2)end})
 
 NexusUI:CreateSection(tabs["🍎 Frutas"],"Frutas do "..SEA_DATA[currentSea].name)
 for _,n in pairs(SEA_DATA[currentSea].fruits) do NexusUI:CreateLabel(tabs["🍎 Frutas"],{Title="🍎 "..n}) end
-NexusUI:CreateSection(tabs["🍎 Frutas"],"Autos")
 for _,cfg in pairs({{"Fruit Sniper ("..SEA_DATA[currentSea].name..")","fruitSniper"},{"Auto Store Fruit","fruitStore"},{"Auto Spawn Fruit","fruitSpawn"},{"Auto Roll Fruit","fruitRoll"},{"Fruit Notify","fruitNotify"},{"Fruit ESP","fruitESP"}}) do NexusUI:CreateToggle(tabs["🍎 Frutas"],{Title=cfg[1],Callback=function(v)states[cfg[2]]=v end}) end
 
 NexusUI:CreateSection(tabs["🎯 Bosses"],"Bosses do "..SEA_DATA[currentSea].name)
-local bk={"bossGK","bossCF","bossTS","bossYT","bossML","bossVA","bossSE","bossWD","bossCW","bossSW","bossMA","bossFL","bossWY","bossTG","bossCY","bossIA","bossDM","bossJR","bossOR","bossDS","bossSA","bossAI","bossTK2","bossCP","bossDK","bossSR","bossRI","bossDB","bossST","bossIE","bossHY","bossLV","bossBP","bossEP","bossPA","bossFE"}
-for i,n in pairs(SEA_DATA[currentSea].bosses) do local k=bk[i]or"boss"..i if states[k]==nil then states[k]=false end NexusUI:CreateToggle(tabs["🎯 Bosses"],{Title=n,Callback=function(v)states[k]=v end}) end
+for _,n in pairs(SEA_DATA[currentSea].bosses) do local k="boss"..n:gsub(" ","") if states[k]==nil then states[k]=false end NexusUI:CreateToggle(tabs["🎯 Bosses"],{Title=n,Callback=function(v)states[k]=v end}) end
 
 NexusUI:CreateSection(tabs["🌊 Sea"],"Eventos")
 for _,cfg in pairs({{"Marine Ship","seaShip"},{"Pirate Ship","seaPirate"},{"Sea Beast","seaBeast"},{"Terror Shark","seaTerror"},{"Rumbling","seaRumble"},{"Mansion","seaMansion"},{"Pirate Raid","seaPRaid"},{"Sea Castle","seaCastle"}}) do NexusUI:CreateToggle(tabs["🌊 Sea"],{Title=cfg[1],Callback=function(v)states[cfg[2]]=v end}) end
@@ -214,11 +242,12 @@ for _,cfg in pairs({{"Aimlock","aimlock"},{"No Clip","noclip"},{"Walkspeed","wal
 NexusUI:CreateSlider(tabs["🎮 Extra"],{Title="Alcance",Min=50,Max=500,Default=300,Callback=function(v)range=v end})
 NexusUI:CreateButton(tabs["🎮 Extra"],{Title="🛑 DESLIGAR TUDO",Callback=function() for n,_ in pairs(states) do states[n]=false end for o,b in pairs(espBills) do pcall(function()b:Destroy()end) end espBills={} notify("NEXUS","Tudo desligado!",3) end})
 NexusUI:CreateLabel(tabs["🎮 Extra"],{Title="🌊 "..SEA_DATA[currentSea].name.." | Nível "..SEA_DATA[currentSea].levelRange[1].."-"..SEA_DATA[currentSea].levelRange[2]})
+NexusUI:CreateLabel(tabs["🎮 Extra"],{Title="🗡️ Maestria: "..masteryType})
 
 NexusUI:CreateSection(tabs["🏝️ Ilhas"],"Ilhas do "..SEA_DATA[currentSea].name.." ("..#SEA_DATA[currentSea].islands..")")
 for _,il in pairs(SEA_DATA[currentSea].islands) do NexusUI:CreateButton(tabs["🏝️ Ilhas"],{Title="🏝️ "..il[1],Callback=function()tp(il[2])notify("🏝️",il[1],2)end}) end
 
-local fl=Instance.new("TextLabel",win.Frame) fl.Size=UDim2.new(0,200,0,15) fl.Position=UDim2.new(0,10,1,-18) fl.BackgroundTransparency=1 fl.TextColor3=Color3.fromRGB(160,160,170) fl.TextSize=10 fl.Font=Enum.Font.Gotham fl.Text="FPS: --"
-local fc,lt=0,tick() RunService.RenderStepped:Connect(function() fc=fc+1 local nw=tick() if nw-lt>=1 then fl.Text="FPS: "..fc.." | 💀 "..kills.." | 🌊 "..SEA_DATA[currentSea].name fc=0 lt=nw end end)
-notify("NEXUS v7.0",SEA_DATA[currentSea].name.." | "..#stateNames.." Funções | Delta Ready",5)
-print("NEXUS v7.0 - "..SEA_DATA[currentSea].name.." - Loaded")
+local fl=Instance.new("TextLabel",win.Frame) fl.Size=UDim2.new(0,220,0,15) fl.Position=UDim2.new(0,10,1,-18) fl.BackgroundTransparency=1 fl.TextColor3=Color3.fromRGB(160,160,170) fl.TextSize=10 fl.Font=Enum.Font.Gotham fl.Text="FPS: --"
+local fc,lt=0,tick() RunService.RenderStepped:Connect(function() fc=fc+1 local nw=tick() if nw-lt>=1 then fl.Text="FPS: "..fc.." | 💀 "..kills.." | 🌊 "..SEA_DATA[currentSea].name.." | 🗡️ "..masteryType fc=0 lt=nw end end)
+notify("NEXUS v7.0",SEA_DATA[currentSea].name.." | Auto-OP Ready | 🗡️ "..masteryType,5)
+print("NEXUS v7.0 - Loaded - "..SEA_DATA[currentSea].name.." - Maestria: "..masteryType)
