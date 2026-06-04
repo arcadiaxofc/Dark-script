@@ -348,28 +348,8 @@ function NexusUI:CreateWindow(config)
     local originalHeight = windowHeight
     local originalWidth = windowWidth
     
-    minimizeBtn.MouseButton1Click:Connect(function()
-        minimized = not minimized
-        if minimized then
-            TweenService:Create(window, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
-                Size = UDim2.new(0, originalWidth, 0, 50)
-            }):Play()
-            contentContainer.Visible = false
-            sidebar.Visible = false
-            scaleFrame.Visible = false
-            minimizeBtn.Text = "□"
-        else
-            TweenService:Create(window, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
-                Size = UDim2.new(0, originalWidth, 0, originalHeight)
-            }):Play()
-            contentContainer.Visible = true
-            sidebar.Visible = true
-            minimizeBtn.Text = "─"
-        end
-    end)
-    
     -- ==================== BOTÃO FLUTUANTE (CORRIGIDO) ====================
-    local floatingBtn = Instance.new("TextButton", CoreGui)
+    local floatingBtn = Instance.new("TextButton", gui)
     floatingBtn.Size = UDim2.new(0, isMobile and 45 or 50, 0, isMobile and 45 or 50)
     floatingBtn.Position = UDim2.new(1, isMobile and -55 or -60, 0.5, isMobile and -22 or -25)
     floatingBtn.Text = config.FloatingIcon or "⚡"
@@ -378,7 +358,7 @@ function NexusUI:CreateWindow(config)
     floatingBtn.Font = Enum.Font.GothamBold
     floatingBtn.BackgroundColor3 = NexusUI.Colors.Title
     floatingBtn.BorderSizePixel = 0
-    floatingBtn.Visible = true  -- Começa visível
+    floatingBtn.Visible = false
     floatingBtn.ZIndex = 999
     Instance.new("UICorner", floatingBtn).CornerRadius = UDim.new(1, 0)
     
@@ -428,11 +408,10 @@ function NexusUI:CreateWindow(config)
         }):Play()
         task.wait(0.3)
         gui:Destroy()
-        floatingBtn.Visible = true
     end)
     
-    -- MINIMIZAR: mostra bolinha
-    minimizeBtn.MouseButton1Click:Connect(function()
+    -- MINIMIZAR: função única
+    local function toggleMinimize()
         minimized = not minimized
         if minimized then
             TweenService:Create(window, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
@@ -440,6 +419,7 @@ function NexusUI:CreateWindow(config)
             }):Play()
             contentContainer.Visible = false
             sidebar.Visible = false
+            scaleFrame.Visible = false
             minimizeBtn.Text = "□"
             floatingBtn.Visible = true
         else
@@ -451,20 +431,15 @@ function NexusUI:CreateWindow(config)
             minimizeBtn.Text = "─"
             floatingBtn.Visible = false
         end
-    end)
+    end
+    
+    minimizeBtn.MouseButton1Click:Connect(toggleMinimize)
     
     -- CLICAR NA BOLINHA: abre a janela
     floatingBtn.MouseButton1Click:Connect(function()
-        floatingBtn.Visible = false
-        window.Visible = true
-        gui.Visible = true
-        contentContainer.Visible = true
-        sidebar.Visible = true
-        minimized = false
-        minimizeBtn.Text = "─"
-        TweenService:Create(window, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
-            Size = UDim2.new(0, originalWidth, 0, originalHeight)
-        }):Play()
+        if minimized then
+            toggleMinimize()
+        end
     end)
     
     -- ==================== DRAG ====================
@@ -499,9 +474,6 @@ function NexusUI:CreateWindow(config)
         Size = UDim2.new(0, windowWidth, 0, windowHeight)
     }):Play()
     
-    -- Oculta a bolinha quando a janela está aberta
-    floatingBtn.Visible = false
-    
     -- ==================== RETORNAR ====================
     local windowData = {
         Gui = gui,
@@ -518,26 +490,12 @@ function NexusUI:CreateWindow(config)
         GetScale = function() return currentScale end,
         Minimize = function()
             if not minimized then
-                minimized = true
-                TweenService:Create(window, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
-                    Size = UDim2.new(0, originalWidth, 0, 50)
-                }):Play()
-                contentContainer.Visible = false
-                sidebar.Visible = false
-                minimizeBtn.Text = "□"
-                floatingBtn.Visible = true
+                toggleMinimize()
             end
         end,
         Restore = function()
             if minimized then
-                minimized = false
-                TweenService:Create(window, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
-                    Size = UDim2.new(0, originalWidth, 0, originalHeight)
-                }):Play()
-                contentContainer.Visible = true
-                sidebar.Visible = true
-                minimizeBtn.Text = "─"
-                floatingBtn.Visible = false
+                toggleMinimize()
             end
         end,
         IsMinimized = function() return minimized end
@@ -593,7 +551,7 @@ function NexusUI:CreateTab(window, config)
         btn.TextColor3 = NexusUI.Colors.Title
         window.CurrentTab = config.Name
         
-        window.ContentContainer.Parent.Content.CanvasPosition = Vector2.new(0, 0)
+        window.Content.CanvasPosition = Vector2.new(0, 0)
     end
     
     btn.MouseButton1Click:Connect(select)
