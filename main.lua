@@ -73,7 +73,7 @@ local MAX_ESP = 10
 local kills = 0
 local attackDelay = 0.5
 local lastAttackTime = 0
-local MIN_ATTACK_DELAY = 0.8
+local MIN_ATTACK_DELAY = 0.4
 
 local states = {}
 local stateNames = {
