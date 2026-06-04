@@ -145,6 +145,9 @@ function NexusUI:CreateWindow(config)
     
     local sidebarPadding = Instance.new("UIPadding", sidebar)
     sidebarPadding.PaddingTop = UDim.new(0, 10)
+    sidebarPadding.PaddingLeft = UDim.new(0, 5)
+    sidebarPadding.PaddingRight = UDim.new(0, 5)
+    sidebarPadding.PaddingBottom = UDim.new(0, 10)
     
     -- ==================== ÁREA DE CONTEÚDO ====================
     local contentArea = Instance.new("ScrollingFrame", window)
@@ -164,6 +167,8 @@ function NexusUI:CreateWindow(config)
     local contentPadding = Instance.new("UIPadding", contentArea)
     contentPadding.PaddingTop = UDim.new(0, 10)
     contentPadding.PaddingBottom = UDim.new(0, 10)
+    contentPadding.PaddingLeft = UDim.new(0, 8)
+    contentPadding.PaddingRight = UDim.new(0, 8)
     
     -- Atualizar canvas
     contentLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
@@ -306,8 +311,8 @@ function NexusUI:CreateTab(window, config)
     
     -- Botão da sidebar
     local btn = Instance.new("TextButton", window.Sidebar)
-    btn.Size = UDim2.new(1, -20, 0, 38)
-    btn.Position = UDim2.new(0, 10, 0, 0)
+    btn.Size = UDim2.new(1, 0, 0, 38)
+    btn.Position = UDim2.new(0, 0, 0, 0)
     btn.Text = "  " .. (config.Icon or "📁") .. " " .. config.Name
     btn.TextColor3 = self.Colors.TextDim
     btn.TextSize = 12
@@ -316,22 +321,27 @@ function NexusUI:CreateTab(window, config)
     btn.BackgroundColor3 = self.Colors.SidebarBg
     btn.BorderSizePixel = 0
     btn.AutoButtonColor = false
+    btn.LayoutOrder = #window.Tabs + 1
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
     
     -- Frame de conteúdo
     local tabContent = Instance.new("Frame", window.Content)
     tabContent.Size = UDim2.new(1, 0, 0, 0)
     tabContent.BackgroundTransparency = 1
+    tabContent.BorderSizePixel = 0
     tabContent.Visible = false
     tabContent.LayoutOrder = config.Order or #window.Tabs + 1
     
     local tabLayout = Instance.new("UIListLayout", tabContent)
     tabLayout.Padding = UDim.new(0, 6)
     tabLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    tabLayout.FillDirection = Enum.FillDirection.Vertical
     
     local tabPadding = Instance.new("UIPadding", tabContent)
     tabPadding.PaddingLeft = UDim.new(0, 5)
     tabPadding.PaddingRight = UDim.new(0, 5)
+    tabPadding.PaddingTop = UDim.new(0, 3)
+    tabPadding.PaddingBottom = UDim.new(0, 3)
     
     -- Selecionar tab
     local function select()
@@ -348,9 +358,10 @@ function NexusUI:CreateTab(window, config)
     
     btn.MouseButton1Click:Connect(select)
     
-    -- Atualizar altura
+    -- Atualizar altura com debounce
     local function updateHeight()
-        tabContent.Size = UDim2.new(1, 0, 0, tabLayout.AbsoluteContentSize.Y + 10)
+        task.wait(0.05) -- Pequeno delay para evitar múltiplas atualizações
+        tabContent.Size = UDim2.new(1, 0, 0, math.max(tabLayout.AbsoluteContentSize.Y + 10, 0))
     end
     tabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateHeight)
     
@@ -631,11 +642,11 @@ function NexusUI:CreateDropdown(tab, config)
     
     local dropdownContent = Instance.new("Frame", tab.Content)
     dropdownContent.Size = UDim2.new(1, 0, 0, 0)
-    dropdownContent.Position = UDim2.new(0, 0, 0, 42)
     dropdownContent.BackgroundColor3 = self.Colors.ElementBg
     dropdownContent.BorderSizePixel = 0
     dropdownContent.ClipsDescendants = true
     dropdownContent.Visible = false
+    dropdownContent.ZIndex = 10
     Instance.new("UICorner", dropdownContent).CornerRadius = UDim.new(0, 6)
     
     local contentLayout = Instance.new("UIListLayout", dropdownContent)
@@ -665,7 +676,6 @@ function NexusUI:CreateDropdown(tab, config)
             selected = opt
             dropdownBtn.Text = selected
             dropdownContent.Visible = false
-            dropdownContent.Size = UDim2.new(1, 0, 0, 0)
             callback(selected)
         end)
     end
