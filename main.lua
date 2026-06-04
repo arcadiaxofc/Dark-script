@@ -71,9 +71,9 @@ local range = 300
 local espBills = {}
 local MAX_ESP = 10
 local kills = 0
-local attackDelay = 0.5
+local attackDelay = 0.15     
 local lastAttackTime = 0
-local MIN_ATTACK_DELAY = 0.4
+local MIN_ATTACK_DELAY = 0.1  
 
 local states = {}
 local stateNames = {
