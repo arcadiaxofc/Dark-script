@@ -1,4 +1,4 @@
--- ==================== NEXUS UI LIBRARY v2.0 - CORRIGIDA ====================
+-- ==================== NEXUS UI LIBRARY v4.0 - MOBILE FRIENDLY ====================
 local NexusUI = {}
 NexusUI.__index = NexusUI
 
@@ -25,10 +25,22 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
+local Workspace = game:GetService("Workspace")
+
+-- ==================== DETECTAR DISPOSITIVO ====================
+local isMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+local viewportSize = Workspace.CurrentCamera.ViewportSize
+local maxWidth = isMobile and math.min(viewportSize.X - 40, 400) or 560
+local maxHeight = isMobile and math.min(viewportSize.Y - 100, 480) or 500
 
 -- ==================== CRIAR JANELA ====================
 function NexusUI:CreateWindow(config)
     config = config or {}
+    
+    -- Ajustes para mobile
+    local windowWidth = isMobile and math.min(config.Width or maxWidth, maxWidth) or (config.Width or 560)
+    local windowHeight = isMobile and math.min(config.Height or maxHeight, maxHeight) or (config.Height or 500)
+    local sidebarWidth = isMobile and 130 or 140
     
     local gui = Instance.new("ScreenGui")
     gui.Name = config.Name or "NexusUI"
@@ -37,14 +49,14 @@ function NexusUI:CreateWindow(config)
     gui.ResetOnSpawn = false
     
     local window = Instance.new("Frame")
-    window.Size = UDim2.new(0, config.Width or 520, 0, config.Height or 480)
-    window.Position = UDim2.new(0.5, -(config.Width or 520)/2, 0.5, -(config.Height or 480)/2)
+    window.Size = UDim2.new(0, windowWidth, 0, windowHeight)
+    window.Position = UDim2.new(0.5, -windowWidth/2, 0.5, -windowHeight/2)
     window.BackgroundColor3 = NexusUI.Colors.MainBg
     window.BorderSizePixel = 0
     window.Parent = gui
     window.Active = true
     window.Draggable = true
-    Instance.new("UICorner", window).CornerRadius = UDim.new(0, 8)
+    Instance.new("UICorner", window).CornerRadius = UDim.new(0, 10)
     
     -- Sombra
     local shadow = Instance.new("Frame", window)
@@ -53,48 +65,79 @@ function NexusUI:CreateWindow(config)
     shadow.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     shadow.BackgroundTransparency = 0.8
     shadow.ZIndex = -1
-    Instance.new("UICorner", shadow).CornerRadius = UDim.new(0, 12)
+    Instance.new("UICorner", shadow).CornerRadius = UDim.new(0, 14)
     
     -- Linha de destaque
     local accentLine = Instance.new("Frame", window)
     accentLine.Size = UDim2.new(1, 0, 0, 3)
     accentLine.BackgroundColor3 = NexusUI.Colors.Title
     accentLine.BorderSizePixel = 0
-    Instance.new("UICorner", accentLine).CornerRadius = UDim.new(0, 8)
+    Instance.new("UICorner", accentLine).CornerRadius = UDim.new(0, 10)
     
     -- ==================== CABEÇALHO ====================
     local header = Instance.new("Frame", window)
-    header.Size = UDim2.new(1, 0, 0, 45)
+    header.Size = UDim2.new(1, 0, 0, 50)
     header.BackgroundColor3 = NexusUI.Colors.HeaderBg
     header.BorderSizePixel = 0
     
-    local headerTitle = Instance.new("TextLabel", header)
-    headerTitle.Size = UDim2.new(1, -110, 1, 0)
-    headerTitle.Position = UDim2.new(0, 15, 0, 0)
-    headerTitle.BackgroundTransparency = 1
-    headerTitle.Text = config.Title or "NEXUS v7.0"
-    headerTitle.TextColor3 = NexusUI.Colors.Title
-    headerTitle.TextSize = 16
-    headerTitle.Font = Enum.Font.GothamBold
-    headerTitle.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local headerSub = Instance.new("TextLabel", header)
-    headerSub.Size = UDim2.new(1, -110, 0, 15)
-    headerSub.Position = UDim2.new(0, 15, 0, 28)
-    headerSub.BackgroundTransparency = 1
-    headerSub.Text = config.Subtitle or "Script Ultimate"
-    headerSub.TextColor3 = NexusUI.Colors.TextDim
-    headerSub.TextSize = 10
-    headerSub.Font = Enum.Font.Gotham
-    headerSub.TextXAlignment = Enum.TextXAlignment.Left
+    -- Logo
+    if config.Logo then
+        local logo = Instance.new("ImageLabel", header)
+        local logoSize = isMobile and 28 or 32
+        logo.Size = UDim2.new(0, logoSize, 0, logoSize)
+        logo.Position = UDim2.new(0, 12, 0.5, -logoSize/2)
+        logo.BackgroundTransparency = 1
+        logo.Image = config.Logo
+        Instance.new("UICorner", logo).CornerRadius = UDim.new(0, 6)
+        
+        local headerTitle = Instance.new("TextLabel", header)
+        headerTitle.Size = UDim2.new(1, -140, 0, 25)
+        headerTitle.Position = UDim2.new(0, 50, 0, 8)
+        headerTitle.BackgroundTransparency = 1
+        headerTitle.Text = config.Title or "NEXUS v7.0"
+        headerTitle.TextColor3 = NexusUI.Colors.Title
+        headerTitle.TextSize = isMobile and 14 or 16
+        headerTitle.Font = Enum.Font.GothamBold
+        headerTitle.TextXAlignment = Enum.TextXAlignment.Left
+        
+        local headerSub = Instance.new("TextLabel", header)
+        headerSub.Size = UDim2.new(1, -140, 0, 15)
+        headerSub.Position = UDim2.new(0, 50, 0, 28)
+        headerSub.BackgroundTransparency = 1
+        headerSub.Text = config.Subtitle or "Script Ultimate"
+        headerSub.TextColor3 = NexusUI.Colors.TextDim
+        headerSub.TextSize = 9
+        headerSub.Font = Enum.Font.Gotham
+        headerSub.TextXAlignment = Enum.TextXAlignment.Left
+    else
+        local headerTitle = Instance.new("TextLabel", header)
+        headerTitle.Size = UDim2.new(1, -110, 0, 25)
+        headerTitle.Position = UDim2.new(0, 12, 0, 8)
+        headerTitle.BackgroundTransparency = 1
+        headerTitle.Text = config.Title or "NEXUS v7.0"
+        headerTitle.TextColor3 = NexusUI.Colors.Title
+        headerTitle.TextSize = isMobile and 14 or 16
+        headerTitle.Font = Enum.Font.GothamBold
+        headerTitle.TextXAlignment = Enum.TextXAlignment.Left
+        
+        local headerSub = Instance.new("TextLabel", header)
+        headerSub.Size = UDim2.new(1, -110, 0, 15)
+        headerSub.Position = UDim2.new(0, 12, 0, 28)
+        headerSub.BackgroundTransparency = 1
+        headerSub.Text = config.Subtitle or "Script Ultimate"
+        headerSub.TextColor3 = NexusUI.Colors.TextDim
+        headerSub.TextSize = 9
+        headerSub.Font = Enum.Font.Gotham
+        headerSub.TextXAlignment = Enum.TextXAlignment.Left
+    end
     
     -- Botão minimizar
     local minimizeBtn = Instance.new("TextButton", header)
-    minimizeBtn.Size = UDim2.new(0, 28, 0, 28)
-    minimizeBtn.Position = UDim2.new(1, -45, 0.5, -14)
+    minimizeBtn.Size = UDim2.new(0, isMobile and 32 or 30, 0, isMobile and 32 or 30)
+    minimizeBtn.Position = UDim2.new(1, isMobile and -80 or -45, 0.5, -15)
     minimizeBtn.Text = "─"
     minimizeBtn.TextColor3 = NexusUI.Colors.Text
-    minimizeBtn.TextSize = 18
+    minimizeBtn.TextSize = isMobile and 16 or 18
     minimizeBtn.Font = Enum.Font.GothamBold
     minimizeBtn.BackgroundColor3 = NexusUI.Colors.ElementBg
     minimizeBtn.BorderSizePixel = 0
@@ -102,46 +145,63 @@ function NexusUI:CreateWindow(config)
     
     -- Botão fechar
     local closeBtn = Instance.new("TextButton", header)
-    closeBtn.Size = UDim2.new(0, 28, 0, 28)
-    closeBtn.Position = UDim2.new(1, -12, 0.5, -14)
+    closeBtn.Size = UDim2.new(0, isMobile and 32 or 30, 0, isMobile and 32 or 30)
+    closeBtn.Position = UDim2.new(1, isMobile and -42 or -12, 0.5, -15)
     closeBtn.Text = "✕"
     closeBtn.TextColor3 = NexusUI.Colors.Danger
-    closeBtn.TextSize = 14
+    closeBtn.TextSize = isMobile and 14 or 16
     closeBtn.Font = Enum.Font.GothamBold
     closeBtn.BackgroundColor3 = NexusUI.Colors.ElementBg
     closeBtn.BorderSizePixel = 0
     Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
     
+    -- Botão de redimensionar (novo!)
+    local resizeBtn = Instance.new("TextButton", header)
+    resizeBtn.Size = UDim2.new(0, isMobile and 32 or 30, 0, isMobile and 32 or 30)
+    resizeBtn.Position = UDim2.new(1, isMobile and -118 or -75, 0.5, -15)
+    resizeBtn.Text = "□"
+    resizeBtn.TextColor3 = NexusUI.Colors.Text
+    resizeBtn.TextSize = isMobile and 16 or 18
+    resizeBtn.Font = Enum.Font.GothamBold
+    resizeBtn.BackgroundColor3 = NexusUI.Colors.ElementBg
+    resizeBtn.BorderSizePixel = 0
+    Instance.new("UICorner", resizeBtn).CornerRadius = UDim.new(0, 6)
+    
     -- ==================== SIDEBAR ====================
-    local sidebar = Instance.new("Frame", window)
-    sidebar.Size = UDim2.new(0, 140, 1, -45)
-    sidebar.Position = UDim2.new(0, 0, 0, 45)
+    local sidebar = Instance.new("ScrollingFrame", window)
+    sidebar.Size = UDim2.new(0, sidebarWidth, 1, -50)
+    sidebar.Position = UDim2.new(0, 0, 0, 50)
     sidebar.BackgroundColor3 = NexusUI.Colors.SidebarBg
     sidebar.BorderSizePixel = 0
+    sidebar.ScrollBarThickness = 0
+    sidebar.CanvasSize = UDim2.new(0, 0, 0, 0)
+    sidebar.AutomaticCanvasSize = Enum.AutomaticSize.Y
     
-    -- Linha separadora
+    local sidebarContent = Instance.new("Frame", sidebar)
+    sidebarContent.Size = UDim2.new(1, 0, 0, 0)
+    sidebarContent.BackgroundTransparency = 1
+    sidebarContent.AutomaticSize = Enum.AutomaticSize.Y
+    
+    local sidebarLayout = Instance.new("UIListLayout", sidebarContent)
+    sidebarLayout.Padding = UDim.new(0, 6)
+    sidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    
+    local sidebarPadding = Instance.new("UIPadding", sidebarContent)
+    sidebarPadding.PaddingTop = UDim.new(0, 10)
+    sidebarPadding.PaddingBottom = UDim.new(0, 10)
+    sidebarPadding.PaddingLeft = UDim.new(0, 10)
+    sidebarPadding.PaddingRight = UDim.new(0, 10)
+    
     local sidebarLine = Instance.new("Frame", sidebar)
     sidebarLine.Size = UDim2.new(0, 1, 1, 0)
     sidebarLine.Position = UDim2.new(1, -1, 0, 0)
     sidebarLine.BackgroundColor3 = NexusUI.Colors.Border
     sidebarLine.BorderSizePixel = 0
     
-    -- Layout da sidebar
-    local sidebarLayout = Instance.new("UIListLayout", sidebar)
-    sidebarLayout.Padding = UDim.new(0, 6)
-    sidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
-    
-    -- Padding da sidebar (CORRIGIDO)
-    local sidebarPadding = Instance.new("UIPadding", sidebar)
-    sidebarPadding.PaddingTop = UDim.new(0, 10)
-    sidebarPadding.PaddingBottom = UDim.new(0, 10)
-    sidebarPadding.PaddingLeft = UDim.new(0, 10)
-    sidebarPadding.PaddingRight = UDim.new(0, 10)
-    
     -- ==================== ÁREA DE CONTEÚDO ====================
     local contentContainer = Instance.new("Frame", window)
-    contentContainer.Size = UDim2.new(1, -150, 1, -55)
-    contentContainer.Position = UDim2.new(0, 145, 0, 50)
+    contentContainer.Size = UDim2.new(1, -(sidebarWidth + 5), 1, -55)
+    contentContainer.Position = UDim2.new(0, sidebarWidth + 5, 0, 55)
     contentContainer.BackgroundTransparency = 1
     
     local contentArea = Instance.new("ScrollingFrame", contentContainer)
@@ -149,9 +209,8 @@ function NexusUI:CreateWindow(config)
     contentArea.BackgroundTransparency = 1
     contentArea.BorderSizePixel = 0
     contentArea.CanvasSize = UDim2.new(0, 0, 0, 0)
-    contentArea.ScrollBarThickness = 4
+    contentArea.ScrollBarThickness = isMobile and 2 or 4
     contentArea.ScrollBarImageColor3 = NexusUI.Colors.Title
-    contentArea.Visible = true
     
     local contentLayout = Instance.new("UIListLayout", contentArea)
     contentLayout.Padding = UDim.new(0, 6)
@@ -164,11 +223,107 @@ function NexusUI:CreateWindow(config)
     contentPadding.PaddingLeft = UDim.new(0, 5)
     contentPadding.PaddingRight = UDim.new(0, 5)
     
-    -- Atualizar canvas CORRETAMENTE
     local function updateCanvas()
         contentArea.CanvasSize = UDim2.new(0, 0, 0, contentLayout.AbsoluteContentSize.Y + 20)
     end
     contentLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
+    
+    -- ==================== SLIDER DE ESCALA (AJUSTE DE TELA) ====================
+    local scaleFrame = Instance.new("Frame", window)
+    scaleFrame.Size = UDim2.new(0, 200, 0, 30)
+    scaleFrame.Position = UDim2.new(0.5, -100, 1, -25)
+    scaleFrame.BackgroundColor3 = NexusUI.Colors.ElementBg
+    scaleFrame.BackgroundTransparency = 0.5
+    scaleFrame.Visible = false
+    Instance.new("UICorner", scaleFrame).CornerRadius = UDim.new(0, 6)
+    
+    local scaleLabel = Instance.new("TextLabel", scaleFrame)
+    scaleLabel.Size = UDim2.new(0, 50, 1, 0)
+    scaleLabel.Text = "100%"
+    scaleLabel.TextColor3 = NexusUI.Colors.Text
+    scaleLabel.TextSize = 10
+    scaleLabel.Font = Enum.Font.GothamBold
+    scaleLabel.BackgroundTransparency = 1
+    
+    local scaleSlider = Instance.new("Frame", scaleFrame)
+    scaleSlider.Size = UDim2.new(0, 120, 0, 4)
+    scaleSlider.Position = UDim2.new(0, 60, 0.5, -2)
+    scaleSlider.BackgroundColor3 = NexusUI.Colors.Border
+    Instance.new("UICorner", scaleSlider).CornerRadius = UDim.new(1, 0)
+    
+    local scaleFill = Instance.new("Frame", scaleSlider)
+    scaleFill.Size = UDim2.new(1, 0, 1, 0)
+    scaleFill.BackgroundColor3 = NexusUI.Colors.Title
+    Instance.new("UICorner", scaleFill).CornerRadius = UDim.new(1, 0)
+    
+    local scaleKnob = Instance.new("Frame", scaleSlider)
+    scaleKnob.Size = UDim2.new(0, 10, 0, 10)
+    scaleKnob.Position = UDim2.new(1, -5, 0.5, -5)
+    scaleKnob.BackgroundColor3 = NexusUI.Colors.Text
+    Instance.new("UICorner", scaleKnob).CornerRadius = UDim.new(1, 0)
+    
+    local currentScale = 1
+    local minScale = 0.6
+    local maxScale = 1.2
+    
+    local function updateScale(scale)
+        currentScale = math.clamp(scale, minScale, maxScale)
+        local percent = (currentScale - minScale) / (maxScale - minScale)
+        scaleFill.Size = UDim2.new(percent, 0, 1, 0)
+        scaleKnob.Position = UDim2.new(percent, -5, 0.5, -5)
+        scaleLabel.Text = math.floor(currentScale * 100) .. "%"
+        
+        -- Aplicar escala na janela
+        local newWidth = math.floor(windowWidth * currentScale)
+        local newHeight = math.floor(windowHeight * currentScale)
+        
+        -- Limites para não sair da tela
+        local maxWidthScreen = viewportSize.X - 40
+        local maxHeightScreen = viewportSize.Y - 100
+        
+        newWidth = math.min(newWidth, maxWidthScreen)
+        newHeight = math.min(newHeight, maxHeightScreen)
+        
+        TweenService:Create(window, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
+            Size = UDim2.new(0, newWidth, 0, newHeight),
+            Position = UDim2.new(0.5, -newWidth/2, 0.5, -newHeight/2)
+        }):Play()
+        
+        -- Ajustar sidebar e conteúdo
+        local newSidebarWidth = math.floor(sidebarWidth * currentScale)
+        sidebar.Size = UDim2.new(0, newSidebarWidth, 1, -50)
+        contentContainer.Size = UDim2.new(1, -(newSidebarWidth + 5), 1, -55)
+        contentContainer.Position = UDim2.new(0, newSidebarWidth + 5, 0, 55)
+    end
+    
+    local draggingScale = false
+    scaleSlider.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            draggingScale = true
+            local percent = math.clamp((input.Position.X - scaleSlider.AbsolutePosition.X) / scaleSlider.AbsoluteSize.X, 0, 1)
+            updateScale(minScale + percent * (maxScale - minScale))
+        end
+    end)
+    
+    UserInputService.InputChanged:Connect(function(input)
+        if draggingScale and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local percent = math.clamp((input.Position.X - scaleSlider.AbsolutePosition.X) / scaleSlider.AbsoluteSize.X, 0, 1)
+            updateScale(minScale + percent * (maxScale - minScale))
+        end
+    end)
+    
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            draggingScale = false
+        end
+    end)
+    
+    -- Mostrar/esconder slider de escala
+    local scaleVisible = false
+    resizeBtn.MouseButton1Click:Connect(function()
+        scaleVisible = not scaleVisible
+        scaleFrame.Visible = scaleVisible
+    end)
     
     -- ==================== FPS ====================
     local fpsLabel = Instance.new("TextLabel", window)
@@ -193,24 +348,101 @@ function NexusUI:CreateWindow(config)
     
     -- ==================== SISTEMA DE MINIMIZAR ====================
     local minimized = false
-    local originalHeight = config.Height or 480
-    local originalWidth = config.Width or 520
+    local originalHeight = windowHeight
+    local originalWidth = windowWidth
     
     minimizeBtn.MouseButton1Click:Connect(function()
         minimized = not minimized
         if minimized then
             TweenService:Create(window, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
-                Size = UDim2.new(0, originalWidth, 0, 45)
+                Size = UDim2.new(0, originalWidth, 0, 50)
             }):Play()
             contentContainer.Visible = false
+            sidebar.Visible = false
+            scaleFrame.Visible = false
             minimizeBtn.Text = "□"
         else
             TweenService:Create(window, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
                 Size = UDim2.new(0, originalWidth, 0, originalHeight)
             }):Play()
             contentContainer.Visible = true
+            sidebar.Visible = true
             minimizeBtn.Text = "─"
         end
+    end)
+    
+    -- ==================== BOTÃO FLUTUANTE ====================
+    local floatingBtn = Instance.new("TextButton", CoreGui)
+    floatingBtn.Size = UDim2.new(0, isMobile and 40 or 45, 0, isMobile and 40 or 45)
+    floatingBtn.Position = UDim2.new(1, isMobile and -50 or -55, 0.5, -22)
+    floatingBtn.Text = config.FloatingIcon or "⚡"
+    floatingBtn.TextColor3 = NexusUI.Colors.Text
+    floatingBtn.TextSize = isMobile and 18 or 22
+    floatingBtn.Font = Enum.Font.GothamBold
+    floatingBtn.BackgroundColor3 = NexusUI.Colors.Title
+    floatingBtn.BorderSizePixel = 0
+    floatingBtn.Visible = false
+    floatingBtn.ZIndex = 999
+    Instance.new("UICorner", floatingBtn).CornerRadius = UDim.new(1, 0)
+    
+    local dragFloat = false
+    floatingBtn.InputBegan:Connect(function(i)
+        if i.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragFloat = true
+        end
+    end)
+    floatingBtn.InputEnded:Connect(function()
+        dragFloat = false
+    end)
+    UserInputService.InputChanged:Connect(function(i)
+        if dragFloat and i.UserInputType == Enum.UserInputType.MouseMovement then
+            local x = math.clamp(i.Position.X - 22, 0, viewportSize.X - 45)
+            local y = math.clamp(i.Position.Y - 22, 0, viewportSize.Y - 45)
+            floatingBtn.Position = UDim2.new(0, x, 0, y)
+        end
+    end)
+    
+    closeBtn.MouseButton1Click:Connect(function()
+        TweenService:Create(window, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+            Size = UDim2.new(0, 0, 0, 0)
+        }):Play()
+        task.wait(0.3)
+        gui:Destroy()
+        floatingBtn.Visible = true
+    end)
+    
+    minimizeBtn.MouseButton1Click:Connect(function()
+        minimized = not minimized
+        if minimized then
+            TweenService:Create(window, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                Size = UDim2.new(0, originalWidth, 0, 50)
+            }):Play()
+            contentContainer.Visible = false
+            sidebar.Visible = false
+            minimizeBtn.Text = "□"
+            floatingBtn.Visible = true
+        else
+            TweenService:Create(window, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+                Size = UDim2.new(0, originalWidth, 0, originalHeight)
+            }):Play()
+            contentContainer.Visible = true
+            sidebar.Visible = true
+            minimizeBtn.Text = "─"
+            floatingBtn.Visible = false
+        end
+    end)
+    
+    floatingBtn.MouseButton1Click:Connect(function()
+        floatingBtn.Visible = false
+        window.Visible = true
+        gui.Visible = true
+        contentContainer.Visible = true
+        sidebar.Visible = true
+        minimized = false
+        minimizeBtn.Text = "─"
+        TweenService:Create(window, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
+            Size = UDim2.new(0, originalWidth, 0, originalHeight)
+        }):Play()
     end)
     
     -- ==================== DRAG ====================
@@ -231,38 +463,44 @@ function NexusUI:CreateWindow(config)
     UserInputService.InputChanged:Connect(function(input)
         if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
             local delta = input.Position - dragStart
-            window.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            local newX = startPos.X.Offset + delta.X
+            local newY = startPos.Y.Offset + delta.Y
+            newX = math.clamp(newX, -windowWidth/2, viewportSize.X - windowWidth/2)
+            newY = math.clamp(newY, -windowHeight/2, viewportSize.Y - windowHeight/2)
+            window.Position = UDim2.new(startPos.X.Scale, newX, startPos.Y.Scale, newY)
         end
     end)
     
-    -- ==================== FECHAR ====================
-    closeBtn.MouseButton1Click:Connect(function()
-        TweenService:Create(window, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
-            Size = UDim2.new(0, 0, 0, 0)
-        }):Play()
-        task.wait(0.3)
-        gui:Destroy()
-    end)
+    -- ==================== ANIMAÇÃO ====================
+    window.Size = UDim2.new(0, 0, 0, windowHeight)
+    TweenService:Create(window, TweenInfo.new(0.4, Enum.EasingStyle.Back), {
+        Size = UDim2.new(0, windowWidth, 0, windowHeight)
+    }):Play()
     
     -- ==================== RETORNAR ====================
     local windowData = {
         Gui = gui,
         Frame = window,
-        Sidebar = sidebar,
+        Sidebar = sidebarContent,
         SidebarLayout = sidebarLayout,
         ContentContainer = contentContainer,
         Content = contentArea,
         ContentLayout = contentLayout,
         Tabs = {},
         CurrentTab = nil,
+        FloatingButton = floatingBtn,
+        SetScale = function(scale) updateScale(scale) end,
+        GetScale = function() return currentScale end,
         Minimize = function()
             if not minimized then
                 minimized = true
                 TweenService:Create(window, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
-                    Size = UDim2.new(0, originalWidth, 0, 45)
+                    Size = UDim2.new(0, originalWidth, 0, 50)
                 }):Play()
                 contentContainer.Visible = false
+                sidebar.Visible = false
                 minimizeBtn.Text = "□"
+                floatingBtn.Visible = true
             end
         end,
         Restore = function()
@@ -272,46 +510,41 @@ function NexusUI:CreateWindow(config)
                     Size = UDim2.new(0, originalWidth, 0, originalHeight)
                 }):Play()
                 contentContainer.Visible = true
+                sidebar.Visible = true
                 minimizeBtn.Text = "─"
+                floatingBtn.Visible = false
             end
         end,
         IsMinimized = function() return minimized end
     }
     
-    -- Animação de entrada
-    window.Size = UDim2.new(0, 0, 0, config.Height or 480)
-    TweenService:Create(window, TweenInfo.new(0.4, Enum.EasingStyle.Back), {
-        Size = UDim2.new(0, config.Width or 520, 0, config.Height or 480)
-    }):Play()
-    
     return windowData
 end
 
--- ==================== CRIAR TAB (CORRIGIDA) ====================
+-- ==================== CRIAR TAB ====================
 function NexusUI:CreateTab(window, config)
     config = config or {}
     
-    -- Botão da sidebar
     local btn = Instance.new("TextButton", window.Sidebar)
     btn.Size = UDim2.new(1, -20, 0, 38)
     btn.Text = "  " .. (config.Icon or "📁") .. " " .. config.Name
     btn.TextColor3 = NexusUI.Colors.TextDim
-    btn.TextSize = 12
+    btn.TextSize = isMobile and 10 or 12
     btn.TextXAlignment = Enum.TextXAlignment.Left
     btn.Font = Enum.Font.GothamBold
     btn.BackgroundColor3 = NexusUI.Colors.SidebarBg
     btn.BorderSizePixel = 0
     btn.AutoButtonColor = false
-    btn.LayoutOrder = #window.Tabs + 1
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
     
-    -- Frame de conteúdo (CORRIGIDO)
-    local tabContent = Instance.new("Frame", window.Content)
-    tabContent.Size = UDim2.new(1, 0, 0, 0)
+    local tabContent = Instance.new("ScrollingFrame", window.Content)
+    tabContent.Size = UDim2.new(1, 0, 1, 0)
     tabContent.BackgroundTransparency = 1
+    tabContent.BorderSizePixel = 0
     tabContent.Visible = false
-    tabContent.LayoutOrder = config.Order or #window.Tabs + 1
-    tabContent.AutomaticSize = Enum.AutomaticSize.Y
+    tabContent.ScrollBarThickness = 0
+    tabContent.CanvasSize = UDim2.new(0, 0, 0, 0)
+    tabContent.AutomaticCanvasSize = Enum.AutomaticSize.Y
     
     local tabLayout = Instance.new("UIListLayout", tabContent)
     tabLayout.Padding = UDim.new(0, 6)
@@ -324,7 +557,6 @@ function NexusUI:CreateTab(window, config)
     tabPadding.PaddingTop = UDim.new(0, 5)
     tabPadding.PaddingBottom = UDim.new(0, 5)
     
-    -- Selecionar tab
     local function select()
         for _, t in pairs(window.Tabs) do
             t.Content.Visible = false
@@ -336,9 +568,7 @@ function NexusUI:CreateTab(window, config)
         btn.TextColor3 = NexusUI.Colors.Title
         window.CurrentTab = config.Name
         
-        -- Forçar atualização do canvas
-        task.wait(0.1)
-        window.ContentLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Wait()
+        window.ContentContainer.Parent.Content.CanvasPosition = Vector2.new(0, 0)
     end
     
     btn.MouseButton1Click:Connect(select)
@@ -376,7 +606,7 @@ function NexusUI:CreateSection(tab, title)
     titleLabel.BackgroundTransparency = 1
     titleLabel.Text = title
     titleLabel.TextColor3 = NexusUI.Colors.Title
-    titleLabel.TextSize = 13
+    titleLabel.TextSize = isMobile and 11 or 13
     titleLabel.Font = Enum.Font.GothamBold
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
     
@@ -395,39 +625,36 @@ function NexusUI:CreateToggle(tab, config)
     config = config or {}
     
     local frame = Instance.new("Frame", tab.Content)
-    frame.Size = UDim2.new(1, 0, 0, 42)
+    frame.Size = UDim2.new(1, 0, 0, isMobile and 48 or 42)
     frame.BackgroundColor3 = NexusUI.Colors.ElementBg
     frame.BorderSizePixel = 0
     frame.AutomaticSize = Enum.AutomaticSize.None
     Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
     
-    -- Título
     local title = Instance.new("TextLabel", frame)
     title.Size = UDim2.new(1, -80, 0, 20)
-    title.Position = UDim2.new(0, 12, 0, 6)
+    title.Position = UDim2.new(0, 12, 0, isMobile and 8 or 6)
     title.BackgroundTransparency = 1
     title.Text = config.Title or "Toggle"
     title.TextColor3 = NexusUI.Colors.Text
-    title.TextSize = 13
+    title.TextSize = isMobile and 12 or 13
     title.Font = Enum.Font.GothamBold
     title.TextXAlignment = Enum.TextXAlignment.Left
     
-    -- Descrição
     local desc = Instance.new("TextLabel", frame)
     desc.Size = UDim2.new(1, -80, 0, 16)
-    desc.Position = UDim2.new(0, 12, 0, 24)
+    desc.Position = UDim2.new(0, 12, 0, isMobile and 26 or 24)
     desc.BackgroundTransparency = 1
     desc.Text = config.Desc or ""
     desc.TextColor3 = NexusUI.Colors.TextDim
-    desc.TextSize = 10
+    desc.TextSize = isMobile and 9 or 10
     desc.Font = Enum.Font.Gotham
     desc.TextXAlignment = Enum.TextXAlignment.Left
     desc.TextTruncate = Enum.TextTruncate.AtEnd
     
-    -- Botão toggle
     local toggle = Instance.new("TextButton", frame)
-    toggle.Size = UDim2.new(0, 55, 0, 26)
-    toggle.Position = UDim2.new(1, -12, 0.5, -13)
+    toggle.Size = UDim2.new(0, 55, 0, isMobile and 30 or 26)
+    toggle.Position = UDim2.new(1, -12, 0.5, -15)
     toggle.Text = "OFF"
     toggle.TextColor3 = NexusUI.Colors.Text
     toggle.TextSize = 11
@@ -465,10 +692,10 @@ function NexusUI:CreateButton(tab, config)
     config = config or {}
     
     local btn = Instance.new("TextButton", tab.Content)
-    btn.Size = UDim2.new(1, 0, 0, 38)
+    btn.Size = UDim2.new(1, 0, 0, isMobile and 42 or 38)
     btn.Text = config.Title or "Button"
     btn.TextColor3 = NexusUI.Colors.Text
-    btn.TextSize = 13
+    btn.TextSize = isMobile and 12 or 13
     btn.Font = Enum.Font.GothamBold
     btn.BackgroundColor3 = NexusUI.Colors.ElementBg
     btn.BorderSizePixel = 0
@@ -499,7 +726,7 @@ function NexusUI:CreateSlider(tab, config)
     local value = config.Default or 50
     
     local frame = Instance.new("Frame", tab.Content)
-    frame.Size = UDim2.new(1, 0, 0, 65)
+    frame.Size = UDim2.new(1, 0, 0, isMobile and 75 or 65)
     frame.BackgroundColor3 = NexusUI.Colors.ElementBg
     frame.BorderSizePixel = 0
     frame.AutomaticSize = Enum.AutomaticSize.None
@@ -511,7 +738,7 @@ function NexusUI:CreateSlider(tab, config)
     title.BackgroundTransparency = 1
     title.Text = config.Title or "Slider"
     title.TextColor3 = NexusUI.Colors.Text
-    title.TextSize = 13
+    title.TextSize = isMobile and 12 or 13
     title.Font = Enum.Font.GothamBold
     title.TextXAlignment = Enum.TextXAlignment.Left
     
@@ -521,14 +748,13 @@ function NexusUI:CreateSlider(tab, config)
     valueLabel.BackgroundTransparency = 1
     valueLabel.Text = tostring(value)
     valueLabel.TextColor3 = NexusUI.Colors.Title
-    valueLabel.TextSize = 13
+    valueLabel.TextSize = isMobile and 12 or 13
     valueLabel.Font = Enum.Font.GothamBold
     valueLabel.TextXAlignment = Enum.TextXAlignment.Right
     
-    -- Barra do slider
     local sliderBar = Instance.new("Frame", frame)
     sliderBar.Size = UDim2.new(1, -24, 0, 4)
-    sliderBar.Position = UDim2.new(0, 12, 0, 40)
+    sliderBar.Position = UDim2.new(0, 12, 0, 45)
     sliderBar.BackgroundColor3 = NexusUI.Colors.ElementBg
     sliderBar.BorderSizePixel = 0
     Instance.new("UICorner", sliderBar).CornerRadius = UDim.new(1, 0)
@@ -540,8 +766,8 @@ function NexusUI:CreateSlider(tab, config)
     Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
     
     local knob = Instance.new("Frame", sliderBar)
-    knob.Size = UDim2.new(0, 12, 0, 12)
-    knob.Position = UDim2.new((value - min) / (max - min), -6, 0.5, -6)
+    knob.Size = UDim2.new(0, isMobile and 15 or 12, 0, isMobile and 15 or 12)
+    knob.Position = UDim2.new((value - min) / (max - min), isMobile and -7.5 or -6, 0.5, isMobile and -7.5 or -6)
     knob.BackgroundColor3 = NexusUI.Colors.Text
     knob.BorderSizePixel = 0
     Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
@@ -553,7 +779,7 @@ function NexusUI:CreateSlider(tab, config)
         val = math.clamp(val, min, max)
         local percent = (val - min) / (max - min)
         fill.Size = UDim2.new(percent, 0, 1, 0)
-        knob.Position = UDim2.new(percent, -6, 0.5, -6)
+        knob.Position = UDim2.new(percent, isMobile and -7.5 or -6, 0.5, isMobile and -7.5 or -6)
         valueLabel.Text = tostring(math.floor(val))
         callback(val)
         return val
@@ -589,14 +815,14 @@ function NexusUI:CreateSlider(tab, config)
     }
 end
 
--- ==================== CRIAR DROPDOWN (CORRIGIDO) ====================
+-- ==================== CRIAR DROPDOWN ====================
 function NexusUI:CreateDropdown(tab, config)
     config = config or {}
     local options = config.Options or {"Opção 1", "Opção 2"}
     local selected = config.Default or options[1]
     
     local frame = Instance.new("Frame", tab.Content)
-    frame.Size = UDim2.new(1, 0, 0, 42)
+    frame.Size = UDim2.new(1, 0, 0, isMobile and 48 or 42)
     frame.BackgroundColor3 = NexusUI.Colors.ElementBg
     frame.BorderSizePixel = 0
     frame.AutomaticSize = Enum.AutomaticSize.None
@@ -604,26 +830,25 @@ function NexusUI:CreateDropdown(tab, config)
     
     local title = Instance.new("TextLabel", frame)
     title.Size = UDim2.new(1, -80, 0, 20)
-    title.Position = UDim2.new(0, 12, 0, 6)
+    title.Position = UDim2.new(0, 12, 0, isMobile and 8 or 6)
     title.BackgroundTransparency = 1
     title.Text = config.Title or "Dropdown"
     title.TextColor3 = NexusUI.Colors.Text
-    title.TextSize = 13
+    title.TextSize = isMobile and 12 or 13
     title.Font = Enum.Font.GothamBold
     title.TextXAlignment = Enum.TextXAlignment.Left
     
     local dropdownBtn = Instance.new("TextButton", frame)
-    dropdownBtn.Size = UDim2.new(0, 120, 0, 30)
-    dropdownBtn.Position = UDim2.new(1, -12, 0.5, -15)
+    dropdownBtn.Size = UDim2.new(0, isMobile and 100 or 120, 0, isMobile and 32 or 30)
+    dropdownBtn.Position = UDim2.new(1, -12, 0.5, -16)
     dropdownBtn.Text = selected
     dropdownBtn.TextColor3 = NexusUI.Colors.Text
-    dropdownBtn.TextSize = 12
+    dropdownBtn.TextSize = isMobile and 11 or 12
     dropdownBtn.Font = Enum.Font.Gotham
     dropdownBtn.BackgroundColor3 = NexusUI.Colors.ElementBg
     dropdownBtn.BorderSizePixel = 0
     Instance.new("UICorner", dropdownBtn).CornerRadius = UDim.new(0, 6)
     
-    -- Dropdown content (SEM POSIÇÃO FIXA)
     local dropdownContent = Instance.new("Frame", frame)
     dropdownContent.Size = UDim2.new(1, 0, 0, 0)
     dropdownContent.Position = UDim2.new(0, 0, 1, 2)
@@ -641,10 +866,10 @@ function NexusUI:CreateDropdown(tab, config)
     
     for _, opt in pairs(options) do
         local optBtn = Instance.new("TextButton", dropdownContent)
-        optBtn.Size = UDim2.new(1, 0, 0, 30)
+        optBtn.Size = UDim2.new(1, 0, 0, isMobile and 35 or 30)
         optBtn.Text = opt
         optBtn.TextColor3 = NexusUI.Colors.TextDim
-        optBtn.TextSize = 12
+        optBtn.TextSize = isMobile and 11 or 12
         optBtn.Font = Enum.Font.Gotham
         optBtn.BackgroundColor3 = NexusUI.Colors.ElementBg
         optBtn.BorderSizePixel = 0
@@ -666,7 +891,7 @@ function NexusUI:CreateDropdown(tab, config)
         end)
     end
     
-    dropdownContent.Size = UDim2.new(1, 0, 0, #options * 32)
+    dropdownContent.Size = UDim2.new(1, 0, 0, #options * (isMobile and 37 or 32))
     
     local open = false
     dropdownBtn.MouseButton1Click:Connect(function()
@@ -695,7 +920,7 @@ function NexusUI:CreateInput(tab, config)
     config = config or {}
     
     local frame = Instance.new("Frame", tab.Content)
-    frame.Size = UDim2.new(1, 0, 0, 50)
+    frame.Size = UDim2.new(1, 0, 0, isMobile and 55 or 50)
     frame.BackgroundColor3 = NexusUI.Colors.ElementBg
     frame.BorderSizePixel = 0
     frame.AutomaticSize = Enum.AutomaticSize.None
@@ -703,22 +928,22 @@ function NexusUI:CreateInput(tab, config)
     
     local title = Instance.new("TextLabel", frame)
     title.Size = UDim2.new(1, -80, 0, 20)
-    title.Position = UDim2.new(0, 12, 0, 6)
+    title.Position = UDim2.new(0, 12, 0, isMobile and 8 or 6)
     title.BackgroundTransparency = 1
     title.Text = config.Title or "Input"
     title.TextColor3 = NexusUI.Colors.Text
-    title.TextSize = 13
+    title.TextSize = isMobile and 12 or 13
     title.Font = Enum.Font.GothamBold
     title.TextXAlignment = Enum.TextXAlignment.Left
     
     local input = Instance.new("TextBox", frame)
-    input.Size = UDim2.new(0, 150, 0, 30)
-    input.Position = UDim2.new(1, -12, 0.5, -15)
+    input.Size = UDim2.new(0, isMobile and 120 or 150, 0, isMobile and 32 or 30)
+    input.Position = UDim2.new(1, -12, 0.5, -16)
     input.PlaceholderText = config.Placeholder or "Digite aqui..."
     input.Text = config.Default or ""
     input.TextColor3 = NexusUI.Colors.Text
     input.PlaceholderColor3 = NexusUI.Colors.TextDim
-    input.TextSize = 12
+    input.TextSize = isMobile and 11 or 12
     input.Font = Enum.Font.Gotham
     input.BackgroundColor3 = NexusUI.Colors.ElementBg
     input.BorderSizePixel = 0
@@ -742,10 +967,10 @@ function NexusUI:CreateLabel(tab, config)
     config = config or {}
     
     local label = Instance.new("TextLabel", tab.Content)
-    label.Size = UDim2.new(1, 0, 0, 32)
+    label.Size = UDim2.new(1, 0, 0, isMobile and 36 or 32)
     label.Text = config.Title or "Label"
     label.TextColor3 = NexusUI.Colors.TextDim
-    label.TextSize = 12
+    label.TextSize = isMobile and 11 or 12
     label.Font = Enum.Font.Gotham
     label.BackgroundColor3 = NexusUI.Colors.ElementBg
     label.BorderSizePixel = 0
@@ -760,7 +985,7 @@ function NexusUI:CreateKeybind(tab, config)
     config = config or {}
     
     local frame = Instance.new("Frame", tab.Content)
-    frame.Size = UDim2.new(1, 0, 0, 42)
+    frame.Size = UDim2.new(1, 0, 0, isMobile and 48 or 42)
     frame.BackgroundColor3 = NexusUI.Colors.ElementBg
     frame.BorderSizePixel = 0
     frame.AutomaticSize = Enum.AutomaticSize.None
@@ -768,20 +993,20 @@ function NexusUI:CreateKeybind(tab, config)
     
     local title = Instance.new("TextLabel", frame)
     title.Size = UDim2.new(1, -80, 0, 20)
-    title.Position = UDim2.new(0, 12, 0, 6)
+    title.Position = UDim2.new(0, 12, 0, isMobile and 8 or 6)
     title.BackgroundTransparency = 1
     title.Text = config.Title or "Keybind"
     title.TextColor3 = NexusUI.Colors.Text
-    title.TextSize = 13
+    title.TextSize = isMobile and 12 or 13
     title.Font = Enum.Font.GothamBold
     title.TextXAlignment = Enum.TextXAlignment.Left
     
     local keyBtn = Instance.new("TextButton", frame)
-    keyBtn.Size = UDim2.new(0, 80, 0, 30)
-    keyBtn.Position = UDim2.new(1, -12, 0.5, -15)
+    keyBtn.Size = UDim2.new(0, isMobile and 70 or 80, 0, isMobile and 32 or 30)
+    keyBtn.Position = UDim2.new(1, -12, 0.5, -16)
     keyBtn.Text = config.Default or "F"
     keyBtn.TextColor3 = NexusUI.Colors.Text
-    keyBtn.TextSize = 12
+    keyBtn.TextSize = isMobile and 11 or 12
     keyBtn.Font = Enum.Font.GothamBold
     keyBtn.BackgroundColor3 = NexusUI.Colors.ElementBg
     keyBtn.BorderSizePixel = 0
