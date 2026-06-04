@@ -1,31 +1,20 @@
--- ==================== NEXUS UI LIBRARY v1.0 ====================
--- Autor: NEXUS Team
--- Descrição: Biblioteca UI moderna para scripts Roblox
--- Compatível: Delta, Krnl, Synapse, ScriptWare
-
+-- ==================== NEXUS UI LIBRARY v2.0 - CORRIGIDA ====================
 local NexusUI = {}
 NexusUI.__index = NexusUI
 
--- ==================== CORES PADRÃO ====================
+-- ==================== CORES ====================
 NexusUI.Colors = {
-    -- Fundos
     MainBg = Color3.fromRGB(20, 20, 25),
     SidebarBg = Color3.fromRGB(15, 15, 20),
     HeaderBg = Color3.fromRGB(25, 25, 30),
     ElementBg = Color3.fromRGB(30, 30, 38),
     ElementHover = Color3.fromRGB(40, 40, 48),
-    
-    -- Textos
     Text = Color3.fromRGB(255, 255, 255),
     TextDim = Color3.fromRGB(160, 160, 170),
     Title = Color3.fromRGB(230, 70, 60),
-    
-    -- Estados
     Success = Color3.fromRGB(0, 180, 0),
     Danger = Color3.fromRGB(200, 50, 40),
     Warn = Color3.fromRGB(255, 180, 0),
-    
-    -- Bordas
     Border = Color3.fromRGB(45, 45, 55),
 }
 
@@ -47,11 +36,10 @@ function NexusUI:CreateWindow(config)
     gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     gui.ResetOnSpawn = false
     
-    -- Janela principal
     local window = Instance.new("Frame")
-    window.Size = UDim2.new(0, config.Width or 520, 0, config.Height or 450)
-    window.Position = UDim2.new(0.5, -(config.Width or 520)/2, 0.5, -(config.Height or 450)/2)
-    window.BackgroundColor3 = self.Colors.MainBg
+    window.Size = UDim2.new(0, config.Width or 520, 0, config.Height or 480)
+    window.Position = UDim2.new(0.5, -(config.Width or 520)/2, 0.5, -(config.Height or 480)/2)
+    window.BackgroundColor3 = NexusUI.Colors.MainBg
     window.BorderSizePixel = 0
     window.Parent = gui
     window.Active = true
@@ -70,14 +58,14 @@ function NexusUI:CreateWindow(config)
     -- Linha de destaque
     local accentLine = Instance.new("Frame", window)
     accentLine.Size = UDim2.new(1, 0, 0, 3)
-    accentLine.BackgroundColor3 = self.Colors.Title
+    accentLine.BackgroundColor3 = NexusUI.Colors.Title
     accentLine.BorderSizePixel = 0
     Instance.new("UICorner", accentLine).CornerRadius = UDim.new(0, 8)
     
     -- ==================== CABEÇALHO ====================
     local header = Instance.new("Frame", window)
     header.Size = UDim2.new(1, 0, 0, 45)
-    header.BackgroundColor3 = self.Colors.HeaderBg
+    header.BackgroundColor3 = NexusUI.Colors.HeaderBg
     header.BorderSizePixel = 0
     
     local headerTitle = Instance.new("TextLabel", header)
@@ -85,7 +73,7 @@ function NexusUI:CreateWindow(config)
     headerTitle.Position = UDim2.new(0, 15, 0, 0)
     headerTitle.BackgroundTransparency = 1
     headerTitle.Text = config.Title or "NEXUS v7.0"
-    headerTitle.TextColor3 = self.Colors.Title
+    headerTitle.TextColor3 = NexusUI.Colors.Title
     headerTitle.TextSize = 16
     headerTitle.Font = Enum.Font.GothamBold
     headerTitle.TextXAlignment = Enum.TextXAlignment.Left
@@ -95,7 +83,7 @@ function NexusUI:CreateWindow(config)
     headerSub.Position = UDim2.new(0, 15, 0, 28)
     headerSub.BackgroundTransparency = 1
     headerSub.Text = config.Subtitle or "Script Ultimate"
-    headerSub.TextColor3 = self.Colors.TextDim
+    headerSub.TextColor3 = NexusUI.Colors.TextDim
     headerSub.TextSize = 10
     headerSub.Font = Enum.Font.Gotham
     headerSub.TextXAlignment = Enum.TextXAlignment.Left
@@ -105,10 +93,10 @@ function NexusUI:CreateWindow(config)
     minimizeBtn.Size = UDim2.new(0, 28, 0, 28)
     minimizeBtn.Position = UDim2.new(1, -45, 0.5, -14)
     minimizeBtn.Text = "─"
-    minimizeBtn.TextColor3 = self.Colors.Text
+    minimizeBtn.TextColor3 = NexusUI.Colors.Text
     minimizeBtn.TextSize = 18
     minimizeBtn.Font = Enum.Font.GothamBold
-    minimizeBtn.BackgroundColor3 = self.Colors.ElementBg
+    minimizeBtn.BackgroundColor3 = NexusUI.Colors.ElementBg
     minimizeBtn.BorderSizePixel = 0
     Instance.new("UICorner", minimizeBtn).CornerRadius = UDim.new(0, 6)
     
@@ -117,10 +105,10 @@ function NexusUI:CreateWindow(config)
     closeBtn.Size = UDim2.new(0, 28, 0, 28)
     closeBtn.Position = UDim2.new(1, -12, 0.5, -14)
     closeBtn.Text = "✕"
-    closeBtn.TextColor3 = self.Colors.Danger
+    closeBtn.TextColor3 = NexusUI.Colors.Danger
     closeBtn.TextSize = 14
     closeBtn.Font = Enum.Font.GothamBold
-    closeBtn.BackgroundColor3 = self.Colors.ElementBg
+    closeBtn.BackgroundColor3 = NexusUI.Colors.ElementBg
     closeBtn.BorderSizePixel = 0
     Instance.new("UICorner", closeBtn).CornerRadius = UDim.new(0, 6)
     
@@ -128,14 +116,14 @@ function NexusUI:CreateWindow(config)
     local sidebar = Instance.new("Frame", window)
     sidebar.Size = UDim2.new(0, 140, 1, -45)
     sidebar.Position = UDim2.new(0, 0, 0, 45)
-    sidebar.BackgroundColor3 = self.Colors.SidebarBg
+    sidebar.BackgroundColor3 = NexusUI.Colors.SidebarBg
     sidebar.BorderSizePixel = 0
     
     -- Linha separadora
     local sidebarLine = Instance.new("Frame", sidebar)
     sidebarLine.Size = UDim2.new(0, 1, 1, 0)
     sidebarLine.Position = UDim2.new(1, -1, 0, 0)
-    sidebarLine.BackgroundColor3 = self.Colors.Border
+    sidebarLine.BackgroundColor3 = NexusUI.Colors.Border
     sidebarLine.BorderSizePixel = 0
     
     -- Layout da sidebar
@@ -143,45 +131,52 @@ function NexusUI:CreateWindow(config)
     sidebarLayout.Padding = UDim.new(0, 6)
     sidebarLayout.SortOrder = Enum.SortOrder.LayoutOrder
     
+    -- Padding da sidebar (CORRIGIDO)
     local sidebarPadding = Instance.new("UIPadding", sidebar)
     sidebarPadding.PaddingTop = UDim.new(0, 10)
-    sidebarPadding.PaddingLeft = UDim.new(0, 5)
-    sidebarPadding.PaddingRight = UDim.new(0, 5)
     sidebarPadding.PaddingBottom = UDim.new(0, 10)
+    sidebarPadding.PaddingLeft = UDim.new(0, 10)
+    sidebarPadding.PaddingRight = UDim.new(0, 10)
     
     -- ==================== ÁREA DE CONTEÚDO ====================
-    local contentArea = Instance.new("ScrollingFrame", window)
-    contentArea.Size = UDim2.new(1, -145, 1, -55)
-    contentArea.Position = UDim2.new(0, 145, 0, 50)
+    local contentContainer = Instance.new("Frame", window)
+    contentContainer.Size = UDim2.new(1, -150, 1, -55)
+    contentContainer.Position = UDim2.new(0, 145, 0, 50)
+    contentContainer.BackgroundTransparency = 1
+    
+    local contentArea = Instance.new("ScrollingFrame", contentContainer)
+    contentArea.Size = UDim2.new(1, 0, 1, 0)
     contentArea.BackgroundTransparency = 1
     contentArea.BorderSizePixel = 0
     contentArea.CanvasSize = UDim2.new(0, 0, 0, 0)
     contentArea.ScrollBarThickness = 4
-    contentArea.ScrollBarImageColor3 = self.Colors.Title
+    contentArea.ScrollBarImageColor3 = NexusUI.Colors.Title
     contentArea.Visible = true
     
     local contentLayout = Instance.new("UIListLayout", contentArea)
     contentLayout.Padding = UDim.new(0, 6)
     contentLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    contentLayout.FillDirection = Enum.FillDirection.Vertical
     
     local contentPadding = Instance.new("UIPadding", contentArea)
     contentPadding.PaddingTop = UDim.new(0, 10)
     contentPadding.PaddingBottom = UDim.new(0, 10)
-    contentPadding.PaddingLeft = UDim.new(0, 8)
-    contentPadding.PaddingRight = UDim.new(0, 8)
+    contentPadding.PaddingLeft = UDim.new(0, 5)
+    contentPadding.PaddingRight = UDim.new(0, 5)
     
-    -- Atualizar canvas
-    contentLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    -- Atualizar canvas CORRETAMENTE
+    local function updateCanvas()
         contentArea.CanvasSize = UDim2.new(0, 0, 0, contentLayout.AbsoluteContentSize.Y + 20)
-    end)
+    end
+    contentLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateCanvas)
     
     -- ==================== FPS ====================
     local fpsLabel = Instance.new("TextLabel", window)
-    fpsLabel.Size = UDim2.new(0, 120, 0, 15)
+    fpsLabel.Size = UDim2.new(0, 180, 0, 15)
     fpsLabel.Position = UDim2.new(0, 10, 1, -18)
     fpsLabel.BackgroundTransparency = 1
     fpsLabel.Text = "FPS: --"
-    fpsLabel.TextColor3 = self.Colors.TextDim
+    fpsLabel.TextColor3 = NexusUI.Colors.TextDim
     fpsLabel.TextSize = 10
     fpsLabel.Font = Enum.Font.Gotham
     
@@ -198,29 +193,22 @@ function NexusUI:CreateWindow(config)
     
     -- ==================== SISTEMA DE MINIMIZAR ====================
     local minimized = false
-    local originalHeight = config.Height or 450
+    local originalHeight = config.Height or 480
     local originalWidth = config.Width or 520
     
     minimizeBtn.MouseButton1Click:Connect(function()
         minimized = not minimized
-        
         if minimized then
             TweenService:Create(window, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
                 Size = UDim2.new(0, originalWidth, 0, 45)
             }):Play()
-            TweenService:Create(sidebar, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
-                Size = UDim2.new(0, 0, 1, -45)
-            }):Play()
-            contentArea.Visible = false
+            contentContainer.Visible = false
             minimizeBtn.Text = "□"
         else
             TweenService:Create(window, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
                 Size = UDim2.new(0, originalWidth, 0, originalHeight)
             }):Play()
-            TweenService:Create(sidebar, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
-                Size = UDim2.new(0, 140, 1, -45)
-            }):Play()
-            contentArea.Visible = true
+            contentContainer.Visible = true
             minimizeBtn.Text = "─"
         end
     end)
@@ -232,7 +220,6 @@ function NexusUI:CreateWindow(config)
             dragging = true
             dragStart = input.Position
             startPos = window.Position
-            
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
@@ -263,6 +250,7 @@ function NexusUI:CreateWindow(config)
         Frame = window,
         Sidebar = sidebar,
         SidebarLayout = sidebarLayout,
+        ContentContainer = contentContainer,
         Content = contentArea,
         ContentLayout = contentLayout,
         Tabs = {},
@@ -273,10 +261,7 @@ function NexusUI:CreateWindow(config)
                 TweenService:Create(window, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
                     Size = UDim2.new(0, originalWidth, 0, 45)
                 }):Play()
-                TweenService:Create(sidebar, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
-                    Size = UDim2.new(0, 0, 1, -45)
-                }):Play()
-                contentArea.Visible = false
+                contentContainer.Visible = false
                 minimizeBtn.Text = "□"
             end
         end,
@@ -286,10 +271,7 @@ function NexusUI:CreateWindow(config)
                 TweenService:Create(window, TweenInfo.new(0.3, Enum.EasingStyle.Quad), {
                     Size = UDim2.new(0, originalWidth, 0, originalHeight)
                 }):Play()
-                TweenService:Create(sidebar, TweenInfo.new(0.2, Enum.EasingStyle.Quad), {
-                    Size = UDim2.new(0, 140, 1, -45)
-                }):Play()
-                contentArea.Visible = true
+                contentContainer.Visible = true
                 minimizeBtn.Text = "─"
             end
         end,
@@ -297,40 +279,39 @@ function NexusUI:CreateWindow(config)
     }
     
     -- Animação de entrada
-    window.Size = UDim2.new(0, 0, 0, config.Height or 450)
+    window.Size = UDim2.new(0, 0, 0, config.Height or 480)
     TweenService:Create(window, TweenInfo.new(0.4, Enum.EasingStyle.Back), {
-        Size = UDim2.new(0, config.Width or 520, 0, config.Height or 450)
+        Size = UDim2.new(0, config.Width or 520, 0, config.Height or 480)
     }):Play()
     
     return windowData
 end
 
--- ==================== CRIAR TAB ====================
+-- ==================== CRIAR TAB (CORRIGIDA) ====================
 function NexusUI:CreateTab(window, config)
     config = config or {}
     
     -- Botão da sidebar
     local btn = Instance.new("TextButton", window.Sidebar)
-    btn.Size = UDim2.new(1, 0, 0, 38)
-    btn.Position = UDim2.new(0, 0, 0, 0)
+    btn.Size = UDim2.new(1, -20, 0, 38)
     btn.Text = "  " .. (config.Icon or "📁") .. " " .. config.Name
-    btn.TextColor3 = self.Colors.TextDim
+    btn.TextColor3 = NexusUI.Colors.TextDim
     btn.TextSize = 12
     btn.TextXAlignment = Enum.TextXAlignment.Left
     btn.Font = Enum.Font.GothamBold
-    btn.BackgroundColor3 = self.Colors.SidebarBg
+    btn.BackgroundColor3 = NexusUI.Colors.SidebarBg
     btn.BorderSizePixel = 0
     btn.AutoButtonColor = false
     btn.LayoutOrder = #window.Tabs + 1
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
     
-    -- Frame de conteúdo
+    -- Frame de conteúdo (CORRIGIDO)
     local tabContent = Instance.new("Frame", window.Content)
     tabContent.Size = UDim2.new(1, 0, 0, 0)
     tabContent.BackgroundTransparency = 1
-    tabContent.BorderSizePixel = 0
     tabContent.Visible = false
     tabContent.LayoutOrder = config.Order or #window.Tabs + 1
+    tabContent.AutomaticSize = Enum.AutomaticSize.Y
     
     local tabLayout = Instance.new("UIListLayout", tabContent)
     tabLayout.Padding = UDim.new(0, 6)
@@ -340,30 +321,27 @@ function NexusUI:CreateTab(window, config)
     local tabPadding = Instance.new("UIPadding", tabContent)
     tabPadding.PaddingLeft = UDim.new(0, 5)
     tabPadding.PaddingRight = UDim.new(0, 5)
-    tabPadding.PaddingTop = UDim.new(0, 3)
-    tabPadding.PaddingBottom = UDim.new(0, 3)
+    tabPadding.PaddingTop = UDim.new(0, 5)
+    tabPadding.PaddingBottom = UDim.new(0, 5)
     
     -- Selecionar tab
     local function select()
         for _, t in pairs(window.Tabs) do
             t.Content.Visible = false
-            t.Button.BackgroundColor3 = self.Colors.SidebarBg
-            t.Button.TextColor3 = self.Colors.TextDim
+            t.Button.BackgroundColor3 = NexusUI.Colors.SidebarBg
+            t.Button.TextColor3 = NexusUI.Colors.TextDim
         end
         tabContent.Visible = true
-        btn.BackgroundColor3 = self.Colors.ElementBg
-        btn.TextColor3 = self.Colors.Title
+        btn.BackgroundColor3 = NexusUI.Colors.ElementBg
+        btn.TextColor3 = NexusUI.Colors.Title
         window.CurrentTab = config.Name
+        
+        -- Forçar atualização do canvas
+        task.wait(0.1)
+        window.ContentLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Wait()
     end
     
     btn.MouseButton1Click:Connect(select)
-    
-    -- Atualizar altura com debounce
-    local function updateHeight()
-        task.wait(0.05) -- Pequeno delay para evitar múltiplas atualizações
-        tabContent.Size = UDim2.new(1, 0, 0, math.max(tabLayout.AbsoluteContentSize.Y + 10, 0))
-    end
-    tabLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(updateHeight)
     
     local tabData = {
         Name = config.Name,
@@ -387,8 +365,9 @@ end
 function NexusUI:CreateSection(tab, title)
     local section = Instance.new("Frame", tab.Content)
     section.Size = UDim2.new(1, 0, 0, 38)
-    section.BackgroundColor3 = self.Colors.ElementBg
+    section.BackgroundColor3 = NexusUI.Colors.ElementBg
     section.BorderSizePixel = 0
+    section.AutomaticSize = Enum.AutomaticSize.None
     Instance.new("UICorner", section).CornerRadius = UDim.new(0, 6)
     
     local titleLabel = Instance.new("TextLabel", section)
@@ -396,7 +375,7 @@ function NexusUI:CreateSection(tab, title)
     titleLabel.Position = UDim2.new(0, 12, 0, 0)
     titleLabel.BackgroundTransparency = 1
     titleLabel.Text = title
-    titleLabel.TextColor3 = self.Colors.Title
+    titleLabel.TextColor3 = NexusUI.Colors.Title
     titleLabel.TextSize = 13
     titleLabel.Font = Enum.Font.GothamBold
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -404,7 +383,7 @@ function NexusUI:CreateSection(tab, title)
     local line = Instance.new("Frame", section)
     line.Size = UDim2.new(0, 2, 1, -10)
     line.Position = UDim2.new(0, 0, 0, 5)
-    line.BackgroundColor3 = self.Colors.Title
+    line.BackgroundColor3 = NexusUI.Colors.Title
     line.BorderSizePixel = 0
     Instance.new("UICorner", line).CornerRadius = UDim.new(0, 2)
     
@@ -417,8 +396,9 @@ function NexusUI:CreateToggle(tab, config)
     
     local frame = Instance.new("Frame", tab.Content)
     frame.Size = UDim2.new(1, 0, 0, 42)
-    frame.BackgroundColor3 = self.Colors.ElementBg
+    frame.BackgroundColor3 = NexusUI.Colors.ElementBg
     frame.BorderSizePixel = 0
+    frame.AutomaticSize = Enum.AutomaticSize.None
     Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
     
     -- Título
@@ -427,7 +407,7 @@ function NexusUI:CreateToggle(tab, config)
     title.Position = UDim2.new(0, 12, 0, 6)
     title.BackgroundTransparency = 1
     title.Text = config.Title or "Toggle"
-    title.TextColor3 = self.Colors.Text
+    title.TextColor3 = NexusUI.Colors.Text
     title.TextSize = 13
     title.Font = Enum.Font.GothamBold
     title.TextXAlignment = Enum.TextXAlignment.Left
@@ -438,7 +418,7 @@ function NexusUI:CreateToggle(tab, config)
     desc.Position = UDim2.new(0, 12, 0, 24)
     desc.BackgroundTransparency = 1
     desc.Text = config.Desc or ""
-    desc.TextColor3 = self.Colors.TextDim
+    desc.TextColor3 = NexusUI.Colors.TextDim
     desc.TextSize = 10
     desc.Font = Enum.Font.Gotham
     desc.TextXAlignment = Enum.TextXAlignment.Left
@@ -449,10 +429,10 @@ function NexusUI:CreateToggle(tab, config)
     toggle.Size = UDim2.new(0, 55, 0, 26)
     toggle.Position = UDim2.new(1, -12, 0.5, -13)
     toggle.Text = "OFF"
-    toggle.TextColor3 = self.Colors.Text
+    toggle.TextColor3 = NexusUI.Colors.Text
     toggle.TextSize = 11
     toggle.Font = Enum.Font.GothamBold
-    toggle.BackgroundColor3 = self.Colors.Danger
+    toggle.BackgroundColor3 = NexusUI.Colors.Danger
     toggle.BorderSizePixel = 0
     toggle.AutoButtonColor = false
     Instance.new("UICorner", toggle).CornerRadius = UDim.new(0, 4)
@@ -463,7 +443,7 @@ function NexusUI:CreateToggle(tab, config)
     toggle.MouseButton1Click:Connect(function()
         state = not state
         toggle.Text = state and "ON" or "OFF"
-        toggle.BackgroundColor3 = state and self.Colors.Success or self.Colors.Danger
+        toggle.BackgroundColor3 = state and NexusUI.Colors.Success or NexusUI.Colors.Danger
         callback(state)
     end)
     
@@ -473,7 +453,7 @@ function NexusUI:CreateToggle(tab, config)
         Set = function(v)
             state = v
             toggle.Text = state and "ON" or "OFF"
-            toggle.BackgroundColor3 = state and self.Colors.Success or self.Colors.Danger
+            toggle.BackgroundColor3 = state and NexusUI.Colors.Success or NexusUI.Colors.Danger
             callback(state)
         end,
         Get = function() return state end
@@ -487,12 +467,13 @@ function NexusUI:CreateButton(tab, config)
     local btn = Instance.new("TextButton", tab.Content)
     btn.Size = UDim2.new(1, 0, 0, 38)
     btn.Text = config.Title or "Button"
-    btn.TextColor3 = self.Colors.Text
+    btn.TextColor3 = NexusUI.Colors.Text
     btn.TextSize = 13
     btn.Font = Enum.Font.GothamBold
-    btn.BackgroundColor3 = self.Colors.ElementBg
+    btn.BackgroundColor3 = NexusUI.Colors.ElementBg
     btn.BorderSizePixel = 0
     btn.AutoButtonColor = false
+    btn.AutomaticSize = Enum.AutomaticSize.None
     Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
     
     btn.MouseButton1Click:Connect(function()
@@ -500,11 +481,11 @@ function NexusUI:CreateButton(tab, config)
     end)
     
     btn.MouseEnter:Connect(function()
-        btn.BackgroundColor3 = self.Colors.ElementHover
+        btn.BackgroundColor3 = NexusUI.Colors.ElementHover
     end)
     
     btn.MouseLeave:Connect(function()
-        btn.BackgroundColor3 = self.Colors.ElementBg
+        btn.BackgroundColor3 = NexusUI.Colors.ElementBg
     end)
     
     return btn
@@ -519,8 +500,9 @@ function NexusUI:CreateSlider(tab, config)
     
     local frame = Instance.new("Frame", tab.Content)
     frame.Size = UDim2.new(1, 0, 0, 65)
-    frame.BackgroundColor3 = self.Colors.ElementBg
+    frame.BackgroundColor3 = NexusUI.Colors.ElementBg
     frame.BorderSizePixel = 0
+    frame.AutomaticSize = Enum.AutomaticSize.None
     Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
     
     local title = Instance.new("TextLabel", frame)
@@ -528,7 +510,7 @@ function NexusUI:CreateSlider(tab, config)
     title.Position = UDim2.new(0, 12, 0, 6)
     title.BackgroundTransparency = 1
     title.Text = config.Title or "Slider"
-    title.TextColor3 = self.Colors.Text
+    title.TextColor3 = NexusUI.Colors.Text
     title.TextSize = 13
     title.Font = Enum.Font.GothamBold
     title.TextXAlignment = Enum.TextXAlignment.Left
@@ -538,7 +520,7 @@ function NexusUI:CreateSlider(tab, config)
     valueLabel.Position = UDim2.new(1, -62, 0, 6)
     valueLabel.BackgroundTransparency = 1
     valueLabel.Text = tostring(value)
-    valueLabel.TextColor3 = self.Colors.Title
+    valueLabel.TextColor3 = NexusUI.Colors.Title
     valueLabel.TextSize = 13
     valueLabel.Font = Enum.Font.GothamBold
     valueLabel.TextXAlignment = Enum.TextXAlignment.Right
@@ -547,20 +529,20 @@ function NexusUI:CreateSlider(tab, config)
     local sliderBar = Instance.new("Frame", frame)
     sliderBar.Size = UDim2.new(1, -24, 0, 4)
     sliderBar.Position = UDim2.new(0, 12, 0, 40)
-    sliderBar.BackgroundColor3 = self.Colors.ElementBg
+    sliderBar.BackgroundColor3 = NexusUI.Colors.ElementBg
     sliderBar.BorderSizePixel = 0
     Instance.new("UICorner", sliderBar).CornerRadius = UDim.new(1, 0)
     
     local fill = Instance.new("Frame", sliderBar)
     fill.Size = UDim2.new((value - min) / (max - min), 0, 1, 0)
-    fill.BackgroundColor3 = self.Colors.Title
+    fill.BackgroundColor3 = NexusUI.Colors.Title
     fill.BorderSizePixel = 0
     Instance.new("UICorner", fill).CornerRadius = UDim.new(1, 0)
     
     local knob = Instance.new("Frame", sliderBar)
     knob.Size = UDim2.new(0, 12, 0, 12)
     knob.Position = UDim2.new((value - min) / (max - min), -6, 0.5, -6)
-    knob.BackgroundColor3 = self.Colors.Text
+    knob.BackgroundColor3 = NexusUI.Colors.Text
     knob.BorderSizePixel = 0
     Instance.new("UICorner", knob).CornerRadius = UDim.new(1, 0)
     
@@ -607,7 +589,7 @@ function NexusUI:CreateSlider(tab, config)
     }
 end
 
--- ==================== CRIAR DROPDOWN ====================
+-- ==================== CRIAR DROPDOWN (CORRIGIDO) ====================
 function NexusUI:CreateDropdown(tab, config)
     config = config or {}
     local options = config.Options or {"Opção 1", "Opção 2"}
@@ -615,8 +597,9 @@ function NexusUI:CreateDropdown(tab, config)
     
     local frame = Instance.new("Frame", tab.Content)
     frame.Size = UDim2.new(1, 0, 0, 42)
-    frame.BackgroundColor3 = self.Colors.ElementBg
+    frame.BackgroundColor3 = NexusUI.Colors.ElementBg
     frame.BorderSizePixel = 0
+    frame.AutomaticSize = Enum.AutomaticSize.None
     Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
     
     local title = Instance.new("TextLabel", frame)
@@ -624,7 +607,7 @@ function NexusUI:CreateDropdown(tab, config)
     title.Position = UDim2.new(0, 12, 0, 6)
     title.BackgroundTransparency = 1
     title.Text = config.Title or "Dropdown"
-    title.TextColor3 = self.Colors.Text
+    title.TextColor3 = NexusUI.Colors.Text
     title.TextSize = 13
     title.Font = Enum.Font.GothamBold
     title.TextXAlignment = Enum.TextXAlignment.Left
@@ -633,16 +616,18 @@ function NexusUI:CreateDropdown(tab, config)
     dropdownBtn.Size = UDim2.new(0, 120, 0, 30)
     dropdownBtn.Position = UDim2.new(1, -12, 0.5, -15)
     dropdownBtn.Text = selected
-    dropdownBtn.TextColor3 = self.Colors.Text
+    dropdownBtn.TextColor3 = NexusUI.Colors.Text
     dropdownBtn.TextSize = 12
     dropdownBtn.Font = Enum.Font.Gotham
-    dropdownBtn.BackgroundColor3 = self.Colors.ElementBg
+    dropdownBtn.BackgroundColor3 = NexusUI.Colors.ElementBg
     dropdownBtn.BorderSizePixel = 0
     Instance.new("UICorner", dropdownBtn).CornerRadius = UDim.new(0, 6)
     
-    local dropdownContent = Instance.new("Frame", tab.Content)
+    -- Dropdown content (SEM POSIÇÃO FIXA)
+    local dropdownContent = Instance.new("Frame", frame)
     dropdownContent.Size = UDim2.new(1, 0, 0, 0)
-    dropdownContent.BackgroundColor3 = self.Colors.ElementBg
+    dropdownContent.Position = UDim2.new(0, 0, 1, 2)
+    dropdownContent.BackgroundColor3 = NexusUI.Colors.ElementBg
     dropdownContent.BorderSizePixel = 0
     dropdownContent.ClipsDescendants = true
     dropdownContent.Visible = false
@@ -658,24 +643,25 @@ function NexusUI:CreateDropdown(tab, config)
         local optBtn = Instance.new("TextButton", dropdownContent)
         optBtn.Size = UDim2.new(1, 0, 0, 30)
         optBtn.Text = opt
-        optBtn.TextColor3 = self.Colors.TextDim
+        optBtn.TextColor3 = NexusUI.Colors.TextDim
         optBtn.TextSize = 12
         optBtn.Font = Enum.Font.Gotham
-        optBtn.BackgroundColor3 = self.Colors.ElementBg
+        optBtn.BackgroundColor3 = NexusUI.Colors.ElementBg
         optBtn.BorderSizePixel = 0
         optBtn.AutoButtonColor = false
         
         optBtn.MouseEnter:Connect(function()
-            optBtn.BackgroundColor3 = self.Colors.ElementHover
+            optBtn.BackgroundColor3 = NexusUI.Colors.ElementHover
         end)
         optBtn.MouseLeave:Connect(function()
-            optBtn.BackgroundColor3 = self.Colors.ElementBg
+            optBtn.BackgroundColor3 = NexusUI.Colors.ElementBg
         end)
         
         optBtn.MouseButton1Click:Connect(function()
             selected = opt
             dropdownBtn.Text = selected
             dropdownContent.Visible = false
+            dropdownContent.Size = UDim2.new(1, 0, 0, 0)
             callback(selected)
         end)
     end
@@ -710,8 +696,9 @@ function NexusUI:CreateInput(tab, config)
     
     local frame = Instance.new("Frame", tab.Content)
     frame.Size = UDim2.new(1, 0, 0, 50)
-    frame.BackgroundColor3 = self.Colors.ElementBg
+    frame.BackgroundColor3 = NexusUI.Colors.ElementBg
     frame.BorderSizePixel = 0
+    frame.AutomaticSize = Enum.AutomaticSize.None
     Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
     
     local title = Instance.new("TextLabel", frame)
@@ -719,7 +706,7 @@ function NexusUI:CreateInput(tab, config)
     title.Position = UDim2.new(0, 12, 0, 6)
     title.BackgroundTransparency = 1
     title.Text = config.Title or "Input"
-    title.TextColor3 = self.Colors.Text
+    title.TextColor3 = NexusUI.Colors.Text
     title.TextSize = 13
     title.Font = Enum.Font.GothamBold
     title.TextXAlignment = Enum.TextXAlignment.Left
@@ -729,11 +716,11 @@ function NexusUI:CreateInput(tab, config)
     input.Position = UDim2.new(1, -12, 0.5, -15)
     input.PlaceholderText = config.Placeholder or "Digite aqui..."
     input.Text = config.Default or ""
-    input.TextColor3 = self.Colors.Text
-    input.PlaceholderColor3 = self.Colors.TextDim
+    input.TextColor3 = NexusUI.Colors.Text
+    input.PlaceholderColor3 = NexusUI.Colors.TextDim
     input.TextSize = 12
     input.Font = Enum.Font.Gotham
-    input.BackgroundColor3 = self.Colors.ElementBg
+    input.BackgroundColor3 = NexusUI.Colors.ElementBg
     input.BorderSizePixel = 0
     Instance.new("UICorner", input).CornerRadius = UDim.new(0, 6)
     
@@ -757,11 +744,12 @@ function NexusUI:CreateLabel(tab, config)
     local label = Instance.new("TextLabel", tab.Content)
     label.Size = UDim2.new(1, 0, 0, 32)
     label.Text = config.Title or "Label"
-    label.TextColor3 = self.Colors.TextDim
+    label.TextColor3 = NexusUI.Colors.TextDim
     label.TextSize = 12
     label.Font = Enum.Font.Gotham
-    label.BackgroundColor3 = self.Colors.ElementBg
+    label.BackgroundColor3 = NexusUI.Colors.ElementBg
     label.BorderSizePixel = 0
+    label.AutomaticSize = Enum.AutomaticSize.None
     Instance.new("UICorner", label).CornerRadius = UDim.new(0, 6)
     
     return label
@@ -773,8 +761,9 @@ function NexusUI:CreateKeybind(tab, config)
     
     local frame = Instance.new("Frame", tab.Content)
     frame.Size = UDim2.new(1, 0, 0, 42)
-    frame.BackgroundColor3 = self.Colors.ElementBg
+    frame.BackgroundColor3 = NexusUI.Colors.ElementBg
     frame.BorderSizePixel = 0
+    frame.AutomaticSize = Enum.AutomaticSize.None
     Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 6)
     
     local title = Instance.new("TextLabel", frame)
@@ -782,7 +771,7 @@ function NexusUI:CreateKeybind(tab, config)
     title.Position = UDim2.new(0, 12, 0, 6)
     title.BackgroundTransparency = 1
     title.Text = config.Title or "Keybind"
-    title.TextColor3 = self.Colors.Text
+    title.TextColor3 = NexusUI.Colors.Text
     title.TextSize = 13
     title.Font = Enum.Font.GothamBold
     title.TextXAlignment = Enum.TextXAlignment.Left
@@ -791,10 +780,10 @@ function NexusUI:CreateKeybind(tab, config)
     keyBtn.Size = UDim2.new(0, 80, 0, 30)
     keyBtn.Position = UDim2.new(1, -12, 0.5, -15)
     keyBtn.Text = config.Default or "F"
-    keyBtn.TextColor3 = self.Colors.Text
+    keyBtn.TextColor3 = NexusUI.Colors.Text
     keyBtn.TextSize = 12
     keyBtn.Font = Enum.Font.GothamBold
-    keyBtn.BackgroundColor3 = self.Colors.ElementBg
+    keyBtn.BackgroundColor3 = NexusUI.Colors.ElementBg
     keyBtn.BorderSizePixel = 0
     Instance.new("UICorner", keyBtn).CornerRadius = UDim.new(0, 6)
     
