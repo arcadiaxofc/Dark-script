@@ -1,5 +1,5 @@
 -- ============================================================
--- NEXUS v7.0.9 PRO - COMPLETO COM TUDO RESTAURADO
+-- NEXUS v7.0.9 PRO - COM DEBUG NO AUTO FARM
 -- ============================================================
 local NexusUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/arcadiaxofc/Dark-script/refs/heads/main/ui.lua"))()
 
@@ -17,8 +17,53 @@ local CoreGui = game:GetService("CoreGui")
 local UserInputService = game:GetService("UserInputService")
 
 local function notify(t, txt, d) pcall(function() StarterGui:SetCore("SendNotification", {Title = t or "NEXUS", Text = txt or "", Duration = d or 3}) end) end
-
 pcall(function() settings().Rendering.QualityLevel = 1 Lighting.GlobalShadows = false Lighting.Brightness = 2 end)
+
+-- ============================================================
+-- PAINEL DE STATUS
+-- ============================================================
+local StatusPanel = {logs = {}, maxLogs = 20}
+function StatusPanel.create()
+    local gui = Instance.new("ScreenGui", CoreGui)
+    gui.Name = "NexusStatusPanel" gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    local frame = Instance.new("Frame", gui)
+    frame.Size = UDim2.new(0, 280, 0, 200) frame.Position = UDim2.new(1, -290, 0, 10)
+    frame.BackgroundColor3 = Color3.fromRGB(15, 15, 22) frame.BackgroundTransparency = 0.3 frame.BorderSizePixel = 0
+    Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
+    local title = Instance.new("TextLabel", frame)
+    title.Size = UDim2.new(1, 0, 0, 25) title.BackgroundColor3 = Color3.fromRGB(200, 50, 40)
+    title.Text = "📊 NEXUS STATUS" title.TextColor3 = Color3.new(1, 1, 1) title.TextSize = 12 title.Font = Enum.Font.GothamBold
+    Instance.new("UICorner", title).CornerRadius = UDim.new(0, 8)
+    local scroll = Instance.new("ScrollingFrame", frame)
+    scroll.Size = UDim2.new(1, 0, 1, -25) scroll.Position = UDim2.new(0, 0, 0, 25) scroll.BackgroundTransparency = 1 scroll.ScrollBarThickness = 3 scroll.CanvasSize = UDim2.new(0, 0, 0, 0)
+    local layout = Instance.new("UIListLayout", scroll) layout.Padding = UDim.new(0, 2)
+    local logLabel = Instance.new("TextLabel", scroll)
+    logLabel.Size = UDim2.new(1, -10, 0, 18) logLabel.Position = UDim2.new(0, 5, 0, 0) logLabel.BackgroundTransparency = 1
+    logLabel.Text = "🟢 Aguardando...\n" logLabel.TextColor3 = Color3.fromRGB(0, 255, 100) logLabel.TextSize = 9 logLabel.Font = Enum.Font.Gotham logLabel.TextXAlignment = Enum.TextXAlignment.Left logLabel.TextWrapped = true logLabel.RichText = true
+    layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() scroll.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 5) end)
+    StatusPanel.gui = gui StatusPanel.frame = frame StatusPanel.logLabel = logLabel
+    local dragging, dragStart, startPos = false, nil, nil
+    title.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true dragStart = i.Position startPos = frame.Position end end)
+    title.InputEnded:Connect(function() dragging = false end)
+    UserInputService.InputChanged:Connect(function(i) if dragging and i.UserInputType == Enum.UserInputType.MouseMovement then local delta = i.Position - dragStart frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y) end end)
+end
+function StatusPanel.log(msg, color)
+    table.insert(StatusPanel.logs, {msg = msg, color = color or Color3.fromRGB(255,255,255), time = os.date("%H:%M:%S")})
+    if #StatusPanel.logs > StatusPanel.maxLogs then table.remove(StatusPanel.logs, 1) end
+    if StatusPanel.logLabel then
+        local text = ""
+        for i = #StatusPanel.logs, math.max(1, #StatusPanel.logs - 15), -1 do
+            local log = StatusPanel.logs[i]
+            text = text .. '<font color="rgb('..math.floor(log.color.R*255)..','..math.floor(log.color.G*255)..','..math.floor(log.color.B*255)..')">['..log.time..'] '..log.msg..'</font>\n'
+        end
+        StatusPanel.logLabel.Text = text
+    end
+end
+function StatusPanel.success(msg) StatusPanel.log("✅ "..msg, Color3.fromRGB(0,255,100)) end
+function StatusPanel.error(msg) StatusPanel.log("❌ "..msg, Color3.fromRGB(255,50,50)) end
+function StatusPanel.warn(msg) StatusPanel.log("⚠️ "..msg, Color3.fromRGB(255,180,0)) end
+function StatusPanel.info(msg) StatusPanel.log("ℹ️ "..msg, Color3.fromRGB(100,180,255)) end
+StatusPanel.create()
 
 -- ============================================================
 -- ANTI-AFK
@@ -26,68 +71,17 @@ pcall(function() settings().Rendering.QualityLevel = 1 Lighting.GlobalShadows = 
 task.spawn(function() while true do task.wait(180) pcall(function() if player.Character and player.Character:FindFirstChild("Humanoid") then player.Character.Humanoid:Move(Vector3.new(1,0,0),true) task.wait(0.3) player.Character.Humanoid:Move(Vector3.zero,true) end end) end end)
 
 -- ============================================================
--- DADOS COMPLETOS DOS 3 SEAS (ILHAS, BOSSES, FRUTAS)
+-- DADOS
 -- ============================================================
 local SEA_DATA = {
-    [1] = {
-        name = "First Sea", levelRange = {1, 700},
-        islands = {
-            {"🏴‍☠️ Pirate Starter", Vector3.new(1289, 11, 4191)},
-            {"⚓ Marine Starter", Vector3.new(-383, 15, 727)},
-            {"🌴 Jungle", Vector3.new(-1250, 15, 3850)},
-            {"🏘️ Pirate Village", Vector3.new(-383, 15, 727)},
-            {"🏜️ Desert", Vector3.new(966, 10, 1100)},
-            {"❄️ Frozen Village", Vector3.new(1150, 25, 4350)},
-            {"🏰 Marine Fortress", Vector3.new(-1500, 10, 5300)},
-            {"☁️ Skylands", Vector3.new(-4850, 750, 1950)},
-            {"🔒 Prison", Vector3.new(-5400, 15, -1700)},
-            {"🏟️ Colosseum", Vector3.new(-3560, 240, -80)},
-            {"🌋 Magma Village", Vector3.new(-3420, 10, -2700)},
-            {"🐠 Underwater City", Vector3.new(5500, -50, 2000)},
-            {"🏛️ Fountain City", Vector3.new(4500, 50, 1200)},
-        },
-        bosses = {"Gorilla King","Chef","The Saw","Yeti","Mob Leader","Vice Admiral","Saber Expert","Warden","Chief Warden","Swan","Magma Admiral","Fishman Lord","Wysper","Thunder God","Cyborg","Ice Admiral"},
-        fruits = {"Rocket-Fruit","Spin-Fruit","Blade-Fruit","Spring-Fruit","Bomb-Fruit","Smoke-Fruit","Spike-Fruit","Flame-Fruit","Eagle-Fruit","Ice-Fruit","Sand-Fruit","Dark-Fruit","Diamond-Fruit","Light-Fruit","Barrier-Fruit","Magma-Fruit","Rumble-Fruit"},
-    },
-    [2] = {
-        name = "Second Sea", levelRange = {701, 1500},
-        islands = {
-            {"🌹 Kingdom of Rose", Vector3.new(-1400, 10, -1400)},
-            {"🌿 Green Zone", Vector3.new(6200, 80, 2500)},
-            {"🔥 Hot and Cold", Vector3.new(-3420, 10, -2700)},
-            {"🏯 Ice Castle", Vector3.new(7200, 100, 3500)},
-            {"🗿 Forgotten Island", Vector3.new(8500, 120, 4500)},
-            {"☕ Cafe", Vector3.new(-570, 310, -1220)},
-            {"🏚️ Mansion", Vector3.new(-390, 45, -800)},
-        },
-        bosses = {"Diamond","Jeremy","Orbitus","Don Swan","Smoke Admiral","Awakened Ice Admiral","Tide Keeper"},
-        fruits = {"Creation-Fruit","Quake-Fruit","Buddha-Fruit","Love-Fruit","Spider-Fruit","Sound-Fruit","Phoenix-Fruit","Portal-Fruit","Lightning-Fruit","Pain-Fruit","Blizzard-Fruit"},
-    },
-    [3] = {
-        name = "Third Sea", levelRange = {1501, 2600},
-        islands = {
-            {"⚓ Port Town", Vector3.new(7200, 100, 3500)},
-            {"🐉 Hydra Island", Vector3.new(6200, 80, 2500)},
-            {"🌳 Great Tree", Vector3.new(8500, 120, 4500)},
-            {"🏰 Castle on the Sea", Vector3.new(4500, 50, 1200)},
-            {"👻 Haunted Castle", Vector3.new(9800, 60, 5500)},
-            {"🌑 Dark Arena", Vector3.new(10500, 100, 6000)},
-            {"🐢 Floating Turtle", Vector3.new(11200, 90, 6500)},
-            {"🦖 Prehistoric Island", Vector3.new(12500, 80, 7000)},
-            {"🏜️ Desert Kingdom", Vector3.new(13800, 100, 7500)},
-        },
-        bosses = {"Cake Prince","Dough King","Soul Reaper","Rip Indra","Darkbeard","Stone","Island Empress","Hydra","Leviathan","Beautiful Pirate","Elite Pirates","Pharaoh Akshan","Fossil Expert"},
-        fruits = {"Gravity-Fruit","Mammoth-Fruit","T-Rex-Fruit","Dough-Fruit","Shadow-Fruit","Venom-Fruit","Control-Fruit","Gas-Fruit","Spirit-Fruit","Tiger-Fruit","Yeti-Fruit","Kitsune-Fruit","Dragon-Fruit","Leopard-Fruit"},
-    },
+    [1] = {name="First Sea", islands={{"Pirate Starter",Vector3.new(1289,11,4191)},{"Jungle",Vector3.new(-1250,15,3850)},{"Desert",Vector3.new(966,10,1100)},{"Frozen Village",Vector3.new(1150,25,4350)},{"Prison",Vector3.new(-5400,15,-1700)},{"Skylands",Vector3.new(-4850,750,1950)}}, bosses={"Gorilla King","Yeti","Vice Admiral","Saber Expert","Swan","Magma Admiral","Fishman Lord"}, fruits={"Flame-Fruit","Ice-Fruit","Dark-Fruit","Light-Fruit","Magma-Fruit","Rumble-Fruit"}},
+    [2] = {name="Second Sea", islands={{"Kingdom of Rose",Vector3.new(-1400,10,-1400)},{"Green Zone",Vector3.new(6200,80,2500)},{"Ice Castle",Vector3.new(7200,100,3500)},{"Forgotten Island",Vector3.new(8500,120,4500)},{"Cafe",Vector3.new(-570,310,-1220)}}, bosses={"Diamond","Jeremy","Don Swan","Tide Keeper"}, fruits={"Buddha-Fruit","Portal-Fruit","Blizzard-Fruit","Phoenix-Fruit"}},
+    [3] = {name="Third Sea", islands={{"Port Town",Vector3.new(7200,100,3500)},{"Hydra Island",Vector3.new(6200,80,2500)},{"Great Tree",Vector3.new(8500,120,4500)},{"Castle on the Sea",Vector3.new(4500,50,1200)},{"Haunted Castle",Vector3.new(9800,60,5500)},{"Dark Arena",Vector3.new(10500,100,6000)}}, bosses={"Dough King","Soul Reaper","Rip Indra","Darkbeard","Stone","Island Empress","Hydra","Leviathan"}, fruits={"Kitsune-Fruit","Dragon-Fruit","Leopard-Fruit","Dough-Fruit","Spirit-Fruit","Venom-Fruit","Control-Fruit"}},
 }
-
 local currentSea = 1
-local function detectSea()
-    local lvl = 1
-    pcall(function() if player.Data and player.Data:FindFirstChild("Level") then lvl = player.Data.Level.Value end end)
-    if lvl <= 700 then currentSea = 1 elseif lvl <= 1500 then currentSea = 2 else currentSea = 3 end
-end
+local function detectSea() local lvl=1 pcall(function() if player.Data and player.Data:FindFirstChild("Level") then lvl=player.Data.Level.Value end end) if lvl<=700 then currentSea=1 elseif lvl<=1500 then currentSea=2 else currentSea=3 end end
 detectSea()
+StatusPanel.info("Sea: "..SEA_DATA[currentSea].name)
 
 -- ============================================================
 -- VARIÁVEIS
@@ -99,59 +93,26 @@ local espBills = {}
 local threads = {}
 
 local function stopThread(name)
-    if threads[name] then
-        threads[name].enabled = false
-        task.cancel(threads[name].thread)
-        threads[name] = nil
-    end
+    if threads[name] then threads[name].enabled = false task.cancel(threads[name].thread) threads[name] = nil end
 end
-
 local function startThread(name, loopFunc, delay)
     stopThread(name)
     local data = {enabled = true}
-    data.thread = task.spawn(function()
-        while data.enabled do
-            pcall(loopFunc)
-            task.wait(delay or 0.1)
-        end
-    end)
+    data.thread = task.spawn(function() while data.enabled do pcall(loopFunc) task.wait(delay or 0.1) end end)
     threads[name] = data
 end
 
 -- ============================================================
--- TELEPORTE + VOO
+-- TELEPORTE
 -- ============================================================
 local function tp(pos)
     pcall(function()
         if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             local hrp = player.Character.HumanoidRootPart
-            hrp.CFrame = CFrame.new(pos + Vector3.new(0, 25, 0))
-            task.wait(0.1)
-            hrp.CFrame = CFrame.new(pos + Vector3.new(0, 5, 0))
-            task.wait(0.05)
+            hrp.CFrame = CFrame.new(pos + Vector3.new(0, 25, 0)) task.wait(0.1)
+            hrp.CFrame = CFrame.new(pos + Vector3.new(0, 5, 0)) task.wait(0.05)
             hrp.CFrame = CFrame.new(pos)
         end
-    end)
-end
-
-local function flyTo(pos)
-    pcall(function()
-        if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
-        local hrp = player.Character.HumanoidRootPart
-        local hum = player.Character:FindFirstChildOfClass("Humanoid")
-        if hum then hum:ChangeState(Enum.HumanoidStateType.Freefall) end
-        local startPos = hrp.Position
-        local targetPos = pos + Vector3.new(0, 50, 0)
-        local steps = math.max(math.floor((targetPos - startPos).Magnitude / 20), 5)
-        for i = 1, steps do
-            hrp.CFrame = CFrame.new(startPos:Lerp(targetPos, i / steps) + Vector3.new(0, math.sin(i/steps*math.pi)*15, 0))
-            task.wait(0.05)
-        end
-        for i = 1, 10 do
-            hrp.CFrame = CFrame.new(targetPos:Lerp(pos, i / 10))
-            task.wait(0.03)
-        end
-        hrp.CFrame = CFrame.new(pos)
     end)
 end
 
@@ -160,8 +121,7 @@ end
 -- ============================================================
 local function attack()
     pcall(function()
-        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-        task.wait(0.05)
+        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0) task.wait(0.05)
         VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
         kills = kills + 1
     end)
@@ -176,20 +136,19 @@ local function findBoss(name)
     return nil
 end
 
-local function findSea(name)
-    for _, o in pairs(Workspace:GetDescendants()) do
-        if o:IsA("Model") and o.Name:find(name) and o:FindFirstChild("Humanoid") and o:FindFirstChild("HumanoidRootPart") and o.Humanoid.Health > 0 then return o end
-    end
-    return nil
-end
-
 -- ============================================================
--- SUPER FARM
+-- SUPER FARM COM DEBUG
 -- ============================================================
-local SuperFarm = {boxPart=nil, collectedMobs={}, phase="quest", mobsKilled=0, mobsNeeded=10, lastQuestTime=0}
+local SuperFarm = {boxPart=nil, collectedMobs={}, phase="quest", mobsKilled=0, mobsNeeded=10, lastQuestTime=0, debugCount=0}
 
 function startSuperFarm()
+    StatusPanel.success("Super Farm INICIADO")
+    StatusPanel.info("Fase: "..SuperFarm.phase.." | Mobs: "..SuperFarm.mobsKilled.."/"..SuperFarm.mobsNeeded)
+    
     startThread("superFarm", function()
+        SuperFarm.debugCount = SuperFarm.debugCount + 1
+        if SuperFarm.debugCount % 20 == 0 then StatusPanel.info("Ciclo #"..SuperFarm.debugCount.." | Fase: "..SuperFarm.phase.." | Mobs: "..SuperFarm.mobsKilled) end
+        
         if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end
         local hrp = player.Character.HumanoidRootPart
         
@@ -197,6 +156,7 @@ function startSuperFarm()
             local part = Instance.new("Part", Workspace)
             part.Name="FarmBox" part.Size=Vector3.new(5,3,5) part.Anchored=true part.CanCollide=false part.Transparency=1
             SuperFarm.boxPart=part
+            StatusPanel.info("Caixa criada")
         end
         
         SuperFarm.boxPart.CFrame = CFrame.new(hrp.Position + Vector3.new(0, 1.5, 0))
@@ -204,21 +164,28 @@ function startSuperFarm()
         local hum = player.Character:FindFirstChildOfClass("Humanoid")
         if hum then hum:ChangeState(Enum.HumanoidStateType.Freefall) hum.Health = hum.MaxHealth end
         
+        -- FASE QUEST
         if SuperFarm.phase == "quest" and tick() - SuperFarm.lastQuestTime > 45 then
+            local found = false
             for _, obj in pairs(Workspace:GetDescendants()) do
                 if obj:IsA("Model") and obj:FindFirstChild("Humanoid") and (obj:FindFirstChild("Quest") or obj:FindFirstChild("QuestGiver")) then
                     if obj:FindFirstChild("HumanoidRootPart") then
-                        flyTo(obj.HumanoidRootPart.Position + Vector3.new(3, 0, 0))
+                        StatusPanel.info("NPC encontrado: "..obj.Name)
+                        tp(obj.HumanoidRootPart.Position + Vector3.new(3, 0, 0))
                         task.wait(1)
                         local r = ReplicatedStorage:FindFirstChild("Remotes")
                         if r and r:FindFirstChild("CommF_") then r.CommF_:InvokeServer("StartQuest", obj.Name) end
                         SuperFarm.lastQuestTime = tick() SuperFarm.mobsKilled = 0 SuperFarm.phase = "collect"
+                        StatusPanel.success("Quest: "..obj.Name)
+                        found = true
                         break
                     end
                 end
             end
+            if not found then StatusPanel.warn("Nenhum NPC de quest por perto") end
         end
         
+        -- FASE COLECT
         if SuperFarm.phase == "collect" then
             local count = 0
             local boxPos = SuperFarm.boxPart.Position
@@ -235,9 +202,10 @@ function startSuperFarm()
                     end
                 end
             end
-            if count > 0 then SuperFarm.phase = "attack" end
+            if count > 0 then SuperFarm.phase = "attack" StatusPanel.info("Puxou "..count.." mobs") end
         end
         
+        -- FASE ATTACK
         if SuperFarm.phase == "attack" then
             local alive = 0
             for obj, _ in pairs(SuperFarm.collectedMobs) do
@@ -245,7 +213,10 @@ function startSuperFarm()
                 else SuperFarm.collectedMobs[obj] = nil SuperFarm.mobsKilled = SuperFarm.mobsKilled + 1 end
             end
             if alive <= 2 then SuperFarm.phase = "collect" end
-            if SuperFarm.mobsKilled >= SuperFarm.mobsNeeded then SuperFarm.phase = "quest" SuperFarm.mobsKilled = 0 SuperFarm.collectedMobs = {} end
+            if SuperFarm.mobsKilled >= SuperFarm.mobsNeeded then
+                SuperFarm.phase = "quest" SuperFarm.mobsKilled = 0 SuperFarm.collectedMobs = {}
+                StatusPanel.success("Ciclo completo! "..SuperFarm.mobsNeeded.." mortos")
+            end
         end
     end, 0.15)
 end
@@ -253,7 +224,8 @@ end
 function stopSuperFarm()
     stopThread("superFarm")
     if SuperFarm.boxPart then SuperFarm.boxPart:Destroy() SuperFarm.boxPart = nil end
-    SuperFarm.collectedMobs = {} SuperFarm.phase = "quest"
+    SuperFarm.collectedMobs = {} SuperFarm.phase = "quest" SuperFarm.mobsKilled = 0
+    StatusPanel.warn("Super Farm PARADO")
 end
 
 -- ============================================================
@@ -289,41 +261,14 @@ function stopBonesFarm() stopThread("bones") end
 function startAutoHaki() startThread("haki", function() local r=ReplicatedStorage:FindFirstChild("Remotes") if r and r:FindFirstChild("CommF_") then r.CommF_:InvokeServer("ActivateHaki","Ken") r.CommF_:InvokeServer("ActivateHaki","Observation") end end, 120) end
 function stopAutoHaki() stopThread("haki") end
 
-function startBountyHunt() startThread("bounty", function() if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end local best,bd=nil,math.huge for _,p in pairs(Players:GetPlayers()) do if p~=player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then local d=(p.Character.HumanoidRootPart.Position-player.Character.HumanoidRootPart.Position).Magnitude if d<bd then best=p bd=d end end end if best then flyTo(best.Character.HumanoidRootPart.Position) for _=1,5 do attack() task.wait(0.3) end end end, 10) end
+function startBountyHunt() startThread("bounty", function() if not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then return end local best,bd=nil,math.huge for _,p in pairs(Players:GetPlayers()) do if p~=player and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then local d=(p.Character.HumanoidRootPart.Position-player.Character.HumanoidRootPart.Position).Magnitude if d<bd then best=p bd=d end end end if best then tp(best.Character.HumanoidRootPart.Position) for _=1,5 do attack() task.wait(0.3) end end end, 10) end
 function stopBountyHunt() stopThread("bounty") end
 
 -- ============================================================
--- BOSS FARM INDIVIDUAL
+-- BOSS FARM
 -- ============================================================
-local bossFarmList = {}
-for _, name in pairs(SEA_DATA[currentSea].bosses) do
-    bossFarmList[name] = false
-end
-
-function startBossFarm(name)
-    startThread("boss_" .. name:gsub(" ", "_"), function()
-        local b = findBoss(name)
-        if b then tp(b.HumanoidRootPart.Position) for _ = 1, 8 do attack() task.wait(0.3) end end
-    end, 5)
-end
-
-function stopBossFarm(name)
-    stopThread("boss_" .. name:gsub(" ", "_"))
-end
-
--- ============================================================
--- SEA EVENT FARM
--- ============================================================
-function startSeaFarm(name)
-    startThread("sea_" .. name:gsub(" ", "_"), function()
-        local s = findSea(name)
-        if s then tp(s.HumanoidRootPart.Position) for _ = 1, 5 do attack() task.wait(0.3) end end
-    end, 10)
-end
-
-function stopSeaFarm(name)
-    stopThread("sea_" .. name:gsub(" ", "_"))
-end
+function startBossFarm(name) startThread("boss_"..name:gsub(" ","_"), function() local b=findBoss(name) if b then tp(b.HumanoidRootPart.Position) for _=1,8 do attack() task.wait(0.3) end end end, 5) end
+function stopBossFarm(name) stopThread("boss_"..name:gsub(" ","_")) end
 
 -- ============================================================
 -- ESP
@@ -347,28 +292,13 @@ function startESP(filter, color)
                         end
                         if show then
                             local bill = Instance.new("BillboardGui", CoreGui)
-                            bill.Adornee = o.Head
-                            bill.Size = UDim2.new(0, 60, 0, 18)
-                            bill.AlwaysOnTop = true
-                            bill.MaxDistance = range
-                            local label = Instance.new("TextLabel", bill)
-                            label.Size = UDim2.new(1, 0, 1, 0)
-                            label.BackgroundTransparency = 0.7
-                            label.BackgroundColor3 = color
-                            label.TextColor3 = Color3.new(1, 1, 1)
-                            label.TextSize = 8
-                            label.Font = Enum.Font.GothamBold
-                            label.Text = o.Name
-                            espBills[o] = bill
-                            count = count + 1
+                            bill.Adornee = o.Head bill.Size = UDim2.new(0, 60, 0, 18) bill.AlwaysOnTop = true bill.MaxDistance = range
+                            local label = Instance.new("TextLabel", bill) label.Size = UDim2.new(1, 0, 1, 0) label.BackgroundTransparency = 0.7 label.BackgroundColor3 = color label.TextColor3 = Color3.new(1, 1, 1) label.TextSize = 8 label.Font = Enum.Font.GothamBold label.Text = o.Name
+                            espBills[o] = bill count = count + 1
                         end
                     end
                 end
-                for o, b in pairs(espBills) do
-                    if type(o) ~= "string" then
-                        pcall(function() if not o.Parent or (o:FindFirstChild("Humanoid") and o.Humanoid.Health <= 0) then b:Destroy() espBills[o] = nil end end)
-                    end
-                end
+                for o, b in pairs(espBills) do if type(o) ~= "string" then pcall(function() if not o.Parent or (o:FindFirstChild("Humanoid") and o.Humanoid.Health <= 0) then b:Destroy() espBills[o] = nil end end) end end
             end)
             task.wait(3)
         end
@@ -385,15 +315,15 @@ local function disableAll()
     stopFragmentFarm() stopBonesFarm() stopAutoHaki() stopBountyHunt()
     for _, name in pairs(SEA_DATA[currentSea].bosses) do stopBossFarm(name) end
     stopESP("players") stopESP("fruits") stopESP("chests") stopESP("bosses")
-    notify("NEXUS", "Tudo desligado!", 3)
+    StatusPanel.error("TUDO DESLIGADO!") notify("NEXUS", "Tudo desligado!", 3)
 end
 
 -- ============================================================
--- UI COMPLETA
+-- UI
 -- ============================================================
-local win = NexusUI:CreateWindow({Title="NEXUS v7.0.9 PRO", Subtitle=SEA_DATA[currentSea].name.." | Completo", Width=580, Height=500})
+local win = NexusUI:CreateWindow({Title="NEXUS v7.0.9 PRO", Subtitle=SEA_DATA[currentSea].name.." | Debug Mode", Width=580, Height=500})
 local tabs={}
-for _,t in pairs({{"⚔️ Farm"},{"🎯 Bosses"},{"🌊 Sea"},{"💎 Farms"},{"🏃 Move"},{"⚙️ Auto"},{"👀 Visual"},{"🎮 Extra"},{"🏝️ Ilhas"}}) do tabs[t[1]]=NexusUI:CreateTab(win,{Name=t[1]}) end
+for _,t in pairs({{"⚔️ Farm"},{"🎯 Bosses"},{"💎 Farms"},{"🏃 Move"},{"⚙️ Auto"},{"👀 Visual"},{"🎮 Extra"},{"🏝️ Ilhas"}}) do tabs[t[1]]=NexusUI:CreateTab(win,{Name=t[1]}) end
 
 NexusUI:CreateSection(tabs["⚔️ Farm"],"SUPER FARM")
 NexusUI:CreateToggle(tabs["⚔️ Farm"],{Title="🚀 Super Farm",Callback=function(v) if v then startSuperFarm() else stopSuperFarm() end end})
@@ -403,11 +333,6 @@ NexusUI:CreateToggle(tabs["⚔️ Farm"],{Title="🛡️ Godmode",Callback=funct
 NexusUI:CreateSection(tabs["🎯 Bosses"],"BOSSES DO "..SEA_DATA[currentSea].name:upper())
 for _, name in pairs(SEA_DATA[currentSea].bosses) do
     NexusUI:CreateToggle(tabs["🎯 Bosses"],{Title="🎯 "..name,Callback=function(v) if v then startBossFarm(name) else stopBossFarm(name) end end})
-end
-
-NexusUI:CreateSection(tabs["🌊 Sea"],"SEA EVENTS")
-for _, name in pairs({"Marine Ship","Pirate Ship","Sea Beast","Terror Shark","Rumbling","Mansion","Pirate Raid","Sea Castle"}) do
-    NexusUI:CreateToggle(tabs["🌊 Sea"],{Title="🌊 "..name,Callback=function(v) if v then startSeaFarm(name) else stopSeaFarm(name) end end})
 end
 
 NexusUI:CreateSection(tabs["💎 Farms"],"FARMS")
@@ -436,10 +361,11 @@ NexusUI:CreateDropdown(tabs["🎮 Extra"],{Title="Maestria",Options={"Fruit","Sw
 NexusUI:CreateSlider(tabs["🎮 Extra"],{Title="Alcance",Min=50,Max=500,Default=300,Callback=function(v)range=v end})
 NexusUI:CreateButton(tabs["🎮 Extra"],{Title="🛑 DESLIGAR TUDO",Callback=disableAll})
 
-NexusUI:CreateSection(tabs["🏝️ Ilhas"],"🏝️ ILHAS DO "..SEA_DATA[currentSea].name:upper().." ("..#SEA_DATA[currentSea].islands.." ilhas)")
+NexusUI:CreateSection(tabs["🏝️ Ilhas"],"ILHAS DO "..SEA_DATA[currentSea].name:upper().." ("..#SEA_DATA[currentSea].islands.." ilhas)")
 for _,il in pairs(SEA_DATA[currentSea].islands) do
-    NexusUI:CreateButton(tabs["🏝️ Ilhas"],{Title="🏝️ "..il[1],Callback=function()flyTo(il[2])notify("✈️","Voando para "..il[1],3)end})
+    NexusUI:CreateButton(tabs["🏝️ Ilhas"],{Title="🏝️ "..il[1],Callback=function()tp(il[2])StatusPanel.info("TP: "..il[1])notify("🏝️",il[1],2)end})
 end
 
-notify("NEXUS v7.0.9 PRO","Tudo restaurado! | "..SEA_DATA[currentSea].name.." | "..#SEA_DATA[currentSea].islands.." ilhas | "..#SEA_DATA[currentSea].bosses.." bosses",5)
-print("NEXUS v7.0.9 PRO - Completo - Loaded")
+StatusPanel.success("Tudo carregado!")
+notify("NEXUS v7.0.9 PRO","Debug Mode ON | Veja o painel de status!",8)
+print("NEXUS v7.0.9 PRO - Debug Mode - Loaded")
