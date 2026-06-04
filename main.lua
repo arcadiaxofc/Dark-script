@@ -1,6 +1,6 @@
 -- ==================== NEXUS v7.0 - MAIN SCRIPT ====================
 -- Carrega a biblioteca UI
-local NexusUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/SEU_USUARIO/REPOSITORIO/main/ui.lua"))()
+local NexusUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/arcadiaxofc/Dark-script/refs/heads/main/ui.lua"))()
 
 -- ==================== SERVIÇOS ====================
 local Players = game:GetService("Players")
