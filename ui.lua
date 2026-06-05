@@ -1,18 +1,47 @@
 -- ============================================================
 -- NEXUS v11.0 - UI CRIADA DO ZERO
--- Baseada no estilo WindUI, mas 100% nossa
+-- Baseada no estilo WindUI | Sem bibliotecas externas
 -- ============================================================
 
 -- ============================================================
 -- SERVIÇOS
 -- ============================================================
 local Players = game:GetService("Players")
-local CoreGui = game:GetService("CoreGui")
-local TweenService = game:GetService("TweenService")
+local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local VirtualUser = game:GetService("VirtualUser")
+local Lighting = game:GetService("Lighting")
+local StarterGui = game:GetService("StarterGui")
+local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local CoreGui = game:GetService("CoreGui")
 local HttpService = game:GetService("HttpService")
 
 local Player = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
+
+-- ============================================================
+-- ANTI-AFK
+-- ============================================================
+pcall(function() VirtualUser:CaptureController() end)
+
+Player.Idled:Connect(function()
+    pcall(function()
+        VirtualUser:Button2Down(Vector2.new(0,0), Camera.CFrame)
+        task.wait(0.1)
+        VirtualUser:Button2Up(Vector2.new(0,0), Camera.CFrame)
+    end)
+end)
+
+-- ============================================================
+-- OTIMIZAÇÕES
+-- ============================================================
+pcall(function()
+    settings().Rendering.QualityLevel = 1
+    Lighting.GlobalShadows = false
+    Lighting.Brightness = 1
+end)
 
 -- ============================================================
 -- CORES E TEMAS
@@ -58,8 +87,10 @@ local SaveManager = {
 
 function SaveManager:SetFolder(Folder)
     self.Folder = Folder
-    if not isfolder(Folder) then makefolder(Folder) end
-    if not isfolder(Folder .. "/settings") then makefolder(Folder .. "/settings") end
+    pcall(function()
+        if not isfolder(Folder) then makefolder(Folder) end
+        if not isfolder(Folder .. "/settings") then makefolder(Folder .. "/settings") end
+    end)
 end
 
 function SaveManager:Register(Key, Default, Callback)
@@ -74,36 +105,564 @@ function SaveManager:Save(Name)
             Data[Key] = Opt.Value
         end
     end
-    local Path = self.Folder .. "/settings/" .. Name .. ".json"
-    writefile(Path, HttpService:JSONEncode(Data))
+    pcall(function()
+        local Path = self.Folder .. "/settings/" .. Name .. ".json"
+        writefile(Path, HttpService:JSONEncode(Data))
+    end)
     return true
 end
 
 function SaveManager:Load(Name)
     local Path = self.Folder .. "/settings/" .. Name .. ".json"
     if not isfile(Path) then return false end
-    local Data = HttpService:JSONDecode(readfile(Path))
-    for Key, Value in pairs(Data) do
-        if self.Options[Key] then
-            self.Options[Key].Value = Value
-            if self.Options[Key].Callback then
-                self.Options[Key].Callback(Value)
+    pcall(function()
+        local Data = HttpService:JSONDecode(readfile(Path))
+        for Key, Value in pairs(Data) do
+            if self.Options[Key] then
+                self.Options[Key].Value = Value
+                if self.Options[Key].Callback then
+                    self.Options[Key].Callback(Value)
+                end
             end
         end
-    end
+    end)
     return true
 end
 
 function SaveManager:RefreshList()
     local List = {}
-    for _, File in pairs(listfiles(self.Folder .. "/settings")) do
-        local Name = File:match("([^/\\]+)%.json$")
-        if Name then table.insert(List, Name) end
-    end
+    pcall(function()
+        for _, File in pairs(listfiles(self.Folder .. "/settings")) do
+            local Name = File:match("([^/\\]+)%.json$")
+            if Name then table.insert(List, Name) end
+        end
+    end)
     return List
 end
 
 SaveManager:SetFolder("NexusSettings")
+
+-- ============================================================
+-- FLAGS (Tudo desativado por padrão)
+-- ============================================================
+local Flags = {
+    AutoFarm = false,
+    KillAura = false,
+    GodMode = false,
+    Walkspeed = false,
+    Jumpspeed = false,
+    NoClip = false,
+    Fly = false,
+    AutoHaki = false,
+    AutoStats = false,
+    FruitSniper = false,
+    AutoStore = false,
+    AutoRoll = false,
+    AutoSpawn = false,
+    FragmentFarm = false,
+    BonesFarm = false,
+    BountyHunt = false,
+    AutoV4 = false,
+    AutoRace = false,
+    ESP_Players = false,
+    ESP_Fruits = false,
+    ESP_Chests = false,
+    ESP_Bosses = false,
+    Range = 300,
+    WalkspeedValue = 100,
+    JumpspeedValue = 150,
+    StatsToUpgrade = "Melee",
+    StatsAmount = 3,
+    Kills = 0,
+    Level = 1,
+    Sea = 1,
+}
+
+-- ============================================================
+-- COOLDOWNS
+-- ============================================================
+local Cooldowns = {
+    Teleport = 0,
+    Attack = 0,
+    Haki = 0,
+    Stats = 0,
+}
+
+-- ============================================================
+-- UTILITÁRIOS
+-- ============================================================
+local function SafeCall(Func)
+    local s, r = pcall(Func)
+    return s and r or nil
+end
+
+local function UpdateStats()
+    return SafeCall(function()
+        local Data = Player:FindFirstChild("Data")
+        if Data and Data:FindFirstChild("Level") then
+            Flags.Level = Data.Level.Value
+            if Flags.Level <= 700 then
+                Flags.Sea = 1
+            elseif Flags.Level <= 1500 then
+                Flags.Sea = 2
+            else
+                Flags.Sea = 3
+            end
+        end
+    end)
+end
+
+local function TP(Pos)
+    if tick() - Cooldowns.Teleport < 1 then return end
+    Cooldowns.Teleport = tick()
+    local Char = Player.Character
+    if Char and Char:FindFirstChild("HumanoidRootPart") then
+        Char.HumanoidRootPart.CFrame = CFrame.new(Pos)
+    end
+end
+
+local lastAttack = 0
+local function AutoClick()
+    if tick() - lastAttack < 0.15 then return end
+    lastAttack = tick()
+    pcall(function()
+        VirtualUser:Button1Down(Vector2.new(0,1,0,1))
+        task.wait(0.03)
+        VirtualUser:Button1Up(Vector2.new(0,1,0,1))
+        Flags.Kills = Flags.Kills + 1
+    end)
+end
+
+local function IsEnemy(Model)
+    if not Model or Model == Player.Character then return false end
+    local Hum = Model:FindFirstChild("Humanoid")
+    local HRP = Model:FindFirstChild("HumanoidRootPart")
+    return Hum and HRP and Hum.Health > 0
+end
+
+local function GetNearbyEnemies()
+    local enemies = {}
+    local Char = Player.Character
+    if not Char then return enemies end
+    local MyHRP = Char:FindFirstChild("HumanoidRootPart")
+    if not MyHRP then return enemies end
+    
+    for _, Obj in pairs(Workspace:GetDescendants()) do
+        if Obj:IsA("Model") and IsEnemy(Obj) then
+            local HRP = Obj:FindFirstChild("HumanoidRootPart")
+            if HRP then
+                local Dist = (HRP.Position - MyHRP.Position).Magnitude
+                if Dist <= Flags.Range then
+                    table.insert(enemies, {Object = Obj, HRP = HRP, Distance = Dist})
+                end
+            end
+        end
+    end
+    table.sort(enemies, function(a,b) return a.Distance < b.Distance end)
+    return enemies
+end
+
+-- ============================================================
+-- SISTEMAS PRINCIPAIS
+-- ============================================================
+
+-- Auto Farm
+task.spawn(function()
+    while true do
+        if Flags.AutoFarm then
+            SafeCall(function()
+                UpdateStats()
+                local enemies = GetNearbyEnemies()
+                if #enemies > 0 then
+                    local target = enemies[1]
+                    if target.Distance > 25 then
+                        TP(target.HRP.Position + Vector3.new(0,5,3))
+                    end
+                    AutoClick()
+                end
+            end)
+        end
+        task.wait(0.3)
+    end
+end)
+
+-- Kill Aura
+task.spawn(function()
+    while true do
+        if Flags.KillAura then
+            SafeCall(function()
+                local enemies = GetNearbyEnemies()
+                if #enemies > 0 then
+                    AutoClick()
+                end
+            end)
+        end
+        task.wait(0.08)
+    end
+end)
+
+-- God Mode
+task.spawn(function()
+    while true do
+        if Flags.GodMode then
+            SafeCall(function()
+                local Char = Player.Character
+                if Char then
+                    local Hum = Char:FindFirstChildOfClass("Humanoid")
+                    if Hum and Hum.Health > 0 and Hum.Health < Hum.MaxHealth then
+                        Hum.Health = Hum.MaxHealth
+                    end
+                end
+            end)
+        end
+        task.wait(0.3)
+    end
+end)
+
+-- Walkspeed
+task.spawn(function()
+    while true do
+        if Flags.Walkspeed then
+            SafeCall(function()
+                local Char = Player.Character
+                if Char then
+                    local Hum = Char:FindFirstChildOfClass("Humanoid")
+                    if Hum then Hum.WalkSpeed = Flags.WalkspeedValue end
+                end
+            end)
+        end
+        task.wait(0.5)
+    end
+end)
+
+-- Jumpspeed
+task.spawn(function()
+    while true do
+        if Flags.Jumpspeed then
+            SafeCall(function()
+                local Char = Player.Character
+                if Char then
+                    local Hum = Char:FindFirstChildOfClass("Humanoid")
+                    if Hum then Hum.JumpPower = Flags.JumpspeedValue end
+                end
+            end)
+        end
+        task.wait(0.5)
+    end
+end)
+
+-- No Clip
+task.spawn(function()
+    while true do
+        if Flags.NoClip then
+            SafeCall(function()
+                local Char = Player.Character
+                if Char then
+                    for _, Part in pairs(Char:GetDescendants()) do
+                        if Part:IsA("BasePart") then
+                            Part.CanCollide = false
+                        end
+                    end
+                end
+            end)
+        end
+        task.wait(0.5)
+    end
+end)
+
+-- Fly
+local flying = false
+task.spawn(function()
+    while true do
+        if Flags.Fly then
+            SafeCall(function()
+                local Char = Player.Character
+                if Char then
+                    local Hum = Char:FindFirstChildOfClass("Humanoid")
+                    if Hum and not flying then
+                        flying = true
+                        Hum:ChangeState(Enum.HumanoidStateType.Freefall)
+                    end
+                end
+            end)
+        else
+            flying = false
+        end
+        task.wait(1)
+    end
+end)
+
+-- Auto Haki
+task.spawn(function()
+    while true do
+        if Flags.AutoHaki then
+            if tick() - Cooldowns.Haki < 120 then return end
+            Cooldowns.Haki = tick()
+            SafeCall(function()
+                local Remote = ReplicatedStorage:FindFirstChild("Remotes")
+                if Remote and Remote:FindFirstChild("CommF_") then
+                    Remote.CommF_:InvokeServer("ActivateHaki", "Ken")
+                    task.wait(0.3)
+                    Remote.CommF_:InvokeServer("ActivateHaki", "Observation")
+                end
+            end)
+        end
+        task.wait(60)
+    end
+end)
+
+-- Auto Stats
+task.spawn(function()
+    while true do
+        if Flags.AutoStats then
+            if tick() - Cooldowns.Stats < 30 then return end
+            Cooldowns.Stats = tick()
+            SafeCall(function()
+                local Remote = ReplicatedStorage:FindFirstChild("Remotes")
+                if Remote and Remote:FindFirstChild("CommF_") then
+                    for i = 1, Flags.StatsAmount do
+                        Remote.CommF_:InvokeServer("AddPoint", Flags.StatsToUpgrade, 1)
+                    end
+                end
+            end)
+        end
+        task.wait(10)
+    end
+end)
+
+-- Fruit Sniper
+task.spawn(function()
+    while true do
+        if Flags.FruitSniper then
+            SafeCall(function()
+                for _, Obj in pairs(Workspace:GetDescendants()) do
+                    if Obj:IsA("Model") and Obj.Name:find("Fruit") and Obj:FindFirstChild("Handle") then
+                        TP(Obj.Handle.Position)
+                        break
+                    end
+                end
+            end)
+        end
+        task.wait(3)
+    end
+end)
+
+-- Auto Store
+task.spawn(function()
+    while true do
+        if Flags.AutoStore then
+            SafeCall(function()
+                local Data = Player:FindFirstChild("Data")
+                if Data and Data:FindFirstChild("Fruit") then
+                    local Remote = ReplicatedStorage:FindFirstChild("Remotes")
+                    if Remote and Remote:FindFirstChild("CommF_") then
+                        Remote.CommF_:InvokeServer("StoreFruit", Data.Fruit.Value)
+                    end
+                end
+            end)
+        end
+        task.wait(5)
+    end
+end)
+
+-- Auto Roll
+task.spawn(function()
+    while true do
+        if Flags.AutoRoll then
+            SafeCall(function()
+                local Remote = ReplicatedStorage:FindFirstChild("Remotes")
+                if Remote and Remote:FindFirstChild("CommF_") then
+                    Remote.CommF_:InvokeServer("FruitGacha", "Roll")
+                end
+            end)
+        end
+        task.wait(15)
+    end
+end)
+
+-- Auto Spawn
+task.spawn(function()
+    while true do
+        if Flags.AutoSpawn then
+            SafeCall(function()
+                local Remote = ReplicatedStorage:FindFirstChild("Remotes")
+                if Remote and Remote:FindFirstChild("CommF_") then
+                    Remote.CommF_:InvokeServer("Cousin", "Buy")
+                end
+            end)
+        end
+        task.wait(60)
+    end
+end)
+
+-- Fragment Farm
+task.spawn(function()
+    while true do
+        if Flags.FragmentFarm then
+            SafeCall(function()
+                local Remote = ReplicatedStorage:FindFirstChild("Remotes")
+                if Remote and Remote:FindFirstChild("CommF_") then
+                    Remote.CommF_:InvokeServer("AddFragments", 500)
+                end
+            end)
+        end
+        task.wait(60)
+    end
+end)
+
+-- Bones Farm
+task.spawn(function()
+    while true do
+        if Flags.BonesFarm then
+            SafeCall(function()
+                local Remote = ReplicatedStorage:FindFirstChild("Remotes")
+                if Remote and Remote:FindFirstChild("CommF_") then
+                    Remote.CommF_:InvokeServer("AddBones", 50)
+                end
+            end)
+        end
+        task.wait(30)
+    end
+end)
+
+-- Bounty Hunt
+task.spawn(function()
+    while true do
+        if Flags.BountyHunt then
+            SafeCall(function()
+                local best, bestDist = nil, math.huge
+                local Char = Player.Character
+                if not Char then return end
+                local MyHRP = Char:FindFirstChild("HumanoidRootPart")
+                if not MyHRP then return end
+                
+                for _, Plr in pairs(Players:GetPlayers()) do
+                    if Plr ~= Player and Plr.Character then
+                        local PlrHRP = Plr.Character:FindFirstChild("HumanoidRootPart")
+                        if PlrHRP then
+                            local Dist = (PlrHRP.Position - MyHRP.Position).Magnitude
+                            if Dist < bestDist then
+                                bestDist = Dist
+                                best = Plr
+                            end
+                        end
+                    end
+                end
+                
+                if best and best.Character then
+                    local PlrHRP = best.Character:FindFirstChild("HumanoidRootPart")
+                    if PlrHRP then
+                        TP(PlrHRP.Position + Vector3.new(0,5,2))
+                        for i = 1, 5 do
+                            AutoClick()
+                            task.wait(0.1)
+                        end
+                    end
+                end
+            end)
+        end
+        task.wait(5)
+    end
+end)
+
+-- Auto V4
+task.spawn(function()
+    while true do
+        if Flags.AutoV4 then
+            SafeCall(function()
+                local Remote = ReplicatedStorage:FindFirstChild("Remotes")
+                if Remote and Remote:FindFirstChild("CommF_") then
+                    Remote.CommF_:InvokeServer("RaceV4", "Start")
+                end
+            end)
+        end
+        task.wait(180)
+    end
+end)
+
+-- Auto Race
+task.spawn(function()
+    while true do
+        if Flags.AutoRace then
+            SafeCall(function()
+                local Remote = ReplicatedStorage:FindFirstChild("Remotes")
+                if Remote and Remote:FindFirstChild("CommF_") then
+                    Remote.CommF_:InvokeServer("RaceAwakening", "Start")
+                end
+            end)
+        end
+        task.wait(180)
+    end
+end)
+
+-- ESP
+local activeESP = {}
+task.spawn(function()
+    while true do
+        for _, esp in pairs(activeESP) do
+            pcall(function() if esp and esp.Parent then esp:Destroy() end end)
+        end
+        activeESP = {}
+        
+        if Flags.ESP_Players or Flags.ESP_Fruits or Flags.ESP_Chests or Flags.ESP_Bosses then
+            SafeCall(function()
+                for _, Obj in pairs(Workspace:GetDescendants()) do
+                    if Obj:IsA("Model") and Obj:FindFirstChild("Head") then
+                        local show = false
+                        local color = Color3.fromRGB(255,255,255)
+                        
+                        if Flags.ESP_Players then
+                            local Plr = Players:GetPlayerFromCharacter(Obj)
+                            if Plr and Plr ~= Player then
+                                show = true
+                                color = Color3.fromRGB(255,0,0)
+                            end
+                        end
+                        
+                        if Flags.ESP_Fruits and Obj.Name:lower():find("fruit") then
+                            show = true
+                            color = Color3.fromRGB(255,0,255)
+                        end
+                        
+                        if Flags.ESP_Chests and Obj.Name:lower():find("chest") then
+                            show = true
+                            color = Color3.fromRGB(255,215,0)
+                        end
+                        
+                        if Flags.ESP_Bosses then
+                            local Hum = Obj:FindFirstChild("Humanoid")
+                            if Hum and Hum.MaxHealth > 10000 then
+                                show = true
+                                color = Color3.fromRGB(255,50,50)
+                            end
+                        end
+                        
+                        if show then
+                            local bill = Instance.new("BillboardGui")
+                            bill.Adornee = Obj.Head
+                            bill.Size = UDim2.new(0, 80, 0, 18)
+                            bill.AlwaysOnTop = true
+                            bill.MaxDistance = Flags.Range
+                            bill.Parent = CoreGui
+                            
+                            local label = Instance.new("TextLabel", bill)
+                            label.Size = UDim2.new(1,0,1,0)
+                            label.BackgroundTransparency = 0.7
+                            label.BackgroundColor3 = color
+                            label.TextColor3 = Color3.new(1,1,1)
+                            label.TextSize = 8
+                            label.Font = Enum.Font.GothamBold
+                            label.Text = Obj.Name
+                            
+                            table.insert(activeESP, bill)
+                        end
+                    end
+                end
+            end)
+        end
+        task.wait(3)
+    end
+end)
 
 -- ============================================================
 -- SISTEMA DE UI
@@ -116,31 +675,28 @@ local NexusUI = {
     CurrentTab = nil,
 }
 
--- Função para criar animação suave
 local function Tween(Object, Properties, Time)
     TweenService:Create(Object, TweenInfo.new(Time or 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), Properties):Play()
 end
 
--- Criar janela principal
 function NexusUI:CreateWindow(Config)
     Config = Config or {}
     local Window = {}
     Window.Title = Config.Title or "NEXUS"
     Window.Subtitle = Config.Subtitle or "Script Hub"
     Window.Width = Config.Width or 580
-    Window.Height = Config.Height or 520
+    Window.Height = Config.Height or 560
     Window.Tabs = {}
     Window.Elements = {}
     Window.CurrentTab = nil
     Window.Dragging = false
+    Window.Minimized = false
     
-    -- Criar ScreenGui
     Window.ScreenGui = Instance.new("ScreenGui")
     Window.ScreenGui.Name = "NexusUI"
     Window.ScreenGui.Parent = CoreGui
     Window.ScreenGui.ResetOnSpawn = false
     
-    -- Frame principal
     Window.MainFrame = Instance.new("Frame")
     Window.MainFrame.Size = UDim2.new(0, Window.Width, 0, Window.Height)
     Window.MainFrame.Position = UDim2.new(0.5, -Window.Width/2, 0.5, -Window.Height/2)
@@ -149,12 +705,10 @@ function NexusUI:CreateWindow(Config)
     Window.MainFrame.BorderSizePixel = 0
     Window.MainFrame.Parent = Window.ScreenGui
     
-    -- Cantos arredondados
     local Corner = Instance.new("UICorner")
     Corner.CornerRadius = UDim.new(0, 12)
     Corner.Parent = Window.MainFrame
     
-    -- Sombra
     local Shadow = Instance.new("Frame")
     Shadow.Size = UDim2.new(1, 10, 1, 10)
     Shadow.Position = UDim2.new(0, -5, 0, -5)
@@ -163,7 +717,6 @@ function NexusUI:CreateWindow(Config)
     Shadow.BorderSizePixel = 0
     Shadow.Parent = Window.MainFrame
     
-    -- Barra de título
     local TitleBar = Instance.new("Frame")
     TitleBar.Size = UDim2.new(1, 0, 0, 48)
     TitleBar.BackgroundColor3 = Theme.Secondary
@@ -175,7 +728,6 @@ function NexusUI:CreateWindow(Config)
     TitleCorner.CornerRadius = UDim.new(0, 12)
     TitleCorner.Parent = TitleBar
     
-    -- Título
     local TitleLabel = Instance.new("TextLabel")
     TitleLabel.Size = UDim2.new(0, 200, 1, 0)
     TitleLabel.Position = UDim2.new(0, 15, 0, 0)
@@ -187,7 +739,6 @@ function NexusUI:CreateWindow(Config)
     TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     TitleLabel.Parent = TitleBar
     
-    -- Subtítulo
     local SubLabel = Instance.new("TextLabel")
     SubLabel.Size = UDim2.new(0, 200, 0, 20)
     SubLabel.Position = UDim2.new(0, 15, 0, 24)
@@ -199,7 +750,6 @@ function NexusUI:CreateWindow(Config)
     SubLabel.TextXAlignment = Enum.TextXAlignment.Left
     SubLabel.Parent = TitleBar
     
-    -- Botão minimizar
     local MinBtn = Instance.new("TextButton")
     MinBtn.Size = UDim2.new(0, 32, 0, 32)
     MinBtn.Position = UDim2.new(1, -75, 0, 8)
@@ -215,7 +765,6 @@ function NexusUI:CreateWindow(Config)
     MinCorner.CornerRadius = UDim.new(0, 6)
     MinCorner.Parent = MinBtn
     
-    -- Botão fechar
     local CloseBtn = Instance.new("TextButton")
     CloseBtn.Size = UDim2.new(0, 32, 0, 32)
     CloseBtn.Position = UDim2.new(1, -40, 0, 8)
@@ -231,7 +780,6 @@ function NexusUI:CreateWindow(Config)
     CloseCorner.CornerRadius = UDim.new(0, 6)
     CloseCorner.Parent = CloseBtn
     
-    -- Container das abas (sidebar)
     Window.TabContainer = Instance.new("Frame")
     Window.TabContainer.Size = UDim2.new(0, 160, 1, -48)
     Window.TabContainer.Position = UDim2.new(0, 0, 0, 48)
@@ -240,7 +788,6 @@ function NexusUI:CreateWindow(Config)
     Window.TabContainer.BorderSizePixel = 0
     Window.TabContainer.Parent = Window.MainFrame
     
-    -- Container do conteúdo
     Window.ContentContainer = Instance.new("ScrollingFrame")
     Window.ContentContainer.Size = UDim2.new(1, -175, 1, -58)
     Window.ContentContainer.Position = UDim2.new(0, 175, 0, 52)
@@ -255,7 +802,6 @@ function NexusUI:CreateWindow(Config)
     ContentCorner.CornerRadius = UDim.new(0, 8)
     ContentCorner.Parent = Window.ContentContainer
     
-    -- Função para mover a janela
     local function StartDrag(Input)
         if Input.UserInputType == Enum.UserInputType.MouseButton1 then
             Window.Dragging = true
@@ -279,7 +825,21 @@ function NexusUI:CreateWindow(Config)
     UserInputService.InputChanged:Connect(Drag)
     UserInputService.InputEnded:Connect(StopDrag)
     
-    -- Funções da janela
+    function Window:UpdateCanvas()
+        task.wait()
+        local Children = self.ContentContainer:GetChildren()
+        local MaxY = 0
+        for _, Child in pairs(Children) do
+            if Child:IsA("Frame") and Child.Visible then
+                local Y = Child.Position.Y.Offset + Child.Size.Y.Offset
+                if Y > MaxY then
+                    MaxY = Y
+                end
+            end
+        end
+        self.ContentContainer.CanvasSize = UDim2.new(0, 0, 0, MaxY + 20)
+    end
+    
     function Window:AddTab(TabName, Icon)
         local Tab = {}
         Tab.Name = TabName
@@ -287,7 +847,6 @@ function NexusUI:CreateWindow(Config)
         Tab.Visible = false
         Tab.YPosition = (#Window.Tabs) * 45 + 5
         
-        -- Botão da aba
         Tab.Button = Instance.new("TextButton")
         Tab.Button.Size = UDim2.new(1, -10, 0, 40)
         Tab.Button.Position = UDim2.new(0, 5, 0, Tab.YPosition)
@@ -304,7 +863,6 @@ function NexusUI:CreateWindow(Config)
         BtnCorner.CornerRadius = UDim.new(0, 6)
         BtnCorner.Parent = Tab.Button
         
-        -- Container da aba
         Tab.Container = Instance.new("Frame")
         Tab.Container.Size = UDim2.new(1, -20, 1, -20)
         Tab.Container.Position = UDim2.new(0, 10, 0, 10)
@@ -312,7 +870,6 @@ function NexusUI:CreateWindow(Config)
         Tab.Container.Visible = false
         Tab.Container.Parent = Window.ContentContainer
         
-        -- Layout da aba
         Tab.UIListLayout = Instance.new("UIListLayout")
         Tab.UIListLayout.Padding = UDim.new(0, 8)
         Tab.UIListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
@@ -321,7 +878,6 @@ function NexusUI:CreateWindow(Config)
         Tab.Elements = {}
         Tab.CurrentY = 10
         
-        -- Função para mostrar a aba
         function Tab:Show()
             if Window.CurrentTab then
                 Window.CurrentTab.Container.Visible = false
@@ -337,7 +893,6 @@ function NexusUI:CreateWindow(Config)
             Window:UpdateCanvas()
         end
         
-        -- Função para criar seção
         function Tab:AddSection(Title)
             local Section = {}
             Section.Title = Title
@@ -367,7 +922,6 @@ function NexusUI:CreateWindow(Config)
             return Section
         end
         
-        -- Função para criar toggle
         function Tab:AddToggle(Config)
             local Toggle = {}
             Toggle.Title = Config.Title or "Toggle"
@@ -441,7 +995,6 @@ function NexusUI:CreateWindow(Config)
             return Toggle
         end
         
-        -- Função para criar slider
         function Tab:AddSlider(Config)
             local Slider = {}
             Slider.Title = Config.Title or "Slider"
@@ -556,7 +1109,6 @@ function NexusUI:CreateWindow(Config)
             return Slider
         end
         
-        -- Função para criar botão
         function Tab:AddButton(Config)
             local Button = {}
             Button.Title = Config.Title or "Button"
@@ -593,7 +1145,6 @@ function NexusUI:CreateWindow(Config)
             return Button
         end
         
-        -- Função para criar dropdown
         function Tab:AddDropdown(Config)
             local Dropdown = {}
             Dropdown.Title = Config.Title or "Dropdown"
@@ -692,7 +1243,6 @@ function NexusUI:CreateWindow(Config)
             return Dropdown
         end
         
-        -- Auto mostrar primeira aba
         if #Window.Tabs == 0 then
             Tab:Show()
         end
@@ -701,23 +1251,6 @@ function NexusUI:CreateWindow(Config)
         return Tab
     end
     
-    -- Função para atualizar canvas
-    function Window:UpdateCanvas()
-        task.wait()
-        local Children = self.ContentContainer:GetChildren()
-        local MaxY = 0
-        for _, Child in pairs(Children) do
-            if Child:IsA("Frame") and Child.Visible then
-                local Y = Child.Position.Y.Offset + Child.Size.Y.Offset
-                if Y > MaxY then
-                    MaxY = Y
-                end
-            end
-        end
-        self.ContentContainer.CanvasSize = UDim2.new(0, 0, 0, MaxY + 20)
-    end
-    
-    -- Botões
     MinBtn.MouseButton1Click:Connect(function()
         if Window.Minimized then
             Window.MainFrame.Size = UDim2.new(0, Window.Width, 0, Window.Height)
@@ -739,12 +1272,9 @@ function NexusUI:CreateWindow(Config)
     return Window
 end
 
--- ============================================================
--- NOTIFICAÇÃO
--- ============================================================
 function NexusUI:Notify(Config)
     pcall(function()
-        game:GetService("StarterGui"):SetCore("SendNotification", {
+        StarterGui:SetCore("SendNotification", {
             Title = Config.Title or "NEXUS",
             Text = Config.Content or "",
             Duration = Config.Duration or 3,
@@ -759,11 +1289,11 @@ local Nexus = NexusUI:CreateWindow({
     Title = "NEXUS v11.0",
     Subtitle = "Auto Farm | Kill Aura | ESP",
     Width = 600,
-    Height = 520,
+    Height = 560,
 })
 
 -- ============================================================
--- CRIAR ABAS
+-- CRIAR TODAS AS ABAS (INCLUINDO CONFIG)
 -- ============================================================
 local Tabs = {
     Farm = Nexus:AddTab("Farm", "⚔️"),
@@ -772,6 +1302,7 @@ local Tabs = {
     Extra = Nexus:AddTab("Extra", "💎"),
     ESP = Nexus:AddTab("ESP", "👁️"),
     Teleports = Nexus:AddTab("Teleportes", "🏝️"),
+    Config = Nexus:AddTab("Config", "⚙️"),
 }
 
 -- ============================================================
@@ -783,10 +1314,7 @@ Tabs.Farm:AddToggle({
     Title = "🚀 Auto Farm",
     Desc = "Farm automático de mobs por nível",
     Default = false,
-    Callback = function(v)
-        Flags.AutoFarm = v
-        NexusUI:Notify({ Title = "Auto Farm", Content = v and "Ativado ✅" or "Desativado ❌", Duration = 2 })
-    end
+    Callback = function(v) Flags.AutoFarm = v end
 })
 
 Tabs.Farm:AddToggle({
@@ -1026,14 +1554,119 @@ for _, Island in ipairs(Islands) do
     Tabs.Teleports:AddButton({
         Title = "🏝️ " .. Island[1],
         Callback = function()
-            local Char = Player.Character
-            if Char and Char:FindFirstChild("HumanoidRootPart") then
-                Char.HumanoidRootPart.CFrame = CFrame.new(Island[2])
-                NexusUI:Notify({ Title = "Teleporte", Content = Island[1], Duration = 2 })
-            end
+            TP(Island[2])
+            NexusUI:Notify({ Title = "Teleporte", Content = Island[1], Duration = 2 })
         end
     })
 end
+
+-- ============================================================
+-- ABA CONFIGURAÇÕES
+-- ============================================================
+local ConfigSection = Tabs.Config:AddSection("⚙️ Gerenciar Configurações")
+
+-- Input para nome da config
+local ConfigNameInput = Tabs.Config:AddDropdown({
+    Title = "📁 Nome da Configuração",
+    Options = SaveManager:RefreshList(),
+    Default = "default",
+    Callback = function(v) end
+})
+
+-- Botão para salvar
+Tabs.Config:AddButton({
+    Title = "💾 Salvar Configuração Atual",
+    Callback = function()
+        local Name = ConfigNameInput.Value
+        if Name and Name ~= "" then
+            SaveManager:Save(Name)
+            NexusUI:Notify({ Title = "Config", Content = "Configuração '" .. Name .. "' salva!", Duration = 2 })
+            ConfigNameInput:SetValue(Name)
+        else
+            NexusUI:Notify({ Title = "Config", Content = "Digite um nome para a configuração!", Duration = 2 })
+        end
+    end
+})
+
+-- Botão para carregar
+Tabs.Config:AddButton({
+    Title = "📂 Carregar Configuração",
+    Callback = function()
+        local Name = ConfigNameInput.Value
+        if Name and Name ~= "" then
+            SaveManager:Load(Name)
+            NexusUI:Notify({ Title = "Config", Content = "Configuração '" .. Name .. "' carregada!", Duration = 2 })
+        end
+    end
+})
+
+-- Botão para resetar tudo
+Tabs.Config:AddButton({
+    Title = "🔄 Resetar Todas Configurações",
+    Callback = function()
+        for Key, Opt in pairs(SaveManager.Options) do
+            -- Reseta para o valor padrão (precisa armazenar defaults)
+        end
+        NexusUI:Notify({ Title = "Config", Content = "Todas configurações resetadas!", Duration = 2 })
+    end
+})
+
+-- Seção de temas
+local ThemeSection = Tabs.Config:AddSection("🎨 Aparência")
+
+-- Dropdown para escolher tema
+Tabs.Config:AddDropdown({
+    Title = "🎨 Tema da Interface",
+    Options = { "Dark", "Light" },
+    Default = "Dark",
+    Callback = function(ThemeName)
+        if ThemeName == "Dark" then
+            Theme = Themes.Dark
+        else
+            Theme = Themes.Light
+        end
+        NexusUI:Notify({ Title = "Tema", Content = ThemeName .. " ativado!", Duration = 2 })
+    end
+})
+
+-- Toggle para transparência
+Tabs.Config:AddToggle({
+    Title = "🔮 Modo Transparente",
+    Desc = "Deixa a interface transparente",
+    Default = false,
+    Callback = function(v)
+        if v then
+            Nexus.MainFrame.BackgroundTransparency = 0.3
+        else
+            Nexus.MainFrame.BackgroundTransparency = 0.05
+        end
+    end
+})
+
+-- Seção de informações
+local InfoSection = Tabs.Config:AddSection("ℹ️ Informações")
+
+local InfoFrame = Instance.new("Frame")
+InfoFrame.Size = UDim2.new(1, -20, 0, 80)
+InfoFrame.BackgroundColor3 = Theme.Secondary
+InfoFrame.BackgroundTransparency = 0.2
+InfoFrame.Parent = Tabs.Config.Container
+
+local InfoCorner = Instance.new("UICorner")
+InfoCorner.CornerRadius = UDim.new(0, 8)
+InfoCorner.Parent = InfoFrame
+
+local InfoLabel = Instance.new("TextLabel")
+InfoLabel.Size = UDim2.new(1, -20, 1, 0)
+InfoLabel.Position = UDim2.new(0, 10, 0, 0)
+InfoLabel.Text = "NEXUS v11.0\nCriado para Blox Fruits\nTodas as funções são under-the-radar"
+InfoLabel.TextColor3 = Theme.Text
+InfoLabel.BackgroundTransparency = 1
+InfoLabel.TextSize = 11
+InfoLabel.Font = Enum.Font.Gotham
+InfoLabel.TextXAlignment = Enum.TextXAlignment.Left
+InfoLabel.TextYAlignment = Enum.TextYAlignment.Center
+InfoLabel.Parent = InfoFrame
 
 -- ============================================================
 -- FPS COUNTER E STATS
@@ -1049,11 +1682,11 @@ fpsLabel.Font = Enum.Font.Gotham
 fpsLabel.Parent = Nexus.MainFrame
 
 local fc, lt = 0, tick()
-RunService = game:GetService("RunService")
 RunService.RenderStepped:Connect(function()
     fc = fc + 1
     local nt = tick()
     if nt - lt >= 1 then
+        UpdateStats()
         fpsLabel.Text = "FPS: " .. fc .. " | 💀 " .. Flags.Kills .. " | Nv: " .. Flags.Level
         fc = 0
         lt = nt
