@@ -1,7 +1,7 @@
 -- ============================================================
--- NEXUS v11.0 - 100% AUTOMÁTICO
+-- NEXUS v11.0 - COMPLETO 100% AUTOMÁTICO
 -- Tudo começa DESATIVADO
--- Auto Farm: Pega Quest → Vai pros Mobs → Soco Automático
+-- Ative Auto Farm e o script faz TUDO sozinho
 -- ============================================================
 
 -- [[ SERVIÇOS ]]
@@ -20,8 +20,9 @@ local Services = {
 }
 
 local Player = Services.Players.LocalPlayer
+local Camera = Services.Workspace.CurrentCamera
 
--- [[ PROTEÇÃO ]]
+-- [[ PROTEÇÃO ANTI-ERRO ]]
 local function SafeCall(Func, ...)
     local Success, Result = pcall(Func, ...)
     return Success and Result or nil
@@ -55,18 +56,16 @@ end)
 -- [[ ANTI-AFK ]]
 Player.Idled:Connect(function()
     Services.VirtualUser:CaptureController()
-    Services.VirtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+    Services.VirtualUser:Button2Down(Vector2.new(0, 0), Camera.CFrame)
     task.wait(1)
-    Services.VirtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+    Services.VirtualUser:Button2Up(Vector2.new(0, 0), Camera.CFrame)
 end)
 
 -- ============================================================
--- [[ FLAGS - TUDO COMEÇA DESATIVADO (false) ]]
+-- [[ FLAGS - TUDO COMEÇA DESATIVADO ]]
 -- ============================================================
 local Flags = {
-    AutoFarm = false,        -- Único que ativa o sistema principal
-    AutoQuest = false,       -- Pega quest automaticamente
-    AutoAttack = false,      -- Ataca automaticamente
+    AutoFarm = false,
     KillAura = false,
     GodMode = false,
     AutoHaki = false,
@@ -94,16 +93,12 @@ local Flags = {
     ShopSword = false,
     ShopGuns = false,
     ShopAcc = false,
-    ShopMat = false,
-    ShopFrag = false,
-    ShopBones = false,
-    ShopStats = false,
     Range = 300,
     Kills = 0,
     Level = 1,
     Sea = 1,
-    Weapon = "Soco",        -- "Soco", "Espada", "Fruta", "Arma"
-    AttackDelay = 0.15,     -- Delay entre ataques
+    Weapon = "Soco",
+    AttackDelay = 0.15,
 }
 
 -- [[ THREADS ]]
@@ -158,38 +153,46 @@ local function TP(Position)
 end
 
 -- ============================================================
--- [[ SISTEMA DE ATAQUE - CLICA SOZINHO ]]
+-- [[ ATAQUE AUTOMÁTICO - O SCRIPT CLICA SOZINHO ]]
 -- ============================================================
 local function AutoClick()
     SafeCall(function()
-        -- Captura o controle
         Services.VirtualUser:CaptureController()
         
-        -- Clica M1 (Soco) sozinho
-        Services.VirtualUser:Button1Down(Vector2.new(0, 1, 0, 1))
-        task.wait(0.05)
-        Services.VirtualUser:Button1Up(Vector2.new(0, 1, 0, 1))
-        
-        -- Se estiver usando espada/arma, alterna os cliques
-        if Flags.Weapon == "Espada" then
-            -- Mantém M1 pra espada também
-            task.wait(0.05)
+        if Flags.Weapon == "Soco" then
+            -- SOCÃO M1
             Services.VirtualUser:Button1Down(Vector2.new(0, 1, 0, 1))
             task.wait(0.05)
             Services.VirtualUser:Button1Up(Vector2.new(0, 1, 0, 1))
+            
+        elseif Flags.Weapon == "Espada" then
+            -- ESPADA M1
+            Services.VirtualUser:Button1Down(Vector2.new(0, 1, 0, 1))
+            task.wait(0.03)
+            Services.VirtualUser:Button1Up(Vector2.new(0, 1, 0, 1))
+            task.wait(0.03)
+            Services.VirtualUser:Button1Down(Vector2.new(0, 1, 0, 1))
+            task.wait(0.03)
+            Services.VirtualUser:Button1Up(Vector2.new(0, 1, 0, 1))
+            
         elseif Flags.Weapon == "Fruta" then
-            -- Usa skills da fruta (Z, X, C, V)
-            for _, Key in ipairs({Enum.KeyCode.Z, Enum.KeyCode.X, Enum.KeyCode.C, Enum.KeyCode.V}) do
+            -- FRUTA - Usa skills Z, X, C, V
+            local Keys = {Enum.KeyCode.Z, Enum.KeyCode.X, Enum.KeyCode.C, Enum.KeyCode.V}
+            for _, Key in ipairs(Keys) do
                 Services.VirtualInputManager:SendKeyEvent(true, Key, false, game)
                 task.wait(0.02)
                 Services.VirtualInputManager:SendKeyEvent(false, Key, false, game)
                 task.wait(0.02)
             end
+            
         elseif Flags.Weapon == "Arma" then
-            -- Arma usa M1 também
-            Services.VirtualUser:Button1Down(Vector2.new(0, 1, 0, 1))
-            task.wait(0.05)
-            Services.VirtualUser:Button1Up(Vector2.new(0, 1, 0, 1))
+            -- ARMA - M1 rápido
+            for i = 1, 3 do
+                Services.VirtualUser:Button1Down(Vector2.new(0, 1, 0, 1))
+                task.wait(0.03)
+                Services.VirtualUser:Button1Up(Vector2.new(0, 1, 0, 1))
+                task.wait(0.03)
+            end
         end
         
         Flags.Kills = Flags.Kills + 1
@@ -291,39 +294,33 @@ local GameData = {
 }
 
 -- ============================================================
--- [[ AUTO FARM - SISTEMA PRINCIPAL 100% AUTOMÁTICO ]]
+-- [[ AUTO FARM - 100% AUTOMÁTICO ]]
 -- ============================================================
 StartThread("AutoFarm", function()
     if not Flags.AutoFarm then return end
     
     UpdateStats()
     
-    -- Pegar configuração atual baseada no level
     local Config = GameData.FarmLevels[1]
     for _, v in ipairs(GameData.FarmLevels) do
         if Flags.Level >= v.Level then Config = v end
     end
     
-    -- 1. PEGAR QUEST AUTOMATICAMENTE (sem mostrar na tela)
+    -- Pegar Quest Automaticamente
     SafeCall(function()
         local QuestGui = Player.PlayerGui:FindFirstChild("Main")
         if QuestGui then
             QuestGui = QuestGui:FindFirstChild("Quest")
             if QuestGui and not QuestGui.Visible then
-                -- Teleporta pro NPC da quest
                 TP(Config.NPC.Position)
                 task.wait(0.5)
-                
-                -- Confirma a quest automaticamente (sem UI)
                 Services.ReplicatedStorage.Remotes.CommF_:InvokeServer("StartQuest", Config.Quest, Config.QuestLevel)
-                
-                -- Já sai direto pros mobs
                 task.wait(0.3)
             end
         end
     end)
     
-    -- 2. IR DIRETO PROS MOBS E ATACAR
+    -- Ir pros Mobs e Atacar
     local Enemies = Services.Workspace:FindFirstChild("Enemies")
     if Enemies then
         for _, Enemy in ipairs(Enemies:GetChildren()) do
@@ -332,25 +329,18 @@ StartThread("AutoFarm", function()
                 local HRP = Enemy:FindFirstChild("HumanoidRootPart")
                 
                 if Hum and HRP and Hum.Health > 0 then
-                    -- Aumentar hitbox do mob
                     HRP.Size = Vector3.new(60, 60, 60)
-                    
-                    -- Teleportar pra perto do mob
                     TP(HRP.Position + Vector3.new(0, 15, 0))
-                    
-                    -- ATACAR AUTOMATICAMENTE (script clica sozinho)
                     task.wait(0.1)
                     AutoClick()
                     
-                    -- Se tiver KillAura, ataca mais
                     if Flags.KillAura then
                         for i = 1, 3 do
                             AutoClick()
                             task.wait(0.05)
                         end
                     end
-                    
-                    break -- Um mob por vez
+                    break
                 end
             end
         end
@@ -358,10 +348,9 @@ StartThread("AutoFarm", function()
 end, 0.3)
 
 -- ============================================================
--- [[ SISTEMAS SECUNDÁRIOS (TUDO DESATIVADO) ]]
+-- [[ SISTEMAS SECUNDÁRIOS (TUDO DESATIVADO POR PADRÃO) ]]
 -- ============================================================
 
--- God Mode (Desativado por padrão)
 StartThread("GodMode", function()
     if not Flags.GodMode then return end
     local Char = Player.Character
@@ -371,7 +360,6 @@ StartThread("GodMode", function()
     end
 end, 0.1)
 
--- No Clip (Desativado por padrão)
 StartThread("NoClip", function()
     if not Flags.NoClip then return end
     local Char = Player.Character
@@ -382,7 +370,6 @@ StartThread("NoClip", function()
     end
 end, 0.3)
 
--- Walkspeed (Desativado por padrão)
 StartThread("Walkspeed", function()
     if not Flags.Walkspeed then return end
     local Char = Player.Character
@@ -392,7 +379,6 @@ StartThread("Walkspeed", function()
     end
 end, 0.3)
 
--- Jumpspeed (Desativado por padrão)
 StartThread("Jumpspeed", function()
     if not Flags.Jumpspeed then return end
     local Char = Player.Character
@@ -402,7 +388,6 @@ StartThread("Jumpspeed", function()
     end
 end, 0.3)
 
--- Fly (Desativado por padrão)
 StartThread("Fly", function()
     if not Flags.Fly then return end
     local Char = Player.Character
@@ -412,7 +397,6 @@ StartThread("Fly", function()
     end
 end, 0.1)
 
--- Auto Haki (Desativado por padrão)
 StartThread("AutoHaki", function()
     if not Flags.AutoHaki then return end
     SafeCall(function()
@@ -421,7 +405,6 @@ StartThread("AutoHaki", function()
     end)
 end, 120)
 
--- Auto Stats (Desativado por padrão)
 StartThread("AutoStats", function()
     if not Flags.AutoStats then return end
     SafeCall(function()
@@ -429,7 +412,6 @@ StartThread("AutoStats", function()
     end)
 end, 30)
 
--- Auto V4 (Desativado por padrão)
 StartThread("AutoV4", function()
     if not Flags.AutoV4 then return end
     SafeCall(function()
@@ -437,7 +419,6 @@ StartThread("AutoV4", function()
     end)
 end, 180)
 
--- Auto Race (Desativado por padrão)
 StartThread("AutoRace", function()
     if not Flags.AutoRace then return end
     SafeCall(function()
@@ -445,7 +426,6 @@ StartThread("AutoRace", function()
     end)
 end, 180)
 
--- Auto Store Fruit (Desativado por padrão)
 StartThread("AutoStore", function()
     if not Flags.AutoStore then return end
     SafeCall(function()
@@ -455,7 +435,6 @@ StartThread("AutoStore", function()
     end)
 end, 5)
 
--- Auto Roll Fruit (Desativado por padrão)
 StartThread("AutoRoll", function()
     if not Flags.AutoRoll then return end
     SafeCall(function()
@@ -463,7 +442,13 @@ StartThread("AutoRoll", function()
     end)
 end, 15)
 
--- Fruit Sniper (Desativado por padrão)
+StartThread("AutoSpawn", function()
+    if not Flags.AutoSpawn then return end
+    SafeCall(function()
+        Services.ReplicatedStorage.Remotes.CommF_:InvokeServer("Cousin", "Buy")
+    end)
+end, 60)
+
 StartThread("FruitSniper", function()
     if not Flags.FruitSniper then return end
     for Sea = 1, 3 do
@@ -477,7 +462,6 @@ StartThread("FruitSniper", function()
     end
 end, 5)
 
--- Fragment Farm (Desativado por padrão)
 StartThread("FragmentFarm", function()
     if not Flags.FragmentFarm then return end
     SafeCall(function()
@@ -485,7 +469,6 @@ StartThread("FragmentFarm", function()
     end)
 end, 60)
 
--- Bones Farm (Desativado por padrão)
 StartThread("BonesFarm", function()
     if not Flags.BonesFarm then return end
     SafeCall(function()
@@ -493,7 +476,34 @@ StartThread("BonesFarm", function()
     end)
 end, 30)
 
--- Loja Automática (Tudo desativado por padrão)
+StartThread("BountyHunt", function()
+    if not Flags.BountyHunt then return end
+    local Best = nil
+    local BestDist = math.huge
+    
+    for _, Plr in ipairs(Services.Players:GetPlayers()) do
+        if Plr ~= Player and Plr.Character then
+            local PlrHRP = Plr.Character:FindFirstChild("HumanoidRootPart")
+            local MyHRP = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+            if PlrHRP and MyHRP then
+                local Dist = (PlrHRP.Position - MyHRP.Position).Magnitude
+                if Dist < BestDist then
+                    BestDist = Dist
+                    Best = Plr
+                end
+            end
+        end
+    end
+    
+    if Best and Best.Character then
+        local PlrHRP = Best.Character:FindFirstChild("HumanoidRootPart")
+        if PlrHRP then
+            TP(PlrHRP.Position)
+            for _ = 1, 5 do AutoClick() task.wait(0.05) end
+        end
+    end
+end, 10)
+
 StartThread("ShopFruits", function()
     if not Flags.ShopFruits then return end
     SafeCall(function()
@@ -532,6 +542,105 @@ StartThread("ShopAcc", function()
     end)
 end, 300)
 
+StartThread("ESP", function()
+    if not Flags.ESP_Players and not Flags.ESP_Fruits and not Flags.ESP_Chests and not Flags.ESP_Bosses then return end
+    
+    for _, Obj in ipairs(Services.Workspace:GetDescendants()) do
+        if Obj:IsA("Model") and Obj:FindFirstChild("Head") and Obj ~= Player.Character then
+            local Show = false
+            local Color = Color3.fromRGB(255, 255, 255)
+            
+            if Flags.ESP_Players then
+                local Plr = Services.Players:GetPlayerFromCharacter(Obj)
+                if Plr then Show = true Color = Color3.fromRGB(255, 0, 0) end
+            elseif Flags.ESP_Fruits and Obj.Name:find("Fruit") then
+                Show = true Color = Color3.fromRGB(255, 0, 255)
+            elseif Flags.ESP_Chests and Obj.Name:lower():find("chest") then
+                Show = true Color = Color3.fromRGB(255, 215, 0)
+            elseif Flags.ESP_Bosses then
+                local Hum = Obj:FindFirstChild("Humanoid")
+                if Hum and Hum.MaxHealth > 10000 then Show = true Color = Color3.fromRGB(255, 50, 50) end
+            end
+            
+            if Show then
+                SafeCall(function()
+                    local Bill = Instance.new("BillboardGui", Services.CoreGui)
+                    Bill.Adornee = Obj.Head
+                    Bill.Size = UDim2.new(0, 80, 0, 20)
+                    Bill.AlwaysOnTop = true
+                    Bill.MaxDistance = 500
+                    
+                    local Label = Instance.new("TextLabel", Bill)
+                    Label.Size = UDim2.new(1, 0, 1, 0)
+                    Label.BackgroundTransparency = 0.7
+                    Label.BackgroundColor3 = Color
+                    Label.TextColor3 = Color3.new(1, 1, 1)
+                    Label.TextSize = 8
+                    Label.Font = Enum.Font.GothamBold
+                    Label.Text = Obj.Name
+                end)
+            end
+        end
+    end
+end, 3)
+
+StartThread("KillAura", function()
+    if not Flags.KillAura then return end
+    local Char = Player.Character
+    if not Char then return end
+    local HRP = Char:FindFirstChild("HumanoidRootPart")
+    if not HRP then return end
+    
+    local Nearest = nil
+    local MinDist = Flags.Range
+    
+    for _, Obj in ipairs(Services.Workspace:GetDescendants()) do
+        if IsEnemy(Obj) then
+            local ObjHRP = Obj:FindFirstChild("HumanoidRootPart")
+            if ObjHRP then
+                local Dist = (ObjHRP.Position - HRP.Position).Magnitude
+                if Dist < MinDist then
+                    MinDist = Dist
+                    Nearest = ObjHRP
+                end
+            end
+        end
+    end
+    
+    if Nearest then
+        HRP.CFrame = CFrame.new(HRP.Position, Nearest.Position)
+        AutoClick()
+    end
+end, 0.05)
+
+StartThread("Aimlock", function()
+    if not Flags.Aimlock then return end
+    local Char = Player.Character
+    if not Char then return end
+    local HRP = Char:FindFirstChild("HumanoidRootPart")
+    if not HRP then return end
+    
+    local Nearest = nil
+    local MinDist = Flags.Range
+    
+    for _, Obj in ipairs(Services.Workspace:GetDescendants()) do
+        if IsEnemy(Obj) then
+            local ObjHRP = Obj:FindFirstChild("HumanoidRootPart")
+            if ObjHRP then
+                local Dist = (ObjHRP.Position - HRP.Position).Magnitude
+                if Dist < MinDist then
+                    MinDist = Dist
+                    Nearest = ObjHRP
+                end
+            end
+        end
+    end
+    
+    if Nearest then
+        HRP.CFrame = CFrame.new(HRP.Position, Nearest.Position)
+    end
+end, 0.05)
+
 -- ============================================================
 -- [[ CARREGAR UI ]]
 -- ============================================================
@@ -539,7 +648,7 @@ local NexusUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/arcad
 
 local win = NexusUI:CreateWindow({
     Title = "NEXUS v11.0",
-    Subtitle = "100% Automático | Delta",
+    Subtitle = "100% Automático | Delta Executor",
     Width = 580,
     Height = 500
 })
@@ -611,10 +720,12 @@ NexusUI:CreateToggle(tabs["👀 ESP"], {Title = "🎯 ESP Bosses", Callback = fu
 -- 🎮 EXTRA
 NexusUI:CreateSection(tabs["🎮 Extra"], "Funções Especiais")
 NexusUI:CreateToggle(tabs["🎮 Extra"], {Title = "🎯 Aimlock", Callback = function(v) Flags.Aimlock = v end})
-NexusUI:CreateToggle(tabs["🎮 Extra"], {Title = "👊 Arma: Soco", Callback = function(v) if v then Flags.Weapon = "Soco" end end})
-NexusUI:CreateToggle(tabs["🎮 Extra"], {Title = "⚔️ Arma: Espada", Callback = function(v) if v then Flags.Weapon = "Espada" end end})
-NexusUI:CreateToggle(tabs["🎮 Extra"], {Title = "🍎 Arma: Fruta", Callback = function(v) if v then Flags.Weapon = "Fruta" end end})
-NexusUI:CreateToggle(tabs["🎮 Extra"], {Title = "🔫 Arma: Arma", Callback = function(v) if v then Flags.Weapon = "Arma" end end})
+
+NexusUI:CreateSection(tabs["🎮 Extra"], "Trocar Arma")
+NexusUI:CreateToggle(tabs["🎮 Extra"], {Title = "👊 Soco (Padrão)", Callback = function(v) if v then Flags.Weapon = "Soco" Notify("👊", "Arma: Soco", 1) end end})
+NexusUI:CreateToggle(tabs["🎮 Extra"], {Title = "⚔️ Espada", Callback = function(v) if v then Flags.Weapon = "Espada" Notify("⚔️", "Arma: Espada", 1) end end})
+NexusUI:CreateToggle(tabs["🎮 Extra"], {Title = "🍎 Fruta", Callback = function(v) if v then Flags.Weapon = "Fruta" Notify("🍎", "Arma: Fruta", 1) end end})
+NexusUI:CreateToggle(tabs["🎮 Extra"], {Title = "🔫 Arma", Callback = function(v) if v then Flags.Weapon = "Arma" Notify("🔫", "Arma: Arma", 1) end end})
 
 -- 🏝️ ILHAS
 NexusUI:CreateSection(tabs["🏝️ Ilhas"], "Teleportes")
@@ -652,7 +763,8 @@ Services.RunService.RenderStepped:Connect(function()
 end)
 
 -- [[ NOTIFICAÇÃO FINAL ]]
-Notify("NEXUS v11.0", "✅ TUDO DESATIVADO!\n🚀 Ative o Auto Farm\n👊 Script clica sozinho!\n⚔️ Troque: Soco/Espada/Fruta/Arma", 8)
+Notify("NEXUS v11.0", "✅ COMPLETO!\n🔴 Tudo começa DESATIVADO!\n🚀 Ative o Auto Farm e pronto!\n👊 Script clica sozinho!\n⚔️ Troque: Soco/Espada/Fruta/Arma", 8)
 print("✅ NEXUS v11.0 - 100% AUTOMÁTICO!")
-print("🚀 Ative Auto Farm e pronto!")
+print("🔴 TUDO DESATIVADO POR PADRÃO!")
+print("🚀 Ative Auto Farm - O script faz o resto!")
 print("👊 Script clica sozinho - Você não faz nada!")
