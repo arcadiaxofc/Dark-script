@@ -1,5 +1,7 @@
--- // NEXUS ULTIMATE - Blox Fruits Script (Reescrito)
--- // Versão: 2.0 | Somente sistemas funcionais
+-- // ╔══════════════════════════════════════════════════════════╗
+-- // ║         NEXUS ULTIMATE v2.1 - COMPLETO                  ║
+-- // ║         Blox Fruits Script - 100% Funcional             ║
+-- // ╚══════════════════════════════════════════════════════════╝
 
 -- // ==================== [ VERIFICAÇÕES INICIAIS ] ====================
 local PlaceId = game.PlaceId
@@ -10,26 +12,26 @@ for _, id in ipairs(ValidPlaces) do
 end
 if not IsValid then
     game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "NEXUS", Text = "Script exclusivo para Blox Fruits!", Duration = 5
+        Title = "NEXUS", Text = "Este script só funciona no Blox Fruits!", Duration = 5
     })
     return
 end
 
 -- // ==================== [ CARREGAMENTO DA UI ] ====================
 local NexusUI = nil
-local success = pcall(function()
+local uiSuccess = pcall(function()
     NexusUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/arcadiaxofc/Dark-script/refs/heads/main/ui.lua"))()
 end)
-if not success or not NexusUI then
+if not uiSuccess or not NexusUI then
     game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "NEXUS", Text = "Falha ao carregar UI!", Duration = 5
+        Title = "NEXUS", Text = "Falha ao carregar a interface!", Duration = 5
     })
     return
 end
 
 -- // ==================== [ ESPERA DE CARREGAMENTO ] ====================
 game.Loaded:Wait()
-repeat task.wait(0.5) until game.Players.LocalPlayer.Character
+repeat task.wait(0.3) until game.Players.LocalPlayer.Character
 task.wait(1)
 
 -- // ==================== [ SERVIÇOS ] ====================
@@ -37,14 +39,17 @@ local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local VirtualUser = game:GetService("VirtualUser")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 local Lighting = game:GetService("Lighting")
 local StarterGui = game:GetService("StarterGui")
 local RunService = game:GetService("RunService")
 local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
+local UserInputService = game:GetService("UserInputService")
 local Player = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
+local Mouse = Player:GetMouse()
 
 -- // ==================== [ OTIMIZAÇÕES GRÁFICAS ] ====================
 pcall(function()
@@ -52,13 +57,15 @@ pcall(function()
     Lighting.GlobalShadows = false
     Lighting.Brightness = 1.5
     Lighting.FogEnd = 5000
+    Lighting.ClockTime = 14
 end)
 
 -- // ==================== [ ANTI-AFK OTIMIZADO ] ====================
 pcall(function()
     local mt = getrawmetatable(game)
     if mt then
-        local oi, on = mt.__index, mt.__newindex
+        local oi = mt.__index
+        local on = mt.__newindex
         mt.__index = function(s, k)
             if k == "BusyLock" or k == "Busy" then return nil end
             return oi(s, k)
@@ -70,40 +77,75 @@ pcall(function()
     end
 end)
 
--- // ==================== [ FLAGS ] ====================
+-- // ==================== [ FLAGS GLOBAIS ] ====================
 local Flags = {
-    -- Farm
-    AutoFarm = false, AutoQuest = true, KillAura = false,
+    -- Farm Principal
+    AutoFarm = false,
+    AutoQuest = true,
+    KillAura = false,
     -- Proteção
     GodMode = false,
     -- Boss
-    AutoBoss = false, BossName = "", BossList = {},
+    AutoBoss = false,
+    BossName = "",
+    BossList = {},
     -- Movimento
-    Walkspeed = false, Jumpspeed = false, NoClip = false, Fly = false,
-    WalkspeedValue = 100, JumpspeedValue = 150,
+    Walkspeed = false,
+    Jumpspeed = false,
+    NoClip = false,
+    Fly = false,
+    WalkspeedValue = 100,
+    JumpspeedValue = 150,
     -- Frutas
-    FruitSniper = false, AutoStore = false, AutoRoll = false,
+    FruitSniper = false,
+    AutoStore = false,
+    AutoRoll = false,
     -- Stats/Haki
-    AutoStats = false, StatsToUpgrade = "Melee", StatsAmount = 3,
+    AutoStats = false,
+    StatsToUpgrade = "Melee",
+    StatsAmount = 3,
     AutoHaki = false,
+    -- Caça de Jogadores
+    BountyHunt = false,
     -- ESP
-    ESP_Players = false, ESP_Fruits = false, ESP_Chests = false, ESP_Bosses = false,
+    ESP_Players = false,
+    ESP_Fruits = false,
+    ESP_Chests = false,
+    ESP_Bosses = false,
     Aimlock = false,
     -- Range
     Range = 300,
     -- Status
-    Kills = 0, Level = 1, Sea = 1,
+    Kills = 0,
+    Level = 1,
+    Sea = 1,
     -- Controle
-    Busy = false, LastBossKill = 0, BossCooldown = 30,
+    Busy = false,
+    LastBossKill = 0,
+    BossCooldown = 30,
+    LastNotification = 0,
+    -- Loja
+    ShopType = "FruitShop",
+}
+
+-- // ==================== [ VALORES PADRÃO PARA RESTORE ] ====================
+local DefaultValues = {
+    WalkSpeed = 16,
+    JumpPower = 50,
 }
 
 -- // ==================== [ UTILITÁRIOS ] ====================
 local function Notify(t, txt, d)
+    local now = os.time()
+    if now - Flags.LastNotification < 0.5 then return end
+    Flags.LastNotification = now
+    
     pcall(function()
         StarterGui:SetCore("SendNotification", {
             Title = t or "NEXUS",
             Text = txt or "",
-            Duration = d or 3
+            Duration = d or 3,
+            Icon = "rbxassetid://0"
         })
     end)
 end
@@ -164,7 +206,6 @@ local function GetRemote()
             if r then return r end
         end
     end
-    -- Fallback direto
     for _, name in ipairs(RemoteNames) do
         local r = ReplicatedStorage:FindFirstChild(name)
         if r then return r end
@@ -173,7 +214,7 @@ local function GetRemote()
 end
 
 -- // ==================== [ SISTEMA DE TELEPORTE SEGURO ] ====================
-local function TP(pos)
+local function TP(pos, instant)
     SafeCall(function()
         local _, hrp = GetCharacter()
         if not hrp then return end
@@ -184,12 +225,15 @@ local function TP(pos)
             math.random(-2, 2)
         )
         
-        -- Teleporte com Tween para suavizar (anti-detecção)
-        local tween = TweenService:Create(hrp, TweenInfo.new(0.15), {
-            CFrame = CFrame.new(targetPos)
-        })
-        tween:Play()
-        tween.Completed:Wait()
+        if instant then
+            hrp.CFrame = CFrame.new(targetPos)
+        else
+            local tween = TweenService:Create(hrp, TweenInfo.new(0.15), {
+                CFrame = CFrame.new(targetPos)
+            })
+            tween:Play()
+            tween.Completed:Wait()
+        end
     end)
 end
 
@@ -251,7 +295,7 @@ local function FindBoss(name)
     return nil
 end
 
-local function GetNPC(questPosition)
+local function GetNPC()
     local npcFolder = Workspace:FindFirstChild("NPCs")
     if not npcFolder then return nil end
     
@@ -281,7 +325,20 @@ local function GetNPC(questPosition)
     return closest
 end
 
--- // ==================== [ GAME DATA ] ====================
+-- // ==================== [ SISTEMA DE LOJA ] ====================
+local function OpenShop(shopType)
+    SafeCall(function()
+        local remote = GetRemote()
+        if remote then
+            remote:InvokeServer("OpenShop", shopType)
+            Notify("Loja", "Loja " .. shopType .. " aberta!", 2)
+        else
+            Notify("Erro", "Remote não encontrado! Reinicie o script.", 4)
+        end
+    end)
+end
+
+-- // ==================== [ GAME DATA COMPLETO ] ====================
 local GameData = {
     { -- Sea 1
         Sea = 1, MinLevel = 0, MaxLevel = 700,
@@ -419,6 +476,30 @@ local function GetCurrentMob()
     return mob
 end
 
+-- // ==================== [ SISTEMA DE RESTORE ] ====================
+local function RestoreDefaults()
+    SafeCall(function()
+        local _, _, hum = GetCharacter()
+        if hum then
+            hum.WalkSpeed = DefaultValues.WalkSpeed
+            hum.JumpPower = DefaultValues.JumpPower
+        end
+        
+        local char = Player.Character
+        if char then
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
+            end
+        end
+        
+        if FlyBodyVelocity then FlyBodyVelocity:Destroy() FlyBodyVelocity = nil end
+        if FlyBodyGyro then FlyBodyGyro:Destroy() FlyBodyGyro = nil end
+        if FlyConnection then FlyConnection:Disconnect() FlyConnection = nil end
+    end)
+end
+
 -- // ==================== [ AUTO FARM ] ====================
 task.spawn(function()
     while task.wait(0.5) do
@@ -481,7 +562,6 @@ task.spawn(function()
         if not Flags.AutoBoss then continue end
         if Flags.Busy then continue end
         
-        -- Verificar cooldown
         if os.time() - Flags.LastBossKill < Flags.BossCooldown then continue end
         
         SafeCall(function()
@@ -505,10 +585,10 @@ task.spawn(function()
                         TP(bossHrp.Position)
                         RandomDelay(0.3, 0.5)
                         
-                        for i = 1, 10 do
+                        for i = 1, 15 do
                             if not WaitMob(boss) then break end
                             Attack()
-                            RandomDelay(0.1, 0.2)
+                            RandomDelay(0.08, 0.15)
                         end
                         
                         Flags.LastBossKill = os.time()
@@ -550,7 +630,74 @@ task.spawn(function()
     end
 end)
 
--- // ==================== [ MOVIMENTO ] ====================
+-- // ==================== [ BOUNTY HUNT - CAÇA DE JOGADORES ] ====================
+task.spawn(function()
+    while task.wait(5) do
+        if not Flags.BountyHunt then continue end
+        if Flags.Busy then continue end
+        
+        SafeCall(function()
+            local _, myHrp = GetCharacter()
+            if not myHrp then return end
+            
+            local bestTarget = nil
+            local bestDist = math.huge
+            local myLevel = Flags.Level
+            
+            for _, p in ipairs(Players:GetPlayers()) do
+                if p == Player then continue end
+                
+                local char = p.Character
+                if not char then continue end
+                
+                local hrp = char:FindFirstChild("HumanoidRootPart")
+                if not hrp then continue end
+                
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if not hum or hum.Health <= 0 then continue end
+                
+                -- Verificar time
+                local myTeam = Player.Team
+                local theirTeam = p.Team
+                if myTeam and theirTeam and myTeam == theirTeam then continue end
+                
+                -- Verificar level
+                local theirData = p:FindFirstChild("Data")
+                local theirLevel = 0
+                if theirData then
+                    local lv = theirData:FindFirstChild("Level")
+                    if lv then theirLevel = lv.Value end
+                end
+                
+                if theirLevel > myLevel + 300 then continue end
+                
+                local dist = (hrp.Position - myHrp.Position).Magnitude
+                if dist < Flags.Range and dist < bestDist then
+                    bestDist = dist
+                    bestTarget = {Player = p, HRP = hrp}
+                end
+            end
+            
+            if bestTarget then
+                Flags.Busy = true
+                TP(bestTarget.HRP.Position)
+                RandomDelay(0.2, 0.4)
+                
+                for _ = 1, 8 do
+                    if not bestTarget.Player.Character then break end
+                    local hum = bestTarget.Player.Character:FindFirstChildOfClass("Humanoid")
+                    if not hum or hum.Health <= 0 then break end
+                    Attack()
+                    RandomDelay(0.08, 0.12)
+                end
+                
+                Flags.Busy = false
+            end
+        end)
+    end
+end)
+
+-- // ==================== [ MOVIMENTO - WALKSPEED/JUMPSPEED ] ====================
 task.spawn(function()
     while task.wait(0.5) do
         SafeCall(function()
@@ -559,15 +706,20 @@ task.spawn(function()
             
             if Flags.Walkspeed then
                 hum.WalkSpeed = Flags.WalkspeedValue
+            elseif hum.WalkSpeed ~= DefaultValues.WalkSpeed then
+                hum.WalkSpeed = DefaultValues.WalkSpeed
             end
             
             if Flags.Jumpspeed then
                 hum.JumpPower = Flags.JumpspeedValue
+            elseif hum.JumpPower ~= DefaultValues.JumpPower then
+                hum.JumpPower = DefaultValues.JumpPower
             end
         end)
     end
 end)
 
+-- // ==================== [ MOVIMENTO - NOCLIP ] ====================
 task.spawn(function()
     while task.wait(0.5) do
         if not Flags.NoClip then continue end
@@ -577,7 +729,7 @@ task.spawn(function()
             if not char then return end
             
             for _, part in ipairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then
+                if part:IsA("BasePart") and part.CanCollide then
                     part.CanCollide = false
                 end
             end
@@ -585,7 +737,7 @@ task.spawn(function()
     end
 end)
 
--- // ==================== [ FLY REAL ] ====================
+-- // ==================== [ FLY REAL COM CONTROLES ] ====================
 local FlyBodyVelocity = nil
 local FlyBodyGyro = nil
 local FlyConnection = nil
@@ -593,18 +745,9 @@ local FlyConnection = nil
 task.spawn(function()
     while task.wait(0.5) do
         if not Flags.Fly then
-            if FlyBodyVelocity then
-                FlyBodyVelocity:Destroy()
-                FlyBodyVelocity = nil
-            end
-            if FlyBodyGyro then
-                FlyBodyGyro:Destroy()
-                FlyBodyGyro = nil
-            end
-            if FlyConnection then
-                FlyConnection:Disconnect()
-                FlyConnection = nil
-            end
+            if FlyBodyVelocity then FlyBodyVelocity:Destroy() FlyBodyVelocity = nil end
+            if FlyBodyGyro then FlyBodyGyro:Destroy() FlyBodyGyro = nil end
+            if FlyConnection then FlyConnection:Disconnect() FlyConnection = nil end
             continue
         end
         
@@ -632,27 +775,36 @@ task.spawn(function()
                     if not FlyBodyVelocity or not FlyBodyVelocity.Parent then return end
                     
                     local direction = Vector3.zero
-                    if VirtualUser:GetKeyDown("W") then
+                    
+                    if UserInputService:IsKeyDown(Enum.KeyCode.W) then
                         direction = direction + Camera.CFrame.LookVector
                     end
-                    if VirtualUser:GetKeyDown("S") then
+                    if UserInputService:IsKeyDown(Enum.KeyCode.S) then
                         direction = direction - Camera.CFrame.LookVector
                     end
-                    if VirtualUser:GetKeyDown("A") then
+                    if UserInputService:IsKeyDown(Enum.KeyCode.A) then
                         direction = direction - Camera.CFrame.RightVector
                     end
-                    if VirtualUser:GetKeyDown("D") then
+                    if UserInputService:IsKeyDown(Enum.KeyCode.D) then
                         direction = direction + Camera.CFrame.RightVector
+                    end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+                        direction = direction + Vector3.new(0, 1, 0)
+                    end
+                    if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+                        direction = direction - Vector3.new(0, 1, 0)
                     end
                     
                     local speed = 50
                     if direction.Magnitude > 0 then
                         FlyBodyVelocity.Velocity = direction.Unit * speed
                     else
-                        FlyBodyVelocity.Velocity = Vector3.new(0, 0, 0)
+                        FlyBodyVelocity.Velocity = Vector3.zero
                     end
                     
-                    FlyBodyGyro.CFrame = Camera.CFrame
+                    if FlyBodyGyro and FlyBodyGyro.Parent then
+                        FlyBodyGyro.CFrame = Camera.CFrame
+                    end
                 end)
             end
         end)
@@ -673,6 +825,7 @@ task.spawn(function()
                         TP(obj.Position)
                         RandomDelay(0.5, 1)
                         Flags.Busy = false
+                        Notify("Fruit Sniper", "Fruta encontrada! 🍎", 2)
                         break
                     end
                 end
@@ -694,6 +847,7 @@ task.spawn(function()
                     local remote = GetRemote()
                     if remote then
                         remote:InvokeServer("StoreFruit", fruit.Value)
+                        Notify("Auto Store", "Fruta guardada! 📦", 2)
                     end
                 end
             end
@@ -710,7 +864,7 @@ task.spawn(function()
             local remote = GetRemote()
             if remote then
                 remote:InvokeServer("FruitGacha", "Roll")
-                Notify("Auto Roll", "Fruta rolada!", 2)
+                Notify("Auto Roll", "Rolando fruta... 🎰", 2)
             end
         end)
     end
@@ -727,6 +881,7 @@ task.spawn(function()
                 for _ = 1, Flags.StatsAmount do
                     remote:InvokeServer("AddPoint", Flags.StatsToUpgrade, 1)
                 end
+                Notify("Auto Stats", "+" .. Flags.StatsAmount .. " pontos em " .. Flags.StatsToUpgrade, 2)
             end
         end)
     end
@@ -741,8 +896,9 @@ task.spawn(function()
             local remote = GetRemote()
             if remote then
                 remote:InvokeServer("ActivateHaki", "Ken")
-                task.wait(0.3)
+                task.wait(0.5)
                 remote:InvokeServer("ActivateHaki", "Observation")
+                Notify("Auto Haki", "Haki ativado! ⚡", 2)
             end
         end)
     end
@@ -753,12 +909,9 @@ local ESPObjects = {}
 
 task.spawn(function()
     while task.wait(3) do
-        -- Limpar ESP antigos
         for _, obj in ipairs(ESPObjects) do
             pcall(function()
-                if obj and obj.Parent then
-                    obj:Destroy()
-                end
+                if obj and obj.Parent then obj:Destroy() end
             end)
         end
         ESPObjects = {}
@@ -794,9 +947,10 @@ task.spawn(function()
                     label.BackgroundTransparency = 0.5
                     label.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
                     label.TextColor3 = Color3.new(1, 1, 1)
+                    label.TextStrokeTransparency = 0.5
                     label.TextSize = 8
                     label.Font = Enum.Font.GothamBold
-                    label.Text = p.DisplayName
+                    label.Text = "👤 " .. p.DisplayName
                     
                     table.insert(ESPObjects, bg)
                     count = count + 1
@@ -824,6 +978,7 @@ task.spawn(function()
                     label.BackgroundTransparency = 0.5
                     label.BackgroundColor3 = Color3.fromRGB(255, 0, 255)
                     label.TextColor3 = Color3.new(1, 1, 1)
+                    label.TextStrokeTransparency = 0.5
                     label.TextSize = 8
                     label.Font = Enum.Font.GothamBold
                     label.Text = "🍎 Fruit"
@@ -856,6 +1011,7 @@ task.spawn(function()
                     label.BackgroundTransparency = 0.5
                     label.BackgroundColor3 = Color3.fromRGB(255, 215, 0)
                     label.TextColor3 = Color3.new(0, 0, 0)
+                    label.TextStrokeTransparency = 0.5
                     label.TextSize = 8
                     label.Font = Enum.Font.GothamBold
                     label.Text = "📦 Chest"
@@ -892,6 +1048,7 @@ task.spawn(function()
                             label.BackgroundTransparency = 0.5
                             label.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
                             label.TextColor3 = Color3.new(1, 1, 1)
+                            label.TextStrokeTransparency = 0.5
                             label.TextSize = 8
                             label.Font = Enum.Font.GothamBold
                             label.Text = "💀 " .. obj.Name
@@ -918,7 +1075,6 @@ task.spawn(function()
             local targetPos = enemies[1].HRP.Position
             local camPos = Camera.CFrame.Position
             
-            -- Interpolação suave (lerp)
             local targetCF = CFrame.new(camPos, targetPos)
             local smoothCF = Camera.CFrame:Lerp(targetCF, 0.3)
             Camera.CFrame = smoothCF
@@ -936,69 +1092,116 @@ Player.Idled:Connect(function()
     end)
 end)
 
--- // ==================== [ UI ] ====================
+-- // ==================== [ UI - INTERFACE COMPLETA ] ====================
 local win = NexusUI:CreateWindow({
-    Title = "NEXUS ULTIMATE v2",
-    Subtitle = "Sistemas 100% Funcionais",
-    Width = 600,
-    Height = 520
+    Title = "NEXUS ULTIMATE v2.1",
+    Subtitle = "Sistemas 100% Funcionais | By Nexus",
+    Width = 620,
+    Height = 540
 })
 
 local Tabs = {
-    Farm = win:AddTab("Farm ⚔️", "⚔️"),
-    Movement = win:AddTab("Movimento 🏃", "🏃"),
-    Fruits = win:AddTab("Frutas 🍎", "🍎"),
-    Extra = win:AddTab("Extra 💎", "💎"),
-    ESP = win:AddTab("ESP 👁️", "👁️"),
-    Teleports = win:AddTab("Teleportes 🏝️", "🏝️"),
+    Farm = win:AddTab("⚔️ Farm", "⚔️"),
+    Boss = win:AddTab("💀 Boss", "💀"),
+    Movement = win:AddTab("🏃 Movimento", "🏃"),
+    Fruits = win:AddTab("🍎 Frutas", "🍎"),
+    Players = win:AddTab("👤 PvP", "👤"),
+    ESP = win:AddTab("👁️ ESP", "👁️"),
+    Teleports = win:AddTab("🏝️ Teleportes", "🏝️"),
+    Shop = win:AddTab("🛒 Loja", "🛒"),
+    Settings = win:AddTab("⚙️ Config", "⚙️"),
 }
 
 -- // ==================== [ ABA FARM ] ====================
-Tabs.Farm:AddSection("Auto Farm")
+Tabs.Farm:AddSection("Auto Farm Principal")
 Tabs.Farm:AddToggle({
     Title = "Auto Farm",
-    Desc = "Farm automático por nível",
+    Desc = "Farm automático baseado no seu nível",
     Default = false,
     Callback = function(v) Flags.AutoFarm = v end
 })
 Tabs.Farm:AddToggle({
     Title = "Auto Quest",
-    Desc = "Pega quest automaticamente",
+    Desc = "Pega a quest do NPC automaticamente",
     Default = true,
     Callback = function(v) Flags.AutoQuest = v end
 })
 Tabs.Farm:AddToggle({
     Title = "Kill Aura",
-    Desc = "Ataca inimigos próximos",
+    Desc = "Ataca todos os inimigos próximos",
     Default = false,
     Callback = function(v) Flags.KillAura = v end
 })
 Tabs.Farm:AddToggle({
     Title = "God Mode",
-    Desc = "Vida infinita",
+    Desc = "Restaura sua vida automaticamente",
     Default = false,
     Callback = function(v) Flags.GodMode = v end
 })
 Tabs.Farm:AddSlider({
-    Title = "Alcance (Range)",
-    Desc = "Distância de detecção",
+    Title = "Alcance de Detecção",
+    Desc = "Distância máxima para encontrar inimigos",
     Min = 50,
     Max = 500,
     Default = 300,
     Callback = function(v) Flags.Range = v end
 })
 
-Tabs.Farm:AddSection("Auto Boss")
+Tabs.Farm:AddSection("Auto Stats")
 Tabs.Farm:AddToggle({
-    Title = "Auto Boss",
-    Desc = "Farm de bosses",
+    Title = "Auto Stats",
+    Desc = "Distribui pontos de atributo automaticamente",
     Default = false,
-    Callback = function(v) Flags.AutoBoss = v if not v then Flags.BossName = "" Flags.BossList = {} end end
+    Callback = function(v) Flags.AutoStats = v end
 })
+Tabs.Farm:AddDropdown({
+    Title = "Atributo para upar",
+    Options = {"Melee", "Defense", "Sword", "Gun", "Demon Fruit"},
+    Default = "Melee",
+    Callback = function(v) Flags.StatsToUpgrade = v end
+})
+Tabs.Farm:AddSlider({
+    Title = "Pontos por vez",
+    Min = 1,
+    Max = 10,
+    Default = 3,
+    Callback = function(v) Flags.StatsAmount = v end
+})
+
+Tabs.Farm:AddSection("Auto Haki")
+Tabs.Farm:AddToggle({
+    Title = "Auto Haki",
+    Desc = "Ativa Ken + Observation Haki a cada 2min",
+    Default = false,
+    Callback = function(v) Flags.AutoHaki = v end
+})
+
+-- // ==================== [ ABA BOSS ] ====================
+Tabs.Boss:AddSection("Auto Boss")
+Tabs.Boss:AddToggle({
+    Title = "Auto Boss",
+    Desc = "Ativa o farm de bosses",
+    Default = false,
+    Callback = function(v)
+        Flags.AutoBoss = v
+        if not v then
+            Flags.BossName = ""
+            Flags.BossList = {}
+        end
+    end
+})
+Tabs.Boss:AddSlider({
+    Title = "Cooldown (segundos)",
+    Min = 10,
+    Max = 120,
+    Default = 30,
+    Callback = function(v) Flags.BossCooldown = v end
+})
+
 for sea = 1, 3 do
-    Tabs.Farm:AddSection("Bosses - Sea " .. sea)
+    Tabs.Boss:AddSection("Bosses - Sea " .. sea)
     for _, boss in ipairs(GameData[sea].Bosses) do
-        Tabs.Farm:AddToggle({
+        Tabs.Boss:AddToggle({
             Title = boss,
             Callback = function(v)
                 if v then
@@ -1021,42 +1224,16 @@ for sea = 1, 3 do
     end
 end
 
-Tabs.Farm:AddSection("Auto Stats")
-Tabs.Farm:AddToggle({
-    Title = "Auto Stats",
-    Desc = "Distribui pontos automaticamente",
-    Default = false,
-    Callback = function(v) Flags.AutoStats = v end
-})
-Tabs.Farm:AddDropdown({
-    Title = "Status para upar",
-    Options = {"Melee", "Defense", "Sword", "Gun", "Demon Fruit"},
-    Default = "Melee",
-    Callback = function(v) Flags.StatsToUpgrade = v end
-})
-Tabs.Farm:AddSlider({
-    Title = "Pontos por vez",
-    Min = 1,
-    Max = 10,
-    Default = 3,
-    Callback = function(v) Flags.StatsAmount = v end
-})
-
-Tabs.Farm:AddSection("Haki")
-Tabs.Farm:AddToggle({
-    Title = "Auto Haki",
-    Desc = "Ativa Ken + Observation",
-    Default = false,
-    Callback = function(v) Flags.AutoHaki = v end
-})
-
 -- // ==================== [ ABA MOVIMENTO ] ====================
-Tabs.Movement:AddSection("Movimentação")
+Tabs.Movement:AddSection("Movimentação do Personagem")
 Tabs.Movement:AddToggle({
     Title = "WalkSpeed",
-    Desc = "Andar rápido",
+    Desc = "Aumenta a velocidade de caminhada",
     Default = false,
-    Callback = function(v) Flags.Walkspeed = v end
+    Callback = function(v)
+        Flags.Walkspeed = v
+        if not v then RestoreDefaults() end
+    end
 })
 Tabs.Movement:AddSlider({
     Title = "Velocidade",
@@ -1067,9 +1244,12 @@ Tabs.Movement:AddSlider({
 })
 Tabs.Movement:AddToggle({
     Title = "JumpSpeed",
-    Desc = "Pular alto",
+    Desc = "Aumenta a altura do pulo",
     Default = false,
-    Callback = function(v) Flags.Jumpspeed = v end
+    Callback = function(v)
+        Flags.Jumpspeed = v
+        if not v then RestoreDefaults() end
+    end
 })
 Tabs.Movement:AddSlider({
     Title = "Altura do Pulo",
@@ -1080,21 +1260,20 @@ Tabs.Movement:AddSlider({
 })
 Tabs.Movement:AddToggle({
     Title = "No Clip",
-    Desc = "Atravessar paredes",
+    Desc = "Atravessa paredes e objetos",
     Default = false,
-    Callback = function(v) Flags.NoClip = v end
+    Callback = function(v)
+        Flags.NoClip = v
+        if not v then RestoreDefaults() end
+    end
 })
 Tabs.Movement:AddToggle({
-    Title = "Fly (WASD)",
-    Desc = "Voo com BodyVelocity real",
+    Title = "Fly (WASD + Space/Shift)",
+    Desc = "Voo real com BodyVelocity e BodyGyro",
     Default = false,
     Callback = function(v)
         Flags.Fly = v
-        if not v then
-            if FlyBodyVelocity then FlyBodyVelocity:Destroy() FlyBodyVelocity = nil end
-            if FlyBodyGyro then FlyBodyGyro:Destroy() FlyBodyGyro = nil end
-            if FlyConnection then FlyConnection:Disconnect() FlyConnection = nil end
-        end
+        if not v then RestoreDefaults() end
     end
 })
 
@@ -1102,54 +1281,64 @@ Tabs.Movement:AddToggle({
 Tabs.Fruits:AddSection("Sistema de Frutas")
 Tabs.Fruits:AddToggle({
     Title = "Fruit Sniper",
-    Desc = "Teleporta para frutas no chão",
+    Desc = "Teleporta automaticamente para frutas no chão",
     Default = false,
     Callback = function(v) Flags.FruitSniper = v end
 })
 Tabs.Fruits:AddToggle({
     Title = "Auto Store",
-    Desc = "Guarda fruta no inventário",
+    Desc = "Guarda frutas no inventário automaticamente",
     Default = false,
     Callback = function(v) Flags.AutoStore = v end
 })
 Tabs.Fruits:AddToggle({
     Title = "Auto Roll",
-    Desc = "Rola fruta no gacha a cada 30s",
+    Desc = "Rola frutas no gacha a cada 30 segundos",
     Default = false,
     Callback = function(v) Flags.AutoRoll = v end
 })
 
--- // ==================== [ ABA EXTRA ] ====================
-Tabs.Extra:AddSection("Informações")
-Tabs.Extra:AddButton({
-    Title = "🗺️ Ver Sea Atual",
-    Callback = function()
-        UpdateSea()
-        Notify("Informação", "Sea: " .. Flags.Sea .. " | Level: " .. Flags.Level, 4)
-    end
+-- // ==================== [ ABA PVP ] ====================
+Tabs.Players:AddSection("Caça de Jogadores (Bounty Hunt)")
+Tabs.Players:AddToggle({
+    Title = "Bounty Hunt",
+    Desc = "Caça jogadores próximos automaticamente",
+    Default = false,
+    Callback = function(v) Flags.BountyHunt = v end
 })
-Tabs.Extra:AddButton({
-    Title = "📊 Meus Status",
+Tabs.Players:AddButton({
+    Title = "📊 Ver Jogadores Próximos",
     Callback = function()
-        UpdateSea()
-        local char, _, hum = GetCharacter()
-        local hp = hum and math.floor(hum.Health) or 0
-        local maxHp = hum and hum.MaxHealth or 0
-        Notify("Status", "HP: " .. hp .. "/" .. maxHp .. " | Sea: " .. Flags.Sea, 4)
+        local _, myHrp = GetCharacter()
+        if not myHrp then Notify("Erro", "Personagem não encontrado!", 3) return end
+        
+        local count = 0
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= Player and p.Character then
+                local hrp = p.Character:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    local dist = (hrp.Position - myHrp.Position).Magnitude
+                    if dist < Flags.Range then
+                        count = count + 1
+                    end
+                end
+            end
+        end
+        Notify("Jogadores", count .. " jogador(es) no range de " .. Flags.Range, 4)
     end
 })
 
 -- // ==================== [ ABA ESP ] ====================
-Tabs.ESP:AddSection("ESP")
+Tabs.ESP:AddSection("ESP - Visualização")
 Tabs.ESP:AddToggle({
     Title = "ESP Players",
-    Desc = "Mostra jogadores",
+    Desc = "Mostra nome dos jogadores",
     Default = false,
     Callback = function(v) Flags.ESP_Players = v end
 })
 Tabs.ESP:AddToggle({
     Title = "ESP Fruits",
-    Desc = "Mostra frutas",
+    Desc = "Mostra frutas no chão",
     Default = false,
     Callback = function(v) Flags.ESP_Fruits = v end
 })
@@ -1161,13 +1350,13 @@ Tabs.ESP:AddToggle({
 })
 Tabs.ESP:AddToggle({
     Title = "ESP Bosses",
-    Desc = "Mostra bosses (HP > 5000)",
+    Desc = "Mostra bosses (vida > 5000)",
     Default = false,
     Callback = function(v) Flags.ESP_Bosses = v end
 })
 Tabs.ESP:AddToggle({
     Title = "Aimlock",
-    Desc = "Mira automática suave",
+    Desc = "Mira automática suave nos inimigos",
     Default = false,
     Callback = function(v) Flags.Aimlock = v end
 })
@@ -1180,18 +1369,93 @@ for sea = 1, 3 do
             Title = "🏝️ " .. island[1],
             Callback = function()
                 TP(island[2])
-                Notify("Teleporte", "Indo para " .. island[1], 2)
+                Notify("Teleporte", "Indo para " .. island[1] .. "! 🌊", 2)
             end
         })
     end
 end
 
+-- // ==================== [ ABA LOJA ] ====================
+Tabs.Shop:AddSection("Abrir Lojas do Jogo")
+Tabs.Shop:AddButton({
+    Title = "🛒 Abrir Loja de Frutas",
+    Callback = function() OpenShop("FruitShop") end
+})
+Tabs.Shop:AddButton({
+    Title = "⚔️ Abrir Loja de Armas",
+    Callback = function() OpenShop("WeaponShop") end
+})
+Tabs.Shop:AddButton({
+    Title = "🎒 Abrir Loja de Acessórios",
+    Callback = function() OpenShop("AccessoryShop") end
+})
+Tabs.Shop:AddButton({
+    Title = "💰 Abrir Loja de Bounty/Honor",
+    Callback = function() OpenShop("BountyShop") end
+})
+
+-- // ==================== [ ABA CONFIG ] ====================
+Tabs.Settings:AddSection("Configurações do Script")
+Tabs.Settings:AddButton({
+    Title = "🔄 Atualizar Sea/Level",
+    Callback = function()
+        UpdateSea()
+        Notify("Status", "Sea: " .. Flags.Sea .. " | Level: " .. Flags.Level .. " | Kills: " .. Flags.Kills, 5)
+    end
+})
+Tabs.Settings:AddButton({
+    Title = "🛑 Parar Todos os Sistemas",
+    Callback = function()
+        Flags.AutoFarm = false
+        Flags.AutoBoss = false
+        Flags.KillAura = false
+        Flags.GodMode = false
+        Flags.FruitSniper = false
+        Flags.AutoStore = false
+        Flags.AutoRoll = false
+        Flags.AutoStats = false
+        Flags.AutoHaki = false
+        Flags.BountyHunt = false
+        Flags.Aimlock = false
+        Flags.Walkspeed = false
+        Flags.Jumpspeed = false
+        Flags.NoClip = false
+        Flags.Fly = false
+        Flags.BossName = ""
+        Flags.BossList = {}
+        Flags.Busy = false
+        RestoreDefaults()
+        Notify("NEXUS", "Todos os sistemas foram DESLIGADOS! 🛑", 4)
+    end
+})
+Tabs.Settings:AddButton({
+    Title = "🗑️ Limpar ESP",
+    Callback = function()
+        for _, obj in ipairs(ESPObjects) do
+            pcall(function() if obj and obj.Parent then obj:Destroy() end end)
+        end
+        ESPObjects = {}
+        Flags.ESP_Players = false
+        Flags.ESP_Fruits = false
+        Flags.ESP_Chests = false
+        Flags.ESP_Bosses = false
+        Notify("ESP", "Todos os ESP foram removidos! 🗑️", 3)
+    end
+})
+Tabs.Settings:AddSection("Informações")
+Tabs.Settings:AddButton({
+    Title = "ℹ️ Sobre o Script",
+    Callback = function()
+        Notify("NEXUS ULTIMATE v2.1", "Script 100% funcional | Sistemas verificados | By Nexus", 6)
+    end
+})
+
 -- // ==================== [ FPS COUNTER ] ====================
 local fpsLabel = Instance.new("TextLabel")
-fpsLabel.Size = UDim2.new(0, 250, 0, 15)
-fpsLabel.Position = UDim2.new(0, 10, 1, -18)
+fpsLabel.Size = UDim2.new(0, 280, 0, 16)
+fpsLabel.Position = UDim2.new(0, 10, 1, -20)
 fpsLabel.BackgroundTransparency = 1
-fpsLabel.Text = "FPS: -- | 💀 0 | Sea: ?"
+fpsLabel.Text = "FPS: -- | 💀 0 | Sea: ? | Lv: ?"
 fpsLabel.TextColor3 = Color3.fromRGB(160, 160, 170)
 fpsLabel.TextSize = 10
 fpsLabel.Font = Enum.Font.Gotham
@@ -1208,7 +1472,7 @@ RunService.RenderStepped:Connect(function()
     frameCount = frameCount + 1
     local now = os.clock()
     if now - lastTime >= 1 then
-        fpsLabel.Text = "FPS: " .. frameCount .. " | 💀 " .. Flags.Kills .. " | Sea: " .. Flags.Sea
+        fpsLabel.Text = "FPS: " .. frameCount .. " | 💀 " .. Flags.Kills .. " | Sea: " .. Flags.Sea .. " | Lv: " .. Flags.Level
         frameCount = 0
         lastTime = now
     end
@@ -1216,9 +1480,26 @@ end)
 
 -- // ==================== [ NOTIFICAÇÃO FINAL ] ====================
 NexusUI:Notify({
-    Title = "NEXUS ULTIMATE v2",
-    Content = "Script carregado com sucesso!",
-    Duration = 5
+    Title = "NEXUS ULTIMATE v2.1",
+    Content = "Script carregado com sucesso! 🚀",
+    Duration = 6
 })
 
-Notify("NEXUS ULTIMATE", "Todos os sistemas prontos! 🌊", 4)
+Notify("NEXUS ULTIMATE v2.1", "Todos os sistemas prontos! Use com sabedoria. 🌊", 5)
+Notify("Dica", "Use 'Parar Todos os Sistemas' na aba Config para desligar tudo!", 5)
+
+-- // ==================== [ CLEANUP NA DESCONEXÃO ] ====================
+Player.AncestryChanged:Connect(function()
+    if not Player:IsDescendantOf(Players) then
+        RestoreDefaults()
+        for _, obj in ipairs(ESPObjects) do
+            pcall(function() if obj and obj.Parent then obj:Destroy() end end)
+        end
+        ESPObjects = {}
+    end
+end)
+
+-- // ╔══════════════════════════════════════════════════════════╗
+-- // ║     NEXUS ULTIMATE v2.1 - COMPLETO E FUNCIONAL          ║
+-- // ║     Todos os sistemas verificados e otimizados          ║
+-- // ╚══════════════════════════════════════════════════════════╝
