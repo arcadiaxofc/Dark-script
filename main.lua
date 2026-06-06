@@ -37,7 +37,6 @@ print("[OK] PlaceId válido:", PlaceId)
 local DiscordLib = nil
 local UI_Carregada = false
 
--- Tenta várias URLs
 local UIs = {
     "https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/UI_Library.lua",
     "https://raw.githubusercontent.com/script-organization/Hub/main/Library.lua",
@@ -134,7 +133,6 @@ print("[SERVIÇOS] Carregados com sucesso")
 -- ============================================================
 -- OTIMIZAÇÕES
 -- ============================================================
--- Aguardar character
 if not Player.Character then
     print("[WAIT] Aguardando Character...")
     repeat task.wait(0.3) until Player.Character
@@ -161,7 +159,6 @@ end)
 -- ============================================================
 -- ANTI-AFK PARA DELTA (SEM VIRTUALUSER)
 -- ============================================================
--- Método 1: Desconectar eventos Idled
 pcall(function()
     local idledConnections = getconnections and getconnections(Player.Idled) or {}
     for _, connection in ipairs(idledConnections) do
@@ -170,7 +167,6 @@ pcall(function()
     end
 end)
 
--- Método 2: Simular movimento periódico
 local lastInput = tick()
 UserInputService.InputBegan:Connect(function()
     lastInput = tick()
@@ -215,7 +211,7 @@ _G.StopTween = false
 _G.Range = 300
 _G.WeaponName = "None"
 
--- Variáveis GLOBAIS para CheckLevel (CORRIGIDO)
+-- Variáveis GLOBAIS para CheckLevel
 _G.Ms = ""
 _G.NameQuest = ""
 _G.QuestLv = 1
@@ -248,7 +244,7 @@ end
 print("[BOSSES]", #BossList, "bosses carregados")
 
 -- ============================================================
--- FUNÇÕES UTILITÁRIAS (CORRIGIDAS)
+-- FUNÇÕES UTILITÁRIAS
 -- ============================================================
 local function GetRemote()
     local remotes = ReplicatedStorage:FindFirstChild("Remotes")
@@ -277,10 +273,8 @@ local function TweenTP(pos)
     return tween
 end
 
--- FUNÇÃO DE ATAQUE PARA DELTA (sem VirtualUser)
 local function Attack()
     pcall(function()
-        -- Método 1: Simular clique do mouse
         local mouse = Player:GetMouse()
         if mouse and mouse.Target then
             mouse:Button1Down()
@@ -288,7 +282,6 @@ local function Attack()
             mouse:Button1Up()
         end
         
-        -- Método 2: Tentar via remote (mais eficaz)
         local remote = GetRemote()
         if remote then
             remote:InvokeServer("Attack")
@@ -296,7 +289,6 @@ local function Attack()
     end)
 end
 
--- FAST ATTACK CORRIGIDO
 local function FastAttack()
     pcall(function()
         local net = ReplicatedStorage:FindFirstChild("Modules")
@@ -342,7 +334,6 @@ local function EquipWeapon()
             end
         end
         
-        -- Se não achou no backpack, tenta no character
         if not toolName then
             for _, tool in pairs(Player.Character:GetChildren()) do
                 if tool:IsA("Tool") and tool.ToolTip == _G.SelectWeapon then
@@ -371,7 +362,7 @@ local function FindBoss(name)
 end
 
 -- ============================================================
--- DADOS DO JOGO - CheckLevel CORRIGIDO (variáveis GLOBAIS)
+-- DADOS DO JOGO - CheckLevel CORRIGIDO
 -- ============================================================
 function CheckLevel()
     local lv = Player.Data.Level.Value
@@ -983,7 +974,7 @@ function CheckLevel()
 end
 
 -- ============================================================
--- AUTO FARM LOOP (CORRIGIDO)
+-- AUTO FARM LOOP (CORRIGIDO - VAI ATRÁS DOS MOBS)
 -- ============================================================
 task.spawn(function()
     print("[AUTO FARM] Loop iniciado")
@@ -996,7 +987,6 @@ task.spawn(function()
         pcall(function()
             CheckLevel()
             
-            -- Verificar se já tem a quest
             local hasQuest = false
             pcall(function()
                 local main = Player.PlayerGui:FindFirstChild("Main")
@@ -1017,18 +1007,17 @@ task.spawn(function()
                 end
             end)
             
-            -- Pegar quest se necessário
             if not hasQuest and _G.AutoQuest then
-                print("[AUTO FARM] Pegando quest:", _G.NameQuest, _G.QuestLv)
+                print("[AUTO FARM] Pegando quest:", _G.NameQuest)
                 local remote = GetRemote()
                 if remote then
                     remote:InvokeServer("AbandonQuest")
-                    task.wait(0.5)
+                    task.wait(0.3)
                     TweenTP(_G.CFrameQ)
                     task.wait(1)
                     if _G.CFrameQ and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
                         local dist = (_G.CFrameQ.Position - Player.Character.HumanoidRootPart.Position).Magnitude
-                        if dist <= 10 then
+                        if dist <= 15 then
                             remote:InvokeServer("StartQuest", _G.NameQuest, _G.QuestLv)
                             print("[AUTO FARM] Quest iniciada!")
                         end
@@ -1037,52 +1026,66 @@ task.spawn(function()
                 return
             end
             
-            -- Farmar mobs
             if hasQuest or not _G.AutoQuest then
                 EquipWeapon()
                 
-                if _G.AutoHaki and not Player.Character:FindFirstChild("HasBuso") then
-                    local remote = GetRemote()
-                    if remote then
-                        remote:InvokeServer("Buso")
-                    end
+                if _G.AutoHaki then
+                    pcall(function()
+                        if not Player.Character:FindFirstChild("HasBuso") then
+                            local remote = GetRemote()
+                            if remote then remote:InvokeServer("Buso") end
+                        end
+                    end)
                 end
                 
+                local foundMob = false
                 local enemiesFolder = Workspace:FindFirstChild("Enemies")
                 if enemiesFolder then
                     local myPos = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
                     if myPos then
                         for _, enemy in pairs(enemiesFolder:GetChildren()) do
+                            if foundMob then break end
                             if enemy:IsA("Model") and enemy.Name == _G.Ms then
                                 local hum = enemy:FindFirstChild("Humanoid")
                                 if hum and hum.Health > 0 then
                                     local hrp = enemy:FindFirstChild("HumanoidRootPart")
                                     if hrp then
-                                        -- Bring Mob
+                                        foundMob = true
+                                        
                                         if _G.BringMob then
-                                            hrp.CFrame = myPos.CFrame + CFrame.new(0, 5, 0)
-                                            hrp.CanCollide = false
+                                            hrp.CFrame = myPos.CFrame * CFrame.new(0, 5, 5)
                                             hum.WalkSpeed = 0
                                             hum.JumpPower = 0
                                         else
                                             local distance = (hrp.Position - myPos.Position).Magnitude
                                             if distance > 15 then
                                                 TP(hrp.Position)
+                                                task.wait(0.3)
                                             end
                                         end
                                         
-                                        -- Atacar
-                                        if _G.FastAttack then
-                                            FastAttack()
-                                        else
-                                            Attack()
+                                        for attackCount = 1, 30 do
+                                            if not _G.AutoFarm then break end
+                                            if hum.Health <= 0 then break end
+                                            
+                                            if _G.FastAttack then
+                                                FastAttack()
+                                            else
+                                                Attack()
+                                            end
+                                            task.wait(0.15)
                                         end
-                                        break
                                     end
                                 end
                             end
                         end
                     end
+                end
+                
+                if not foundMob then
+                    print("[AUTO FARM] Indo para área de spawn:", _G.NameMon)
+                    TweenTP(_G.CFrameMon)
+                    task.wait(1)
                 end
             end
         end)
@@ -1113,9 +1116,7 @@ task.spawn(function()
                     
                     if _G.AutoHaki and not Player.Character:FindFirstChild("HasBuso") then
                         local remote = GetRemote()
-                        if remote then
-                            remote:InvokeServer("Buso")
-                        end
+                        if remote then remote:InvokeServer("Buso") end
                     end
                     
                     EquipWeapon()
