@@ -1,5 +1,5 @@
 -- ============================================================
--- NEXUS - MAIN (So carrega UI e injeta o CORE)
+-- NEXUS SUPREMO - MAIN (CORRIGIDO)
 -- ============================================================
 
 -- Variaveis globais
@@ -17,6 +17,14 @@ _G.ESP_Players = false
 _G.ESP_Items = false
 _G.ESP_Enemies = false
 _G.ESP_Range = 200
+_G.WalkSpeed = false
+_G.WalkSpeedValue = 100
+_G.JumpPower = false
+_G.JumpPowerValue = 150
+_G.NoClip = false
+_G.Fly = false
+_G.FlySpeed = 50
+_G.GodMode = false
 
 -- Carregar UI
 pcall(function()
@@ -41,11 +49,25 @@ pcall(function()
         espCh:Toggle("ESP Itens", false, function(v) _G.ESP_Items = v end)
         espCh:Toggle("ESP Inimigos", false, function(v) _G.ESP_Enemies = v end)
         
-        local stopCh = serv:Channel("Controle")
-        stopCh:Button("PARAR TUDO", function()
+        local moveCh = serv:Channel("Movimento")
+        moveCh:Toggle("WalkSpeed", false, function(v) _G.WalkSpeed = v end)
+        moveCh:Slider("Velocidade", 16, 350, 100, function(v) _G.WalkSpeedValue = v end)
+        moveCh:Toggle("JumpPower", false, function(v) _G.JumpPower = v end)
+        moveCh:Slider("Altura Pulo", 50, 300, 150, function(v) _G.JumpPowerValue = v end)
+        moveCh:Toggle("NoClip", false, function(v) _G.NoClip = v end)
+        moveCh:Toggle("Fly", false, function(v) _G.Fly = v end)
+        moveCh:Slider("Fly Speed", 10, 200, 50, function(v) _G.FlySpeed = v end)
+        
+        local protCh = serv:Channel("Protecao")
+        protCh:Toggle("God Mode", false, function(v) _G.GodMode = v end)
+        
+        local ctrlCh = serv:Channel("Controle")
+        ctrlCh:Button("PARAR TUDO", function()
             _G.AutoWood = false; _G.AutoFood = false; _G.AutoGems = false
             _G.AutoCollect = false; _G.AutoFire = false; _G.AutoDefense = false
             _G.AutoKill = false; _G.SmartNight = false; _G.ESP_Enabled = false
+            _G.WalkSpeed = false; _G.JumpPower = false; _G.NoClip = false
+            _G.Fly = false; _G.GodMode = false
             DiscordLib:Notification("NEXUS", "Tudo parado!", "OK")
         end)
         
@@ -53,7 +75,7 @@ pcall(function()
     end
 end)
 
--- Carregar CORE do GitHub
+-- INJETAR CORE (SEU LINK)
 local coreCode = game:HttpGet("https://raw.githubusercontent.com/arcadiaxofc/Dark-script/refs/heads/main/core99.lua")
 if coreCode then
     local folder = Instance.new("Folder")
@@ -65,6 +87,4 @@ if coreCode then
     script.Source = coreCode
     script.Parent = folder
     script.Enabled = true
-    
-    print("[NEXUS] Core injetado!")
 end
