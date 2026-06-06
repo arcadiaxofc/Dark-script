@@ -1,7 +1,13 @@
 -- // ╔══════════════════════════════════════════════════════════╗
--- // ║     NEXUS SUPREMO - COMPLETO COM SAVE/LOAD              ║
--- // ║   Config salvável + Status + Todos os sistemas         ║
+-- // ║     NEXUS SUPREMO - BASE FUNCIONAL + SAVE/LOAD         ║
 -- // ╚══════════════════════════════════════════════════════════╝
+
+-- ============================================================
+-- DIAGNÓSTICO INICIAL
+-- ============================================================
+print("=== NEXUS DELTA INICIADO ===")
+print("Hora:", os.date("%H:%M:%S"))
+print("PlaceId:", game.PlaceId)
 
 -- ============================================================
 -- VERIFICAÇÕES INICIAIS
@@ -12,28 +18,48 @@ local IsValid = false
 for _, id in ipairs(ValidPlaces) do
     if PlaceId == id then IsValid = true break end
 end
+
 if not IsValid then
     game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "NEXUS SUPREMO", Text = "Script exclusivo para Blox Fruits!", Duration = 5
+        Title = "NEXUS DELTA", Text = "Script exclusivo para Blox Fruits!", Duration = 5
     })
     return
 end
+print("[OK] PlaceId válido:", PlaceId)
 
 -- ============================================================
--- CARREGAMENTO DA UI
+-- CARREGAMENTO DA UI (COM FALLBACK)
 -- ============================================================
 local DiscordLib = nil
+local UI_Carregada = false
+
 local UIs = {
     "https://raw.githubusercontent.com/bloodball/-back-ups-for-libs/main/discord",
+    "https://raw.githubusercontent.com/arcadiaxofc/Dark-script/refs/heads/main/ui.lua",
 }
+
 for _, url in ipairs(UIs) do
-    if not DiscordLib then
-        pcall(function()
-            DiscordLib = loadstring(game:HttpGet(url))()
+    if not UI_Carregada then
+        local success, result = pcall(function()
+            print("[UI] Tentando carregar:", url)
+            return loadstring(game:HttpGet(url))()
         end)
+        if success and result then
+            DiscordLib = result
+            UI_Carregada = true
+            print("[UI] Carregada com sucesso!")
+        else
+            print("[UI] Falha ao carregar:", url)
+        end
     end
 end
-if not DiscordLib then return end
+
+if not UI_Carregada then
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "NEXUS", Text = "Falha ao carregar UI!", Duration = 5
+    })
+    return
+end
 
 -- ============================================================
 -- SERVIÇOS
@@ -53,8 +79,9 @@ local Camera = Workspace.CurrentCamera
 -- ============================================================
 -- ESPERAR CARREGAR
 -- ============================================================
-game.Loaded:Wait()
-repeat task.wait(0.3) until Player.Character
+if not Player.Character then
+    repeat task.wait(0.3) until Player.Character
+end
 task.wait(1)
 
 -- ============================================================
@@ -77,113 +104,83 @@ end)
 -- ============================================================
 -- SISTEMA DE CONFIGURAÇÃO (SAVE/LOAD)
 -- ============================================================
-local ConfigManager = {}
 local ConfigFolder = "NexusSupremo"
 local ConfigFile = ConfigFolder .. "/config.json"
 
-function ConfigManager:Init()
-    if not isfolder or not writefile then return false end
+local function SaveConfig()
+    if not isfolder or not writefile then return end
     if not isfolder(ConfigFolder) then makefolder(ConfigFolder) end
-    return true
-end
-
-function ConfigManager:Save()
-    if not self:Init() then return false end
-    local config = {}
-    for k, v in pairs(_G) do
-        if type(v) ~= "function" and type(v) ~= "thread" and type(v) ~= "userdata" then
-            pcall(function() config[k] = v end)
-        end
-    end
-    pcall(function() writefile(ConfigFile, HttpService:JSONEncode(config)) end)
-    return true
-end
-
-function ConfigManager:Load()
-    if not self:Init() then return false end
-    if not isfile(ConfigFile) then return false end
-    local success, json = pcall(function() return readfile(ConfigFile) end)
-    if not success then return false end
-    local success2, config = pcall(function() return HttpService:JSONDecode(json) end)
-    if not success2 then return false end
-    for k, v in pairs(config) do
-        if _G[k] ~= nil and type(_G[k]) == type(v) then
-            _G[k] = v
-        end
-    end
-    return true
-end
-
-function ConfigManager:Reset()
-    local defaults = {
-        AutoFarm = false, AutoQuest = true, AutoBoss = false, AutoHaki = false,
-        GodMode = false, BringMob = true, FastAttack = false, AutoStats = false,
-        FruitSniper = false, AutoStore = false, AutoRoll = false, SelectBoss = "",
-        SelectWeapon = "Melee", Fast_Delay = 0.1, Range = 300,
-        ESP_Enabled = false, ESP_Players = false, ESP_Fruits = false, ESP_Range = 500,
-        WalkSpeed = false, WalkSpeedValue = 100, JumpPower = false, JumpPowerValue = 150,
-        NoClip = false, Fly = false, FlySpeed = 50,
-        AutoClicker = false, AutoClickerSpeed = 0.15, AutoClickerClicks = 5, AutoClickerMode = "Attack",
+    
+    local config = {
+        AutoFarm = _G.AutoFarm,
+        BringMob = _G.BringMob,
+        FastAttack = _G.FastAttack,
+        AutoHaki = _G.AutoHaki,
+        GodMode = _G.GodMode,
+        SelectWeapon = _G.SelectWeapon,
+        Range = _G.Range,
+        AutoBoss = _G.AutoBoss,
+        SelectBoss = _G.SelectBoss,
+        FruitSniper = _G.FruitSniper,
+        AutoStore = _G.AutoStore,
+        AutoRoll = _G.AutoRoll,
+        AutoStats = _G.AutoStats,
     }
-    for k, v in pairs(defaults) do _G[k] = v end
-    self:Save()
-    return true
+    
+    pcall(function()
+        writefile(ConfigFile, HttpService:JSONEncode(config))
+        print("[CONFIG] Salvo!")
+    end)
 end
 
--- Auto-Salvar a cada 30s
-task.spawn(function()
-    while task.wait(30) do
-        pcall(function() ConfigManager:Save() end)
+local function LoadConfig()
+    if not isfolder or not isfile then return end
+    if not isfile(ConfigFile) then return end
+    
+    local success, json = pcall(function() return readfile(ConfigFile) end)
+    if not success then return end
+    
+    local success2, config = pcall(function() return HttpService:JSONDecode(json) end)
+    if not success2 then return end
+    
+    for k, v in pairs(config) do
+        if _G[k] ~= nil then
+            _G[k] = v
+            print("[CONFIG] Carregado:", k, "=", v)
+        end
     end
-end)
+end
 
 -- ============================================================
--- CARREGAR CONFIGURAÇÃO SALVA
+-- FLAGS GLOBAIS
 -- ============================================================
-ConfigManager:Load()
+_G.AutoFarm = false
+_G.AutoQuest = true
+_G.AutoBoss = false
+_G.AutoHaki = false
+_G.GodMode = false
+_G.BringMob = true
+_G.FastAttack = false
+_G.AutoStats = false
+_G.FruitSniper = false
+_G.AutoStore = false
+_G.AutoRoll = false
+_G.SelectBoss = ""
+_G.SelectWeapon = "Melee"
+_G.Fast_Delay = 0.1
+_G.Range = 300
+_G.WeaponName = "None"
 
--- ============================================================
--- FLAGS GLOBAIS (VALORES PADRÃO)
--- ============================================================
-if _G.AutoFarm == nil then _G.AutoFarm = false end
-if _G.AutoQuest == nil then _G.AutoQuest = true end
-if _G.AutoBoss == nil then _G.AutoBoss = false end
-if _G.AutoHaki == nil then _G.AutoHaki = false end
-if _G.GodMode == nil then _G.GodMode = false end
-if _G.BringMob == nil then _G.BringMob = true end
-if _G.FastAttack == nil then _G.FastAttack = false end
-if _G.AutoStats == nil then _G.AutoStats = false end
-if _G.FruitSniper == nil then _G.FruitSniper = false end
-if _G.AutoStore == nil then _G.AutoStore = false end
-if _G.AutoRoll == nil then _G.AutoRoll = false end
-if _G.SelectBoss == nil then _G.SelectBoss = "" end
-if _G.SelectWeapon == nil then _G.SelectWeapon = "Melee" end
-if _G.Fast_Delay == nil then _G.Fast_Delay = 0.1 end
-if _G.Range == nil then _G.Range = 300 end
-if _G.ESP_Enabled == nil then _G.ESP_Enabled = false end
-if _G.ESP_Players == nil then _G.ESP_Players = false end
-if _G.ESP_Fruits == nil then _G.ESP_Fruits = false end
-if _G.ESP_Range == nil then _G.ESP_Range = 500 end
-if _G.WalkSpeed == nil then _G.WalkSpeed = false end
-if _G.WalkSpeedValue == nil then _G.WalkSpeedValue = 100 end
-if _G.JumpPower == nil then _G.JumpPower = false end
-if _G.JumpPowerValue == nil then _G.JumpPowerValue = 150 end
-if _G.NoClip == nil then _G.NoClip = false end
-if _G.Fly == nil then _G.Fly = false end
-if _G.FlySpeed == nil then _G.FlySpeed = 50 end
-if _G.AutoClicker == nil then _G.AutoClicker = false end
-if _G.AutoClickerSpeed == nil then _G.AutoClickerSpeed = 0.15 end
-if _G.AutoClickerClicks == nil then _G.AutoClickerClicks = 5 end
-if _G.AutoClickerMode == nil then _G.AutoClickerMode = "Attack" end
-
--- Variáveis do CheckLevel
+-- CheckLevel
 _G.Ms = ""
 _G.NameQuest = ""
 _G.QuestLv = 1
 _G.NameMon = ""
 _G.CFrameQ = CFrame.new(0,0,0)
 _G.CFrameMon = CFrame.new(0,0,0)
-_G.WeaponName = "None"
+
+-- Carregar config salva
+LoadConfig()
 
 -- ============================================================
 -- DETECÇÃO DE SEA
@@ -193,25 +190,12 @@ local Sea2 = game.PlaceId == 4442272183
 local Sea3 = game.PlaceId == 7449423635
 
 -- ============================================================
--- LISTAS
+-- LISTA DE BOSSES
 -- ============================================================
 local BossList = {}
 if Sea1 then BossList = {"Gorilla King","Bobby","Yeti","Mob Leader","Vice Admiral","Warden","Chief Warden","Saber Expert","Swan","Magma Admiral","Fishman Lord","Wysper","Thunder God","Cyborg","Ice Admiral"}
 elseif Sea2 then BossList = {"Diamond","Jeremy","Orbitus","Don Swan","Smoke Admiral","Awakened Ice Admiral","Tide Keeper"}
 elseif Sea3 then BossList = {"Cake Prince","Dough King","Soul Reaper","Rip Indra","Darkbeard","Stone","Island Empress","Hydra","Leviathan"} end
-
-local TeleportList = {}
-local TeleportCoords = {}
-if Sea1 then
-    TeleportList = {"Pirate Starter","Jungle","Desert","Frozen Village","Marine Fortress","Skylands","Prison","Colosseum","Magma Village","Underwater City","Fountain City"}
-    TeleportCoords = {["Pirate Starter"]=Vector3.new(1289,11,4191),["Jungle"]=Vector3.new(-1250,15,3850),["Desert"]=Vector3.new(966,10,1100),["Frozen Village"]=Vector3.new(1150,25,4350),["Marine Fortress"]=Vector3.new(-1500,10,5300),["Skylands"]=Vector3.new(-4850,750,1950),["Prison"]=Vector3.new(-5400,15,-1700),["Colosseum"]=Vector3.new(-3560,240,-80),["Magma Village"]=Vector3.new(-3420,10,-2700),["Underwater City"]=Vector3.new(5500,-50,2000),["Fountain City"]=Vector3.new(4500,50,1200)}
-elseif Sea2 then
-    TeleportList = {"Kingdom of Rose","Green Zone","Ice Castle","Forgotten Island","Cafe"}
-    TeleportCoords = {["Kingdom of Rose"]=Vector3.new(-1400,10,-1400),["Green Zone"]=Vector3.new(6200,80,2500),["Ice Castle"]=Vector3.new(7200,100,3500),["Forgotten Island"]=Vector3.new(8500,120,4500),["Cafe"]=Vector3.new(-570,310,-1220)}
-elseif Sea3 then
-    TeleportList = {"Port Town","Hydra Island","Great Tree","Castle on the Sea","Haunted Castle","Floating Turtle"}
-    TeleportCoords = {["Port Town"]=Vector3.new(-6000,20,-4000),["Hydra Island"]=Vector3.new(6200,80,2500),["Great Tree"]=Vector3.new(8500,120,4500),["Castle on the Sea"]=Vector3.new(4500,50,1200),["Haunted Castle"]=Vector3.new(9800,60,5500),["Floating Turtle"]=Vector3.new(11200,90,6500)}
-end
 
 -- ============================================================
 -- FUNÇÕES UTILITÁRIAS
@@ -225,7 +209,7 @@ end
 local function TP(pos)
     local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    hrp.CFrame = CFrame.new(pos + Vector3.new(0,3,0))
+    hrp.CFrame = CFrame.new(pos + Vector3.new(0, 3, 0))
 end
 
 local function Attack()
@@ -290,24 +274,6 @@ local function FindBoss(name)
         end
     end
     return nil
-end
-
--- ============================================================
--- STATUS (O que está ativo)
--- ============================================================
-local function GetStatus()
-    local s = {}
-    if _G.AutoFarm then s[#s+1] = "⚔️Farm" end
-    if _G.AutoBoss then s[#s+1] = "💀Boss" end
-    if _G.GodMode then s[#s+1] = "🛡️God" end
-    if _G.FastAttack then s[#s+1] = "⚡Fast" end
-    if _G.Fly then s[#s+1] = "🕊️Fly" end
-    if _G.WalkSpeed then s[#s+1] = "🏃Speed" end
-    if _G.ESP_Enabled then s[#s+1] = "👁️ESP" end
-    if _G.AutoClicker then s[#s+1] = "🖱️Click" end
-    if _G.FruitSniper then s[#s+1] = "🍎Fruit" end
-    if #s == 0 then return "😴 Nada ativo" end
-    return table.concat(s," ")
 end
 
 -- ============================================================
@@ -377,6 +343,7 @@ end
 -- AUTO FARM LOOP
 -- ============================================================
 task.spawn(function()
+    print("[AUTO FARM] Loop iniciado")
     while task.wait(0.15) do
         if not _G.AutoFarm then task.wait(1); continue end
         pcall(function()
@@ -436,6 +403,7 @@ end)
 -- AUTO BOSS LOOP
 -- ============================================================
 task.spawn(function()
+    print("[AUTO BOSS] Loop iniciado")
     while task.wait(0.3) do
         if not _G.AutoBoss or _G.SelectBoss == "" then task.wait(1); continue end
         if _G.AutoFarm then continue end
@@ -536,142 +504,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- ESP
--- ============================================================
-local ESPObjects = {}
-task.spawn(function()
-    while task.wait(3) do
-        for _, obj in ipairs(ESPObjects) do pcall(function() if obj and obj.Parent then obj:Destroy() end end) end
-        ESPObjects = {}
-        if not _G.ESP_Enabled then continue end
-        pcall(function()
-            local count = 0
-            if _G.ESP_Players then
-                for _, p in ipairs(Players:GetPlayers()) do
-                    if count >= 10 then break end
-                    if p == Player then continue end
-                    local char = p.Character; if not char then continue end
-                    local head = char:FindFirstChild("Head"); if not head then continue end
-                    local bg = Instance.new("BillboardGui")
-                    bg.Adornee = head; bg.Size = UDim2.new(0,80,0,16); bg.AlwaysOnTop = true
-                    bg.MaxDistance = _G.ESP_Range; bg.StudsOffset = Vector3.new(0,2,0); bg.Parent = CoreGui
-                    local label = Instance.new("TextLabel",bg)
-                    label.Size = UDim2.new(1,0,1,0); label.BackgroundTransparency = 0.5
-                    label.BackgroundColor3 = Color3.fromRGB(255,0,0); label.TextColor3 = Color3.new(1,1,1)
-                    label.TextSize = 8; label.Font = Enum.Font.GothamBold; label.Text = "👤 "..p.DisplayName
-                    table.insert(ESPObjects,bg); count = count + 1
-                end
-            end
-            if _G.ESP_Fruits then
-                for _, obj in pairs(Workspace:GetDescendants()) do
-                    if count >= 10 then break end
-                    if not obj:IsA("BasePart") then continue end
-                    if not obj.Name:lower():find("fruit",1,true) then continue end
-                    if not (obj.Parent and obj.Parent:FindFirstChild("Handle")) then continue end
-                    local bg = Instance.new("BillboardGui")
-                    bg.Adornee = obj; bg.Size = UDim2.new(0,60,0,14); bg.AlwaysOnTop = true
-                    bg.MaxDistance = _G.ESP_Range; bg.StudsOffset = Vector3.new(0,2,0); bg.Parent = CoreGui
-                    local label = Instance.new("TextLabel",bg)
-                    label.Size = UDim2.new(1,0,1,0); label.BackgroundTransparency = 0.5
-                    label.BackgroundColor3 = Color3.fromRGB(255,0,255); label.TextColor3 = Color3.new(1,1,1)
-                    label.TextSize = 8; label.Font = Enum.Font.GothamBold; label.Text = "🍎 Fruit"
-                    table.insert(ESPObjects,bg); count = count + 1
-                end
-            end
-        end)
-    end
-end)
-
--- ============================================================
--- WALKSPEED / JUMPPOWER
--- ============================================================
-task.spawn(function()
-    while task.wait(0.5) do
-        pcall(function()
-            local hum = Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
-            if hum then
-                if _G.WalkSpeed then hum.WalkSpeed = _G.WalkSpeedValue end
-                if _G.JumpPower then hum.JumpPower = _G.JumpPowerValue end
-            end
-        end)
-    end
-end)
-
--- ============================================================
--- NOCLIP
--- ============================================================
-task.spawn(function()
-    RunService.Stepped:Connect(function()
-        if not _G.NoClip then return end
-        pcall(function()
-            for _, part in pairs(Player.Character:GetDescendants()) do
-                if part:IsA("BasePart") then part.CanCollide = false end
-            end
-        end)
-    end)
-end)
-
--- ============================================================
--- FLY
--- ============================================================
-local FlyBV, FlyBG, FlyConn = nil, nil, nil
-task.spawn(function()
-    while task.wait(0.5) do
-        if not _G.Fly then
-            if FlyBV then FlyBV:Destroy(); FlyBV = nil end
-            if FlyBG then FlyBG:Destroy(); FlyBG = nil end
-            if FlyConn then FlyConn:Disconnect(); FlyConn = nil end
-            continue
-        end
-        pcall(function()
-            local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-            if not hrp then return end
-            if not FlyBV then FlyBV = Instance.new("BodyVelocity"); FlyBV.MaxForce = Vector3.new(400000,400000,400000); FlyBV.Velocity = Vector3.zero; FlyBV.Parent = hrp end
-            if not FlyBG then FlyBG = Instance.new("BodyGyro"); FlyBG.MaxTorque = Vector3.new(400000,400000,400000); FlyBG.CFrame = hrp.CFrame; FlyBG.Parent = hrp end
-            if not FlyConn then
-                FlyConn = RunService.RenderStepped:Connect(function()
-                    if not _G.Fly then return end
-                    if not FlyBV or not FlyBV.Parent then return end
-                    local dir = Vector3.zero
-                    if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir = dir + Camera.CFrame.LookVector end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.S) then dir = dir - Camera.CFrame.LookVector end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.A) then dir = dir - Camera.CFrame.RightVector end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir = dir + Camera.CFrame.RightVector end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.Space) then dir = dir + Vector3.new(0,1,0) end
-                    if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then dir = dir - Vector3.new(0,1,0) end
-                    if dir.Magnitude > 0 then FlyBV.Velocity = dir.Unit * _G.FlySpeed else FlyBV.Velocity = Vector3.zero end
-                    if FlyBG and FlyBG.Parent then FlyBG.CFrame = Camera.CFrame end
-                end)
-            end
-        end)
-    end
-end)
-
--- ============================================================
--- AUTO CLICKER
--- ============================================================
-task.spawn(function()
-    while task.wait(0.2) do
-        if not _G.AutoClicker then task.wait(1); continue end
-        if _G.AutoFarm then continue end
-        for i = 1, _G.AutoClickerClicks do
-            if not _G.AutoClicker then break end
-            if _G.AutoClickerMode == "Attack" then Attack()
-            elseif _G.AutoClickerMode == "FastAttack" then FastAttack()
-            elseif _G.AutoClickerMode == "Jump" then
-                pcall(function()
-                    if Player.Character and Player.Character:FindFirstChild("Humanoid") then
-                        Player.Character.Humanoid.Jump = true
-                    end
-                end)
-            end
-            task.wait(_G.AutoClickerSpeed)
-        end
-    end
-end)
-
--- ============================================================
--- NOCLIP AUTOMÁTICO (FARM)
+-- NOCLIP AUTOMÁTICO
 -- ============================================================
 RunService.Stepped:Connect(function()
     if not _G.AutoFarm and not _G.AutoBoss then return end
@@ -721,7 +554,22 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- UI COMPLETA
+-- STATUS
+-- ============================================================
+local function GetStatus()
+    local s = {}
+    if _G.AutoFarm then s[#s+1] = "⚔️Farm" end
+    if _G.AutoBoss then s[#s+1] = "💀Boss" end
+    if _G.GodMode then s[#s+1] = "🛡️God" end
+    if _G.FastAttack then s[#s+1] = "⚡Fast" end
+    if _G.FruitSniper then s[#s+1] = "🍎Fruit" end
+    if _G.AutoStats then s[#s+1] = "📊Stats" end
+    if #s == 0 then return "😴 Nada ativo" end
+    return table.concat(s," ")
+end
+
+-- ============================================================
+-- UI
 -- ============================================================
 local win = DiscordLib:Window("NEXUS SUPREMO")
 local serv = win:Server("Blox Fruits", "http://www.roblox.com/asset/?id=6031075938")
@@ -742,60 +590,23 @@ local bCh = serv:Channel("💀 Auto Boss")
 bCh:Toggle("Auto Boss", _G.AutoBoss, function(v) _G.AutoBoss = v end)
 bCh:Dropdown("Boss", BossList, function(v) _G.SelectBoss = v end)
 
--- Clicker
-local cCh = serv:Channel("🖱️ Auto Clicker")
-cCh:Toggle("Auto Clicker", _G.AutoClicker, function(v) _G.AutoClicker = v end)
-cCh:Dropdown("Modo", {"Attack","FastAttack","Jump"}, function(v) _G.AutoClickerMode = v end)
-cCh:Slider("Cliques", 1, 20, _G.AutoClickerClicks, function(v) _G.AutoClickerClicks = v end)
-cCh:Slider("Velocidade", 0.1, 1, _G.AutoClickerSpeed, function(v) _G.AutoClickerSpeed = v end)
-
 -- Frutas
 local frCh = serv:Channel("🍎 Frutas")
 frCh:Toggle("Fruit Sniper", _G.FruitSniper, function(v) _G.FruitSniper = v end)
 frCh:Toggle("Auto Store", _G.AutoStore, function(v) _G.AutoStore = v end)
 frCh:Toggle("Auto Roll", _G.AutoRoll, function(v) _G.AutoRoll = v end)
 
--- Movimento
-local mCh = serv:Channel("🏃 Movimento")
-mCh:Toggle("WalkSpeed", _G.WalkSpeed, function(v) _G.WalkSpeed = v end)
-mCh:Slider("Velocidade", 16, 350, _G.WalkSpeedValue, function(v) _G.WalkSpeedValue = v end)
-mCh:Toggle("JumpPower", _G.JumpPower, function(v) _G.JumpPower = v end)
-mCh:Slider("Altura Pulo", 50, 300, _G.JumpPowerValue, function(v) _G.JumpPowerValue = v end)
-mCh:Toggle("NoClip", _G.NoClip, function(v) _G.NoClip = v end)
-mCh:Toggle("Fly (WASD)", _G.Fly, function(v) _G.Fly = v end)
-mCh:Slider("Fly Speed", 10, 200, _G.FlySpeed, function(v) _G.FlySpeed = v end)
-
--- ESP
-local eCh = serv:Channel("👁️ ESP")
-eCh:Toggle("ESP Ligado", _G.ESP_Enabled, function(v) _G.ESP_Enabled = v end)
-eCh:Toggle("ESP Players", _G.ESP_Players, function(v) _G.ESP_Players = v end)
-eCh:Toggle("ESP Fruits", _G.ESP_Fruits, function(v) _G.ESP_Fruits = v end)
-eCh:Slider("Alcance ESP", 100, 1000, _G.ESP_Range, function(v) _G.ESP_Range = v end)
-
--- Teleportes
-local tCh = serv:Channel("🏝️ Teleportes")
-for _, nome in ipairs(TeleportList) do
-    tCh:Button(nome, function()
-        local pos = TeleportCoords[nome]
-        if pos then TP(pos) end
-    end)
-end
-
--- Configurações (SAVE/LOAD)
+-- Config
 local cfgCh = serv:Channel("⚙️ Configurações")
 cfgCh:Toggle("Auto Stats", _G.AutoStats, function(v) _G.AutoStats = v end)
 cfgCh:Slider("Delay Ataque (ms)", 0, 500, _G.Fast_Delay*1000, function(v) _G.Fast_Delay = v/1000 end)
 cfgCh:Button("💾 Salvar Config", function()
-    ConfigManager:Save()
+    SaveConfig()
     DiscordLib:Notification("CONFIG", "💾 Configurações salvas!", "OK")
 end)
 cfgCh:Button("📂 Carregar Config", function()
-    ConfigManager:Load()
+    LoadConfig()
     DiscordLib:Notification("CONFIG", "📂 Configurações carregadas!", "OK")
-end)
-cfgCh:Button("🔄 Resetar Config", function()
-    ConfigManager:Reset()
-    DiscordLib:Notification("CONFIG", "🔄 Configurações resetadas!", "OK")
 end)
 
 -- Status
@@ -811,17 +622,15 @@ task.spawn(function()
         end)
     end
 end)
-stCh:Button("🔄 Atualizar Status", function()
+stCh:Button("🔄 Atualizar", function()
     local status = GetStatus()
     local lv = Player.Data.Level.Value
     DiscordLib:Notification("STATUS", string.format("%s\nLevel: %d", status, lv), "OK")
 end)
 stCh:Button("🛑 Parar Tudo", function()
-    _G.AutoFarm = false; _G.AutoBoss = false; _G.AutoClicker = false; _G.GodMode = false
+    _G.AutoFarm = false; _G.AutoBoss = false; _G.GodMode = false
     _G.FruitSniper = false; _G.AutoStore = false; _G.AutoRoll = false; _G.AutoStats = false
-    _G.WalkSpeed = false; _G.JumpPower = false; _G.NoClip = false; _G.Fly = false
-    _G.ESP_Enabled = false
-    ConfigManager:Save()
+    SaveConfig()
     DiscordLib:Notification("NEXUS", "🛑 Tudo parado e salvo!", "OK")
 end)
 
@@ -832,8 +641,7 @@ local lv = Player.Data.Level.Value
 local sea = Sea1 and "1" or Sea2 and "2" or Sea3 and "3" or "?"
 DiscordLib:Notification("NEXUS SUPREMO", 
     "✅ Script carregado!\n\n" ..
-    "⚔️ Farm | 💀 Boss | 🖱️ Clicker\n" ..
-    "🍎 Frutas | 🏃 Mov | 👁️ ESP | 🏝️ TP\n" ..
+    "⚔️ Farm | 💀 Boss | 🍎 Frutas\n" ..
     "💾 Save/Load | 📊 Status\n\n" ..
     "Sea: " .. sea .. " | Level: " .. lv, 
     "🚀 VAMOS LÁ!"
