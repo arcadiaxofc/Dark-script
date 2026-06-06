@@ -1,100 +1,116 @@
 -- // ╔══════════════════════════════════════════════════════════╗
--- // ║         NEXUS v11.0 - DELTA OPTIMIZED                   ║
--- // ║   CORAÇÃO DO SCRIPT - Completo para Delta Executor      ║
+-- // ║              NEXUS v11.0 - DELTA EDITION                ║
+-- // ║        OTIMIZADO PARA MÁXIMA COMPATIBILIDADE            ║
+-- // ║     Android | iOS | PC | Celulares Fracos               ║
 -- // ╚══════════════════════════════════════════════════════════╝
 
 -- ============================================================
--- DIAGNÓSTICO INICIAL (Para ver se está rodando)
+-- SEÇÃO 1: DIAGNÓSTICO INICIAL
 -- ============================================================
-print("=== NEXUS DELTA INICIADO ===")
-print("Hora:", os.date("%H:%M:%S"))
-print("PlaceId:", game.PlaceId)
+print("[NEXUS] =========================================")
+print("[NEXUS] Iniciando script...")
+print("[NEXUS] Hora:", os.date("%H:%M:%S"))
+print("[NEXUS] PlaceId:", game.PlaceId)
+print("[NEXUS] =========================================")
 
 -- ============================================================
--- VERIFICAÇÕES INICIAIS
+-- SEÇÃO 2: VERIFICAÇÕES DE PLACE
 -- ============================================================
 local PlaceId = game.PlaceId
 local ValidPlaces = {2753915549, 4442272183, 7449423635}
 local IsValid = false
+
 for _, id in ipairs(ValidPlaces) do
-    if PlaceId == id then IsValid = true break end
+    if PlaceId == id then 
+        IsValid = true 
+        break 
+    end
 end
 
 if not IsValid then
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "NEXUS DELTA", 
-        Text = "Script exclusivo para Blox Fruits!\nPlaceId atual: " .. PlaceId, 
-        Duration = 5
-    })
-    print("[ERRO] PlaceId inválido:", PlaceId)
+    warn("[NEXUS] ERRO: Script exclusivo para Blox Fruits!")
+    pcall(function()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "NEXUS", 
+            Text = "Script exclusivo para Blox Fruits!", 
+            Duration = 5
+        })
+    end)
     return
 end
-print("[OK] PlaceId válido:", PlaceId)
+print("[NEXUS] PlaceId válido:", PlaceId)
 
 -- ============================================================
--- CARREGAMENTO DA UI (COM FALLBACK)
+-- SEÇÃO 3: SERVIÇOS (armazenados uma única vez)
+-- ============================================================
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
+local UserInputService = game:GetService("UserInputService")
+local Player = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
+
+print("[NEXUS] Serviços carregados com sucesso")
+
+-- ============================================================
+-- SEÇÃO 4: CARREGAMENTO DA UI (com fallback)
 -- ============================================================
 local DiscordLib = nil
 local UI_Carregada = false
 
-local UIs = {
+local UI_URLs = {
     "https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/UI_Library.lua",
     "https://raw.githubusercontent.com/script-organization/Hub/main/Library.lua",
     "https://raw.githubusercontent.com/arcadiaxofc/Dark-script/refs/heads/main/ui.lua",
 }
 
-for _, url in ipairs(UIs) do
+for _, url in ipairs(UI_URLs) do
     if not UI_Carregada then
         local success, result = pcall(function()
-            print("[UI] Tentando carregar:", url)
+            print("[NEXUS] Tentando carregar UI:", url)
             return loadstring(game:HttpGet(url))()
         end)
         if success and result then
             DiscordLib = result
             UI_Carregada = true
-            print("[UI] Carregada com sucesso!")
+            print("[NEXUS] UI carregada com sucesso!")
         else
-            print("[UI] Falha ao carregar:", url)
+            print("[NEXUS] Falha ao carregar UI:", url)
         end
     end
 end
 
--- Fallback: UI minimalista se nenhuma carregar
+-- Fallback minimalista se nenhuma UI carregar
 if not UI_Carregada then
-    print("[UI] Usando fallback minimalista")
+    print("[NEXUS] Usando UI fallback minimalista")
     DiscordLib = {
         Window = function(_, title) 
-            print("[UI] Window:", title)
             return { 
                 Server = function(_, name, id) 
-                    print("[UI] Server:", name)
                     return {
                         Channel = function(_, channelName)
-                            print("[UI] Channel:", channelName)
                             return {
                                 Toggle = function(_, text, default, cb) 
-                                    print("[UI] Toggle:", text, default)
-                                    cb(default)
-                                    return {}
+                                    cb(default) 
+                                    return {} 
                                 end,
-                                Dropdown = function(_, text, options, cb)
-                                    print("[UI] Dropdown:", text)
-                                    cb(options[1])
-                                    return {}
+                                Dropdown = function(_, text, options, cb) 
+                                    cb(options[1]) 
+                                    return {} 
                                 end,
-                                Slider = function(_, text, min, max, default, cb)
-                                    print("[UI] Slider:", text, default)
-                                    cb(default)
-                                    return {}
+                                Slider = function(_, text, min, max, default, cb) 
+                                    cb(default) 
+                                    return {} 
                                 end,
-                                Button = function(_, text, cb)
-                                    print("[UI] Button:", text)
-                                    cb()
-                                    return {}
+                                Button = function(_, text, cb) 
+                                    cb() 
+                                    return {} 
                                 end,
-                                Label = function(_, text)
-                                    print("[UI] Label:", text)
-                                    return {}
+                                Label = function(_, text) 
+                                    return {} 
                                 end
                             }
                         end
@@ -116,55 +132,50 @@ if not UI_Carregada then
 end
 
 -- ============================================================
--- SERVIÇOS (SEM VIRTUALUSER)
--- ============================================================
-local Players = game:GetService("Players")
-local Workspace = game:GetService("Workspace")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
-local Lighting = game:GetService("Lighting")
-local UserInputService = game:GetService("UserInputService")
-local Player = Players.LocalPlayer
-local Camera = Workspace.CurrentCamera
-
-print("[SERVIÇOS] Carregados com sucesso")
-
--- ============================================================
--- OTIMIZAÇÕES
+-- SEÇÃO 5: AGUARDAR CARREGAMENTO DO PERSONAGEM
 -- ============================================================
 if not Player.Character then
-    print("[WAIT] Aguardando Character...")
-    repeat task.wait(0.3) until Player.Character
+    print("[NEXUS] Aguardando personagem carregar...")
+    repeat 
+        task.wait(0.5) 
+    until Player.Character
 end
-print("[OK] Character encontrado:", Player.Character.Name)
+print("[NEXUS] Personagem carregado:", Player.Character.Name)
 
 task.wait(1)
 
+-- ============================================================
+-- SEÇÃO 6: OTIMIZAÇÕES DE PERFORMANCE
+-- ============================================================
 pcall(function() 
     settings().Rendering.QualityLevel = 1 
-    print("[OTIMIZAÇÃO] QualityLevel = 1")
+    print("[NEXUS] QualityLevel reduzido para 1")
 end)
+
 pcall(function() 
     Lighting.GlobalShadows = false 
-    print("[OTIMIZAÇÃO] GlobalShadows = false")
+    print("[NEXUS] Sombras globais desativadas")
 end)
+
 pcall(function() 
     Lighting.Brightness = 1.5 
 end)
+
 pcall(function() 
     Lighting.FogEnd = 5000 
 end)
 
+print("[NEXUS] Otimizações aplicadas")
+
 -- ============================================================
--- ANTI-AFK PARA DELTA (SEM VIRTUALUSER)
+-- SEÇÃO 7: ANTI-AFK (compatível com todos executores)
 -- ============================================================
 pcall(function()
-    local idledConnections = getconnections and getconnections(Player.Idled) or {}
-    for _, connection in ipairs(idledConnections) do
-        connection:Disable()
-        print("[ANTI-AFK] Conexão Idled desabilitada")
+    local connections = getconnections and getconnections(Player.Idled) or {}
+    for _, conn in ipairs(connections) do
+        conn:Disable()
     end
+    print("[NEXUS] Conexões Idled desabilitadas")
 end)
 
 local lastInput = tick()
@@ -178,20 +189,21 @@ task.spawn(function()
             pcall(function()
                 local mouse = Player:GetMouse()
                 if mouse then
-                    local pos = mouse.X
-                    mouse.Move(mouse.X + 1, mouse.Y)
+                    local x = mouse.X
+                    mouse.Move(x + 1, mouse.Y)
                     task.wait(0.05)
-                    mouse.Move(pos, mouse.Y)
+                    mouse.Move(x, mouse.Y)
                 end
             end)
             lastInput = tick()
-            print("[ANTI-AFK] Input simulado")
         end
     end
 end)
 
+print("[NEXUS] Anti-AFK configurado")
+
 -- ============================================================
--- FLAGS GLOBAIS
+-- SEÇÃO 8: FLAGS GLOBAIS
 -- ============================================================
 _G.AutoFarm = false
 _G.AutoQuest = true
@@ -211,51 +223,66 @@ _G.StopTween = false
 _G.Range = 300
 _G.WeaponName = "None"
 
--- Variáveis GLOBAIS para CheckLevel
+-- Variáveis globais para CheckLevel
 _G.Ms = ""
 _G.NameQuest = ""
 _G.QuestLv = 1
 _G.NameMon = ""
-_G.CFrameQ = CFrame.new(0,0,0)
-_G.CFrameMon = CFrame.new(0,0,0)
+_G.CFrameQ = CFrame.new(0, 0, 0)
+_G.CFrameMon = CFrame.new(0, 0, 0)
 
-print("[FLAGS] Configurações globais inicializadas")
+print("[NEXUS] Flags globais inicializadas")
 
 -- ============================================================
--- DETECÇÃO DE SEA
+-- SEÇÃO 9: DETECÇÃO DE SEA
 -- ============================================================
 local Sea1 = game.PlaceId == 2753915549
 local Sea2 = game.PlaceId == 4442272183
 local Sea3 = game.PlaceId == 7449423635
 
-print("[SEA] Sea1:", Sea1, "Sea2:", Sea2, "Sea3:", Sea3)
+print("[NEXUS] Sea detectada:", Sea1 and "1" or Sea2 and "2" or Sea3 and "3" or "Desconhecida")
 
 -- ============================================================
--- LISTA DE BOSSES POR SEA
+-- SEÇÃO 10: LISTA DE BOSSES POR SEA
 -- ============================================================
 local BossList = {}
+
 if Sea1 then
-    BossList = {"Gorilla King", "Bobby", "Yeti", "Mob Leader", "Vice Admiral", "Warden", "Chief Warden", "Saber Expert", "Swan", "Magma Admiral", "Fishman Lord", "Wysper", "Thunder God", "Cyborg", "Ice Admiral"}
+    BossList = {
+        "Gorilla King", "Bobby", "Yeti", "Mob Leader", 
+        "Vice Admiral", "Warden", "Chief Warden", "Saber Expert", 
+        "Swan", "Magma Admiral", "Fishman Lord", "Wysper", 
+        "Thunder God", "Cyborg", "Ice Admiral"
+    }
 elseif Sea2 then
-    BossList = {"Diamond", "Jeremy", "Orbitus", "Don Swan", "Smoke Admiral", "Awakened Ice Admiral", "Tide Keeper"}
+    BossList = {
+        "Diamond", "Jeremy", "Orbitus", "Don Swan", 
+        "Smoke Admiral", "Awakened Ice Admiral", "Tide Keeper"
+    }
 elseif Sea3 then
-    BossList = {"Cake Prince", "Dough King", "Soul Reaper", "Rip Indra", "Darkbeard", "Stone", "Island Empress", "Hydra", "Leviathan"}
+    BossList = {
+        "Cake Prince", "Dough King", "Soul Reaper", "Rip Indra", 
+        "Darkbeard", "Stone", "Island Empress", "Hydra", "Leviathan"
+    }
 end
-print("[BOSSES]", #BossList, "bosses carregados")
+
+print("[NEXUS]", #BossList, "bosses carregados")
 
 -- ============================================================
--- FUNÇÕES UTILITÁRIAS
+-- SEÇÃO 11: FUNÇÕES UTILITÁRIAS
 -- ============================================================
+
+-- Obtém o remote de comunicação
 local function GetRemote()
     local remotes = ReplicatedStorage:FindFirstChild("Remotes")
     if remotes then
         local comm = remotes:FindFirstChild("CommF_") or remotes:FindFirstChild("CommF")
         if comm then return comm end
     end
-    local comm = ReplicatedStorage:FindFirstChild("CommF_") or ReplicatedStorage:FindFirstChild("CommF")
-    return comm
+    return ReplicatedStorage:FindFirstChild("CommF_") or ReplicatedStorage:FindFirstChild("CommF")
 end
 
+-- Teleporte instantâneo
 local function TP(pos)
     local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
@@ -263,6 +290,7 @@ local function TP(pos)
     return true
 end
 
+-- Teleporte suave com Tween
 local function TweenTP(pos)
     local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return nil end
@@ -273,6 +301,7 @@ local function TweenTP(pos)
     return tween
 end
 
+-- Ataque normal
 local function Attack()
     pcall(function()
         local mouse = Player:GetMouse()
@@ -289,10 +318,13 @@ local function Attack()
     end)
 end
 
+-- Ataque rápido
 local function FastAttack()
     pcall(function()
-        local net = ReplicatedStorage:FindFirstChild("Modules")
-        if net then net = net:FindFirstChild("Net") end
+        local modules = ReplicatedStorage:FindFirstChild("Modules")
+        if not modules then return end
+        
+        local net = modules:FindFirstChild("Net")
         if not net then return end
         
         local registerAttack = net:FindFirstChild("RE/RegisterAttack")
@@ -322,9 +354,12 @@ local function FastAttack()
     end)
 end
 
+-- Equipar arma
 local function EquipWeapon()
     pcall(function()
         local toolName = nil
+        
+        -- Procura no backpack
         for _, tool in pairs(Player.Backpack:GetChildren()) do
             if tool.ToolTip == _G.SelectWeapon then
                 toolName = tool.Name
@@ -334,6 +369,7 @@ local function EquipWeapon()
             end
         end
         
+        -- Se não achou, verifica se já está equipada
         if not toolName then
             for _, tool in pairs(Player.Character:GetChildren()) do
                 if tool:IsA("Tool") and tool.ToolTip == _G.SelectWeapon then
@@ -345,13 +381,15 @@ local function EquipWeapon()
     end)
 end
 
+-- Encontrar boss por nome
 local function FindBoss(name)
     for _, folderName in ipairs({"Bosses", "Enemies"}) do
         local folder = Workspace:FindFirstChild(folderName)
         if folder then
             for _, mob in ipairs(folder:GetChildren()) do
                 if mob:IsA("Model") and string.lower(mob.Name):find(string.lower(name), 1, true) then
-                    if mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then
+                    local hum = mob:FindFirstChild("Humanoid")
+                    if hum and hum.Health > 0 then
                         return mob
                     end
                 end
@@ -361,8 +399,10 @@ local function FindBoss(name)
     return nil
 end
 
+print("[NEXUS] Funções utilitárias carregadas")
+
 -- ============================================================
--- DADOS DO JOGO - CheckLevel CORRIGIDO
+-- SEÇÃO 12: DADOS DO JOGO - CHECKLEVEL
 -- ============================================================
 function CheckLevel()
     local lv = Player.Data.Level.Value
@@ -970,14 +1010,17 @@ function CheckLevel()
         end
     end
     
-    print("[CHECKLEVEL] Ms:", _G.Ms, "| Quest:", _G.NameQuest, "| Level:", lv)
+    print("[CHECKLEVEL] Level:", lv, "| Mob:", _G.Ms, "| Quest:", _G.NameQuest)
 end
 
+print("[NEXUS] CheckLevel carregado com todos os níveis")
+
 -- ============================================================
--- AUTO FARM LOOP (CORRIGIDO - VAI ATRÁS DOS MOBS)
+-- SEÇÃO 13: AUTO FARM LOOP
 -- ============================================================
 task.spawn(function()
     print("[AUTO FARM] Loop iniciado")
+    
     while task.wait(0.1) do
         if not _G.AutoFarm then 
             task.wait(1)
@@ -987,6 +1030,7 @@ task.spawn(function()
         pcall(function()
             CheckLevel()
             
+            -- Verificar se tem quest ativa
             local hasQuest = false
             pcall(function()
                 local main = Player.PlayerGui:FindFirstChild("Main")
@@ -1007,6 +1051,7 @@ task.spawn(function()
                 end
             end)
             
+            -- Pegar quest se necessário
             if not hasQuest and _G.AutoQuest then
                 print("[AUTO FARM] Pegando quest:", _G.NameQuest)
                 local remote = GetRemote()
@@ -1015,6 +1060,7 @@ task.spawn(function()
                     task.wait(0.3)
                     TweenTP(_G.CFrameQ)
                     task.wait(1)
+                    
                     if _G.CFrameQ and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
                         local dist = (_G.CFrameQ.Position - Player.Character.HumanoidRootPart.Position).Magnitude
                         if dist <= 15 then
@@ -1026,25 +1072,33 @@ task.spawn(function()
                 return
             end
             
+            -- Farmar mobs
             if hasQuest or not _G.AutoQuest then
                 EquipWeapon()
                 
+                -- Auto Haki
                 if _G.AutoHaki then
                     pcall(function()
                         if not Player.Character:FindFirstChild("HasBuso") then
                             local remote = GetRemote()
-                            if remote then remote:InvokeServer("Buso") end
+                            if remote then 
+                                remote:InvokeServer("Buso") 
+                            end
                         end
                     end)
                 end
                 
+                -- Procurar e atacar mobs
                 local foundMob = false
                 local enemiesFolder = Workspace:FindFirstChild("Enemies")
+                
                 if enemiesFolder then
                     local myPos = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+                    
                     if myPos then
                         for _, enemy in pairs(enemiesFolder:GetChildren()) do
                             if foundMob then break end
+                            
                             if enemy:IsA("Model") and enemy.Name == _G.Ms then
                                 local hum = enemy:FindFirstChild("Humanoid")
                                 if hum and hum.Health > 0 then
@@ -1052,6 +1106,7 @@ task.spawn(function()
                                     if hrp then
                                         foundMob = true
                                         
+                                        -- Bring Mob ou ir até o mob
                                         if _G.BringMob then
                                             hrp.CFrame = myPos.CFrame * CFrame.new(0, 5, 5)
                                             hum.WalkSpeed = 0
@@ -1064,6 +1119,7 @@ task.spawn(function()
                                             end
                                         end
                                         
+                                        -- Atacar até matar
                                         for attackCount = 1, 30 do
                                             if not _G.AutoFarm then break end
                                             if hum.Health <= 0 then break end
@@ -1082,6 +1138,7 @@ task.spawn(function()
                     end
                 end
                 
+                -- Se não achou mob, vai para área de spawn
                 if not foundMob then
                     print("[AUTO FARM] Indo para área de spawn:", _G.NameMon)
                     TweenTP(_G.CFrameMon)
@@ -1093,10 +1150,11 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- AUTO BOSS LOOP
+-- SEÇÃO 14: AUTO BOSS LOOP
 -- ============================================================
 task.spawn(function()
     print("[AUTO BOSS] Loop iniciado")
+    
     while task.wait(0.5) do
         if not _G.AutoBoss or _G.SelectBoss == "" then 
             task.wait(1)
@@ -1116,7 +1174,9 @@ task.spawn(function()
                     
                     if _G.AutoHaki and not Player.Character:FindFirstChild("HasBuso") then
                         local remote = GetRemote()
-                        if remote then remote:InvokeServer("Buso") end
+                        if remote then 
+                            remote:InvokeServer("Buso") 
+                        end
                     end
                     
                     EquipWeapon()
@@ -1133,7 +1193,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- GOD MODE
+-- SEÇÃO 15: GOD MODE
 -- ============================================================
 task.spawn(function()
     while task.wait(0.3) do
@@ -1148,7 +1208,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- AUTO STATS
+-- SEÇÃO 16: AUTO STATS
 -- ============================================================
 task.spawn(function()
     while task.wait(60) do
@@ -1166,7 +1226,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- FRUIT SNIPER
+-- SEÇÃO 17: FRUIT SNIPER
 -- ============================================================
 task.spawn(function()
     while task.wait(3) do
@@ -1175,7 +1235,7 @@ task.spawn(function()
             for _, obj in pairs(Workspace:GetDescendants()) do
                 if obj:IsA("BasePart") and obj.Name:lower():find("fruit", 1, true) then
                     if obj.Parent and obj.Parent:FindFirstChild("Handle") then
-                        print("[FRUIT] Fruta encontrada em:", obj.Position)
+                        print("[FRUIT] Fruta encontrada!")
                         TP(obj.Position)
                         task.wait(0.5)
                         break
@@ -1187,7 +1247,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- AUTO STORE
+-- SEÇÃO 18: AUTO STORE
 -- ============================================================
 task.spawn(function()
     while task.wait(10) do
@@ -1209,7 +1269,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- AUTO ROLL
+-- SEÇÃO 19: AUTO ROLL
 -- ============================================================
 task.spawn(function()
     while task.wait(30) do
@@ -1225,7 +1285,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- NOCLIP AUTOMÁTICO
+-- SEÇÃO 20: NOCLIP AUTOMÁTICO
 -- ============================================================
 RunService.Stepped:Connect(function()
     if not _G.AutoFarm and not _G.AutoBoss then return end
@@ -1241,7 +1301,7 @@ RunService.Stepped:Connect(function()
 end)
 
 -- ============================================================
--- BODY VELOCITY ANTI-KNOCKBACK
+-- SEÇÃO 21: ANTI-KNOCKBACK
 -- ============================================================
 task.spawn(function()
     while task.wait(0.5) do
@@ -1266,7 +1326,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- ANTI-STUN
+-- SEÇÃO 22: ANTI-STUN
 -- ============================================================
 task.spawn(function()
     while task.wait(0.1) do
@@ -1282,17 +1342,18 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- UI - INSTALAR CATEGORIAS
+-- SEÇÃO 23: INTERFACE DO USUÁRIO
 -- ============================================================
-print("[UI] Criando interface...")
-local win = DiscordLib:Window("NEXUS SUPREMO DELTA")
+print("[NEXUS] Criando interface...")
+
+local win = DiscordLib:Window("NEXUS SUPREMO v11.0")
 local serv = win:Server("Blox Fruits", "http://www.roblox.com/asset/?id=6031075938")
 
--- CANAL: AUTO FARM
+-- Canal: Auto Farm
 local farmChannel = serv:Channel("⚔️ Auto Farm")
 farmChannel:Toggle("Auto Farm Level", false, function(v) 
     _G.AutoFarm = v 
-    print("[UI] Auto Farm:", v)
+    print("[UI] Auto Farm:", v and "ATIVADO" or "DESATIVADO")
 end)
 farmChannel:Toggle("Auto Quest", true, function(v) 
     _G.AutoQuest = v 
@@ -1311,24 +1372,24 @@ farmChannel:Toggle("God Mode", false, function(v)
 end)
 farmChannel:Dropdown("Select Weapon", {"Melee", "Sword", "Blox Fruit"}, function(v) 
     _G.SelectWeapon = v 
-    print("[UI] Weapon selecionada:", v)
+    print("[UI] Arma:", v)
 end)
 farmChannel:Slider("Attack Range", 50, 500, 300, function(v) 
     _G.Range = v 
 end)
 
--- CANAL: AUTO BOSS
+-- Canal: Auto Boss
 local bossChannel = serv:Channel("💀 Auto Boss")
 bossChannel:Toggle("Auto Boss", false, function(v) 
     _G.AutoBoss = v 
-    print("[UI] Auto Boss:", v)
+    print("[UI] Auto Boss:", v and "ATIVADO" or "DESATIVADO")
 end)
 bossChannel:Dropdown("Select Boss", BossList, function(v) 
     _G.SelectBoss = v 
-    print("[UI] Boss selecionado:", v)
+    print("[UI] Boss:", v)
 end)
 
--- CANAL: FRUTAS
+-- Canal: Frutas
 local fruitChannel = serv:Channel("🍎 Frutas")
 fruitChannel:Toggle("Fruit Sniper", false, function(v) 
     _G.FruitSniper = v 
@@ -1340,7 +1401,7 @@ fruitChannel:Toggle("Auto Roll", false, function(v)
     _G.AutoRoll = v 
 end)
 
--- CANAL: CONFIGURAÇÕES
+-- Canal: Configurações
 local settingsChannel = serv:Channel("⚙️ Configurações")
 settingsChannel:Toggle("Auto Stats (Melee)", false, function(v) 
     _G.AutoStats = v 
@@ -1351,7 +1412,9 @@ end)
 settingsChannel:Button("🔄 Refresh Status", function()
     local lv = Player.Data.Level.Value
     local sea = Sea1 and "1" or Sea2 and "2" or Sea3 and "3" or "?"
-    DiscordLib:Notification("NEXUS SUPREMO", "Sea: " .. sea .. " | Level: " .. lv .. " | Weapon: " .. (_G.WeaponName or "None"), "OK")
+    DiscordLib:Notification("NEXUS SUPREMO", 
+        "Sea: " .. sea .. " | Level: " .. lv .. " | Weapon: " .. (_G.WeaponName or "None"), 
+        "OK")
 end)
 settingsChannel:Button("🛑 Stop Everything", function()
     _G.AutoFarm = false
@@ -1364,19 +1427,21 @@ settingsChannel:Button("🛑 Stop Everything", function()
     _G.StopTween = true
     task.wait(0.5)
     _G.StopTween = false
-    DiscordLib:Notification("NEXUS SUPREMO", "All systems have been STOPPED!", "OK")
+    DiscordLib:Notification("NEXUS SUPREMO", "Todos os sistemas PARADOS!", "OK")
     print("[UI] Todos os sistemas parados")
 end)
-settingsChannel:Label("NEXUS SUPREMO v11.0 - Delta Edition")
-settingsChannel:Label("Made with ❤️ by Nexus Team")
-settingsChannel:Label("Adaptado para Delta Executor")
+settingsChannel:Label("NEXUS SUPREMO v11.0")
+settingsChannel:Label("Delta Executor Edition")
+settingsChannel:Label("Otimizado para todos devices")
 
 -- ============================================================
--- NOTIFICAÇÃO INICIAL
+-- SEÇÃO 24: NOTIFICAÇÃO FINAL
 -- ============================================================
+print("[NEXUS] =========================================")
 print("[NEXUS] Script carregado com sucesso!")
-print("[NEXUS] Level atual:", Player.Data.Level.Value)
+print("[NEXUS] Level:", Player.Data.Level.Value)
 print("[NEXUS] Sea:", Sea1 and "1" or Sea2 and "2" or Sea3 and "3")
+print("[NEXUS] =========================================")
 
 DiscordLib:Notification("NEXUS SUPREMO DELTA", 
     "Script carregado com sucesso!\n\n" ..
@@ -1384,10 +1449,9 @@ DiscordLib:Notification("NEXUS SUPREMO DELTA",
     "💀 Auto Boss - Todas as Seas\n" ..
     "🍎 Frutas - Sniper/Store/Roll\n" ..
     "⚙️ Configurações - Customizável\n\n" ..
-    "Seu level: " .. Player.Data.Level.Value, 
+    "Level atual: " .. Player.Data.Level.Value .. "\n" ..
+    "Sea: " .. (Sea1 and "1" or Sea2 and "2" or Sea3 and "3"), 
     "🚀 INICIAR!"
 )
 
-print("=== NEXUS DELTA PRONTO ===")
-print("Use o menu UI para ativar as funções")
-print("Recomendação: Ative 'Auto Farm Level' primeiro")
+print("[NEXUS] PRONTO - Ative 'Auto Farm Level' para começar!")
