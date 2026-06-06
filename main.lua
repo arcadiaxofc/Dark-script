@@ -1,47 +1,33 @@
 -- // ╔══════════════════════════════════════════════════════════╗
--- // ║              NEXUS v11.0 - DELTA EDITION                ║
--- // ║        OTIMIZADO PARA MÁXIMA COMPATIBILIDADE            ║
--- // ║     Android | iOS | PC | Celulares Fracos               ║
+-- // ║              NEXUS v11.0 - FINAL STABLE                 ║
+-- // ║  Corrigido: Jump Loop | HTTP 404 | Frutas | Memória     ║
+-- // ║  Proteções: Nil Value | FastAttack | Garbage Collector  ║
 -- // ╚══════════════════════════════════════════════════════════╝
 
--- ============================================================
--- SEÇÃO 1: DIAGNÓSTICO INICIAL
--- ============================================================
 print("[NEXUS] =========================================")
-print("[NEXUS] Iniciando script...")
+print("[NEXUS] Iniciando script v11.0 Final...")
 print("[NEXUS] Hora:", os.date("%H:%M:%S"))
-print("[NEXUS] PlaceId:", game.PlaceId)
 print("[NEXUS] =========================================")
 
 -- ============================================================
--- SEÇÃO 2: VERIFICAÇÕES DE PLACE
+-- VERIFICAÇÕES INICIAIS
 -- ============================================================
 local PlaceId = game.PlaceId
 local ValidPlaces = {2753915549, 4442272183, 7449423635}
 local IsValid = false
 
 for _, id in ipairs(ValidPlaces) do
-    if PlaceId == id then 
-        IsValid = true 
-        break 
-    end
+    if PlaceId == id then IsValid = true break end
 end
 
 if not IsValid then
     warn("[NEXUS] ERRO: Script exclusivo para Blox Fruits!")
-    pcall(function()
-        game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "NEXUS", 
-            Text = "Script exclusivo para Blox Fruits!", 
-            Duration = 5
-        })
-    end)
     return
 end
-print("[NEXUS] PlaceId válido:", PlaceId)
+print("[NEXUS] PlaceId válido")
 
 -- ============================================================
--- SEÇÃO 3: SERVIÇOS (armazenados uma única vez)
+-- SERVIÇOS
 -- ============================================================
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
@@ -51,41 +37,27 @@ local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
 local UserInputService = game:GetService("UserInputService")
 local Player = Players.LocalPlayer
-local Camera = Workspace.CurrentCamera
-
-print("[NEXUS] Serviços carregados com sucesso")
 
 -- ============================================================
--- SEÇÃO 4: CARREGAMENTO DA UI (com fallback)
+-- 🔧 PROTEÇÃO 1: AGUARDAR DADOS DO JOGADOR (Evita Nil Value)
+-- ============================================================
+print("[NEXUS] Aguardando dados do jogador...")
+repeat task.wait(0.5) until Player:FindFirstChild("Data") and Player.Data:FindFirstChild("Level")
+print("[NEXUS] Dados carregados! Level:", Player.Data.Level.Value)
+
+-- ============================================================
+-- UI (FALLBACK - EVITA HTTP 404)
 -- ============================================================
 local DiscordLib = nil
-local UI_Carregada = false
+local success, result = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/arcadiaxofc/Dark-script/refs/heads/main/ui.lua"))()
+end)
 
-local UI_URLs = {
-    "https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/UI_Library.lua",
-    "https://raw.githubusercontent.com/script-organization/Hub/main/Library.lua",
-    "https://raw.githubusercontent.com/arcadiaxofc/Dark-script/refs/heads/main/ui.lua",
-}
-
-for _, url in ipairs(UI_URLs) do
-    if not UI_Carregada then
-        local success, result = pcall(function()
-            print("[NEXUS] Tentando carregar UI:", url)
-            return loadstring(game:HttpGet(url))()
-        end)
-        if success and result then
-            DiscordLib = result
-            UI_Carregada = true
-            print("[NEXUS] UI carregada com sucesso!")
-        else
-            print("[NEXUS] Falha ao carregar UI:", url)
-        end
-    end
-end
-
--- Fallback minimalista se nenhuma UI carregar
-if not UI_Carregada then
-    print("[NEXUS] Usando UI fallback minimalista")
+if success and result then
+    DiscordLib = result
+    print("[NEXUS] UI carregada")
+else
+    print("[NEXUS] UI fallback - sem erros HTTP")
     DiscordLib = {
         Window = function(_, title) 
             return { 
@@ -93,89 +65,45 @@ if not UI_Carregada then
                     return {
                         Channel = function(_, channelName)
                             return {
-                                Toggle = function(_, text, default, cb) 
-                                    cb(default) 
-                                    return {} 
-                                end,
-                                Dropdown = function(_, text, options, cb) 
-                                    cb(options[1]) 
-                                    return {} 
-                                end,
-                                Slider = function(_, text, min, max, default, cb) 
-                                    cb(default) 
-                                    return {} 
-                                end,
-                                Button = function(_, text, cb) 
-                                    cb() 
-                                    return {} 
-                                end,
-                                Label = function(_, text) 
-                                    return {} 
-                                end
+                                Toggle = function(_, text, default, cb) cb(default) return {} end,
+                                Dropdown = function(_, text, options, cb) cb(options[1]) return {} end,
+                                Slider = function(_, text, min, max, default, cb) cb(default) return {} end,
+                                Button = function(_, text, cb) cb() return {} end,
+                                Label = function(_, text) return {} end
                             }
                         end
                     }
                 end
             }
         end,
-        Notification = function(_, title, text, btn)
-            print(string.format("[%s] %s", title, text))
-            pcall(function()
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = title,
-                    Text = text,
-                    Duration = 5
-                })
-            end)
-        end
+        Notification = function(_, title, text, btn) end
     }
 end
 
 -- ============================================================
--- SEÇÃO 5: AGUARDAR CARREGAMENTO DO PERSONAGEM
+-- AGUARDAR PERSONAGEM
 -- ============================================================
 if not Player.Character then
-    print("[NEXUS] Aguardando personagem carregar...")
-    repeat 
-        task.wait(0.5) 
-    until Player.Character
+    repeat task.wait(0.5) until Player.Character
 end
-print("[NEXUS] Personagem carregado:", Player.Character.Name)
-
 task.wait(1)
 
 -- ============================================================
--- SEÇÃO 6: OTIMIZAÇÕES DE PERFORMANCE
+-- OTIMIZAÇÕES
 -- ============================================================
-pcall(function() 
-    settings().Rendering.QualityLevel = 1 
-    print("[NEXUS] QualityLevel reduzido para 1")
-end)
-
-pcall(function() 
-    Lighting.GlobalShadows = false 
-    print("[NEXUS] Sombras globais desativadas")
-end)
-
-pcall(function() 
-    Lighting.Brightness = 1.5 
-end)
-
-pcall(function() 
-    Lighting.FogEnd = 5000 
-end)
-
-print("[NEXUS] Otimizações aplicadas")
+pcall(function() settings().Rendering.QualityLevel = 1 end)
+pcall(function() Lighting.GlobalShadows = false end)
+pcall(function() Lighting.Brightness = 1.5 end)
+pcall(function() Lighting.FogEnd = 5000 end)
 
 -- ============================================================
--- SEÇÃO 7: ANTI-AFK (compatível com todos executores)
+-- ANTI-AFK (SEM LOOP DE PULO)
 -- ============================================================
 pcall(function()
     local connections = getconnections and getconnections(Player.Idled) or {}
     for _, conn in ipairs(connections) do
         conn:Disable()
     end
-    print("[NEXUS] Conexões Idled desabilitadas")
 end)
 
 local lastInput = tick()
@@ -200,10 +128,19 @@ task.spawn(function()
     end
 end)
 
-print("[NEXUS] Anti-AFK configurado")
+-- ============================================================
+-- 🔧 PROTEÇÃO 3: GARBAGE COLLECTOR (Limpeza de memória)
+-- ============================================================
+task.spawn(function()
+    while true do
+        task.wait(300) -- A cada 5 minutos
+        collectgarbage("collect")
+        print("[NEXUS] Memória limpa (GC)")
+    end
+end)
 
 -- ============================================================
--- SEÇÃO 8: FLAGS GLOBAIS
+-- FLAGS GLOBAIS
 -- ============================================================
 _G.AutoFarm = false
 _G.AutoQuest = true
@@ -223,66 +160,43 @@ _G.StopTween = false
 _G.Range = 300
 _G.WeaponName = "None"
 
--- Variáveis globais para CheckLevel
 _G.Ms = ""
 _G.NameQuest = ""
 _G.QuestLv = 1
 _G.NameMon = ""
-_G.CFrameQ = CFrame.new(0, 0, 0)
-_G.CFrameMon = CFrame.new(0, 0, 0)
-
-print("[NEXUS] Flags globais inicializadas")
+_G.CFrameQ = CFrame.new(0,0,0)
+_G.CFrameMon = CFrame.new(0,0,0)
 
 -- ============================================================
--- SEÇÃO 9: DETECÇÃO DE SEA
+-- DETECÇÃO DE SEA
 -- ============================================================
 local Sea1 = game.PlaceId == 2753915549
 local Sea2 = game.PlaceId == 4442272183
 local Sea3 = game.PlaceId == 7449423635
 
-print("[NEXUS] Sea detectada:", Sea1 and "1" or Sea2 and "2" or Sea3 and "3" or "Desconhecida")
-
 -- ============================================================
--- SEÇÃO 10: LISTA DE BOSSES POR SEA
+-- BOSSES
 -- ============================================================
 local BossList = {}
-
 if Sea1 then
-    BossList = {
-        "Gorilla King", "Bobby", "Yeti", "Mob Leader", 
-        "Vice Admiral", "Warden", "Chief Warden", "Saber Expert", 
-        "Swan", "Magma Admiral", "Fishman Lord", "Wysper", 
-        "Thunder God", "Cyborg", "Ice Admiral"
-    }
+    BossList = {"Gorilla King","Bobby","Yeti","Mob Leader","Vice Admiral","Warden","Chief Warden","Saber Expert","Swan","Magma Admiral","Fishman Lord","Wysper","Thunder God","Cyborg","Ice Admiral"}
 elseif Sea2 then
-    BossList = {
-        "Diamond", "Jeremy", "Orbitus", "Don Swan", 
-        "Smoke Admiral", "Awakened Ice Admiral", "Tide Keeper"
-    }
+    BossList = {"Diamond","Jeremy","Orbitus","Don Swan","Smoke Admiral","Awakened Ice Admiral","Tide Keeper"}
 elseif Sea3 then
-    BossList = {
-        "Cake Prince", "Dough King", "Soul Reaper", "Rip Indra", 
-        "Darkbeard", "Stone", "Island Empress", "Hydra", "Leviathan"
-    }
+    BossList = {"Cake Prince","Dough King","Soul Reaper","Rip Indra","Darkbeard","Stone","Island Empress","Hydra","Leviathan"}
 end
 
-print("[NEXUS]", #BossList, "bosses carregados")
-
 -- ============================================================
--- SEÇÃO 11: FUNÇÕES UTILITÁRIAS
+-- FUNÇÕES UTILITÁRIAS
 -- ============================================================
-
--- Obtém o remote de comunicação
 local function GetRemote()
     local remotes = ReplicatedStorage:FindFirstChild("Remotes")
     if remotes then
-        local comm = remotes:FindFirstChild("CommF_") or remotes:FindFirstChild("CommF")
-        if comm then return comm end
+        return remotes:FindFirstChild("CommF_") or remotes:FindFirstChild("CommF")
     end
     return ReplicatedStorage:FindFirstChild("CommF_") or ReplicatedStorage:FindFirstChild("CommF")
 end
 
--- Teleporte instantâneo
 local function TP(pos)
     local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
@@ -290,7 +204,6 @@ local function TP(pos)
     return true
 end
 
--- Teleporte suave com Tween
 local function TweenTP(pos)
     local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return nil end
@@ -301,7 +214,6 @@ local function TweenTP(pos)
     return tween
 end
 
--- Ataque normal
 local function Attack()
     pcall(function()
         local mouse = Player:GetMouse()
@@ -310,42 +222,31 @@ local function Attack()
             task.wait(_G.Fast_Delay)
             mouse:Button1Up()
         end
-        
         local remote = GetRemote()
-        if remote then
-            remote:InvokeServer("Attack")
-        end
+        if remote then remote:InvokeServer("Attack") end
     end)
 end
 
--- Ataque rápido
+-- 🔧 PROTEÇÃO 2: FastAttack com verificação extra
 local function FastAttack()
+    if not _G.FastAttack then return end -- Proteção extra
+    
     pcall(function()
-        local modules = ReplicatedStorage:FindFirstChild("Modules")
-        if not modules then return end
-        
-        local net = modules:FindFirstChild("Net")
+        local net = ReplicatedStorage:FindFirstChild("Modules")
+        if net then net = net:FindFirstChild("Net") end
         if not net then return end
-        
         local registerAttack = net:FindFirstChild("RE/RegisterAttack")
         local registerHit = net:FindFirstChild("RE/RegisterHit")
-        
-        if registerAttack then
-            registerAttack:FireServer(0.01)
-        end
-        
+        if registerAttack then registerAttack:FireServer(0.01) end
         local myPos = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
         if not myPos then return end
-        
         local enemiesFolder = Workspace:FindFirstChild("Enemies")
         if not enemiesFolder then return end
-        
         for _, enemy in pairs(enemiesFolder:GetChildren()) do
             if enemy:IsA("Model") and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
                 local head = enemy:FindFirstChild("Head")
                 if head and registerHit then
-                    local distance = (myPos.Position - head.Position).Magnitude
-                    if distance <= 60 then
+                    if (myPos.Position - head.Position).Magnitude <= 60 then
                         registerHit:FireServer(head, {{enemy, head}})
                     end
                 end
@@ -354,34 +255,24 @@ local function FastAttack()
     end)
 end
 
--- Equipar arma
 local function EquipWeapon()
     pcall(function()
-        local toolName = nil
-        
-        -- Procura no backpack
         for _, tool in pairs(Player.Backpack:GetChildren()) do
             if tool.ToolTip == _G.SelectWeapon then
-                toolName = tool.Name
                 _G.WeaponName = tool.Name
                 Player.Character.Humanoid:EquipTool(tool)
-                break
+                return
             end
         end
-        
-        -- Se não achou, verifica se já está equipada
-        if not toolName then
-            for _, tool in pairs(Player.Character:GetChildren()) do
-                if tool:IsA("Tool") and tool.ToolTip == _G.SelectWeapon then
-                    _G.WeaponName = tool.Name
-                    break
-                end
+        for _, tool in pairs(Player.Character:GetChildren()) do
+            if tool:IsA("Tool") and tool.ToolTip == _G.SelectWeapon then
+                _G.WeaponName = tool.Name
+                return
             end
         end
     end)
 end
 
--- Encontrar boss por nome
 local function FindBoss(name)
     for _, folderName in ipairs({"Bosses", "Enemies"}) do
         local folder = Workspace:FindFirstChild(folderName)
@@ -389,9 +280,7 @@ local function FindBoss(name)
             for _, mob in ipairs(folder:GetChildren()) do
                 if mob:IsA("Model") and string.lower(mob.Name):find(string.lower(name), 1, true) then
                     local hum = mob:FindFirstChild("Humanoid")
-                    if hum and hum.Health > 0 then
-                        return mob
-                    end
+                    if hum and hum.Health > 0 then return mob end
                 end
             end
         end
@@ -399,629 +288,368 @@ local function FindBoss(name)
     return nil
 end
 
-print("[NEXUS] Funções utilitárias carregadas")
-
 -- ============================================================
--- SEÇÃO 12: DADOS DO JOGO - CHECKLEVEL
+-- CHECKLEVEL (COMPLETO - SEA 1, 2 E 3)
 -- ============================================================
 function CheckLevel()
     local lv = Player.Data.Level.Value
     
     if Sea1 then
         if lv <= 9 then
-            _G.Ms = "Bandit"
-            _G.NameQuest = "BanditQuest1"
-            _G.QuestLv = 1
-            _G.NameMon = "Bandit"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Bandit", "BanditQuest1", 1, "Bandit"
             _G.CFrameQ = CFrame.new(1060.94, 16.46, 1547.78)
             _G.CFrameMon = CFrame.new(1038.55, 41.30, 1576.51)
         elseif lv <= 14 then
-            _G.Ms = "Monkey"
-            _G.NameQuest = "JungleQuest"
-            _G.QuestLv = 1
-            _G.NameMon = "Monkey"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Monkey", "JungleQuest", 1, "Monkey"
             _G.CFrameQ = CFrame.new(-1601.66, 36.85, 153.39)
             _G.CFrameMon = CFrame.new(-1448.14, 50.85, 63.61)
         elseif lv <= 29 then
-            _G.Ms = "Gorilla"
-            _G.NameQuest = "JungleQuest"
-            _G.QuestLv = 2
-            _G.NameMon = "Gorilla"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Gorilla", "JungleQuest", 2, "Gorilla"
             _G.CFrameQ = CFrame.new(-1601.66, 36.85, 153.39)
             _G.CFrameMon = CFrame.new(-1142.65, 40.46, -515.39)
         elseif lv <= 39 then
-            _G.Ms = "Pirate"
-            _G.NameQuest = "BuggyQuest1"
-            _G.QuestLv = 1
-            _G.NameMon = "Pirate"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Pirate", "BuggyQuest1", 1, "Pirate"
             _G.CFrameQ = CFrame.new(-1140.18, 4.75, 3827.41)
             _G.CFrameMon = CFrame.new(-1201.09, 40.63, 3857.60)
         elseif lv <= 59 then
-            _G.Ms = "Brute"
-            _G.NameQuest = "BuggyQuest1"
-            _G.QuestLv = 2
-            _G.NameMon = "Brute"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Brute", "BuggyQuest1", 2, "Brute"
             _G.CFrameQ = CFrame.new(-1140.18, 4.75, 3827.41)
             _G.CFrameMon = CFrame.new(-1387.53, 24.59, 4100.96)
         elseif lv <= 74 then
-            _G.Ms = "Desert Bandit"
-            _G.NameQuest = "DesertQuest"
-            _G.QuestLv = 1
-            _G.NameMon = "Desert Bandit"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Desert Bandit", "DesertQuest", 1, "Desert Bandit"
             _G.CFrameQ = CFrame.new(896.52, 6.44, 4390.15)
             _G.CFrameMon = CFrame.new(985.00, 16.11, 4417.91)
         elseif lv <= 89 then
-            _G.Ms = "Desert Officer"
-            _G.NameQuest = "DesertQuest"
-            _G.QuestLv = 2
-            _G.NameMon = "Desert Officer"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Desert Officer", "DesertQuest", 2, "Desert Officer"
             _G.CFrameQ = CFrame.new(896.52, 6.44, 4390.15)
             _G.CFrameMon = CFrame.new(1547.15, 14.45, 4381.80)
         elseif lv <= 99 then
-            _G.Ms = "Snow Bandit"
-            _G.NameQuest = "SnowQuest"
-            _G.QuestLv = 1
-            _G.NameMon = "Snow Bandit"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Snow Bandit", "SnowQuest", 1, "Snow Bandit"
             _G.CFrameQ = CFrame.new(1386.81, 87.27, -1298.36)
             _G.CFrameMon = CFrame.new(1356.30, 105.77, -1328.24)
         elseif lv <= 119 then
-            _G.Ms = "Snowman"
-            _G.NameQuest = "SnowQuest"
-            _G.QuestLv = 2
-            _G.NameMon = "Snowman"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Snowman", "SnowQuest", 2, "Snowman"
             _G.CFrameQ = CFrame.new(1386.81, 87.27, -1298.36)
             _G.CFrameMon = CFrame.new(1218.80, 138.01, -1488.03)
         elseif lv <= 149 then
-            _G.Ms = "Chief Petty Officer"
-            _G.NameQuest = "MarineQuest2"
-            _G.QuestLv = 1
-            _G.NameMon = "Chief Petty Officer"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Chief Petty Officer", "MarineQuest2", 1, "Chief Petty Officer"
             _G.CFrameQ = CFrame.new(-5035.50, 28.68, 4324.18)
             _G.CFrameMon = CFrame.new(-4931.16, 65.79, 4121.84)
         elseif lv <= 174 then
-            _G.Ms = "Sky Bandit"
-            _G.NameQuest = "SkyQuest"
-            _G.QuestLv = 1
-            _G.NameMon = "Sky Bandit"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Sky Bandit", "SkyQuest", 1, "Sky Bandit"
             _G.CFrameQ = CFrame.new(-4842.14, 717.70, -2623.05)
             _G.CFrameMon = CFrame.new(-4955.64, 365.46, -2908.19)
         elseif lv <= 209 then
-            _G.Ms = "Prisoner"
-            _G.NameQuest = "PrisonerQuest"
-            _G.QuestLv = 1
-            _G.NameMon = "Prisoner"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Prisoner", "PrisonerQuest", 1, "Prisoner"
             _G.CFrameQ = CFrame.new(5310.61, 0.35, 474.95)
             _G.CFrameMon = CFrame.new(4937.32, 0.33, 649.57)
         elseif lv <= 249 then
-            _G.Ms = "Dangerous Prisoner"
-            _G.NameQuest = "PrisonerQuest"
-            _G.QuestLv = 2
-            _G.NameMon = "Dangerous Prisoner"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Dangerous Prisoner", "PrisonerQuest", 2, "Dangerous Prisoner"
             _G.CFrameQ = CFrame.new(5310.61, 0.35, 474.95)
             _G.CFrameMon = CFrame.new(5099.66, 0.35, 1055.76)
         elseif lv <= 274 then
-            _G.Ms = "Toga Warrior"
-            _G.NameQuest = "ColosseumQuest"
-            _G.QuestLv = 1
-            _G.NameMon = "Toga Warrior"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Toga Warrior", "ColosseumQuest", 1, "Toga Warrior"
             _G.CFrameQ = CFrame.new(-1577.79, 7.42, -2984.48)
             _G.CFrameMon = CFrame.new(-1872.52, 49.08, -2913.81)
         elseif lv <= 299 then
-            _G.Ms = "Gladiator"
-            _G.NameQuest = "ColosseumQuest"
-            _G.QuestLv = 2
-            _G.NameMon = "Gladiator"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Gladiator", "ColosseumQuest", 2, "Gladiator"
             _G.CFrameQ = CFrame.new(-1577.79, 7.42, -2984.48)
             _G.CFrameMon = CFrame.new(-1521.37, 81.20, -3066.31)
         elseif lv <= 324 then
-            _G.Ms = "Military Soldier"
-            _G.NameQuest = "MagmaQuest"
-            _G.QuestLv = 1
-            _G.NameMon = "Military Soldier"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Military Soldier", "MagmaQuest", 1, "Military Soldier"
             _G.CFrameQ = CFrame.new(-5316.12, 12.26, 8517.00)
             _G.CFrameMon = CFrame.new(-5369.00, 61.24, 8556.49)
         elseif lv <= 374 then
-            _G.Ms = "Military Spy"
-            _G.NameQuest = "MagmaQuest"
-            _G.QuestLv = 2
-            _G.NameMon = "Military Spy"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Military Spy", "MagmaQuest", 2, "Military Spy"
             _G.CFrameQ = CFrame.new(-5316.12, 12.26, 8517.00)
             _G.CFrameMon = CFrame.new(-5787.00, 75.83, 8651.70)
         elseif lv <= 399 then
-            _G.Ms = "Fishman Warrior"
-            _G.NameQuest = "FishmanQuest"
-            _G.QuestLv = 1
-            _G.NameMon = "Fishman Warrior"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Fishman Warrior", "FishmanQuest", 1, "Fishman Warrior"
             _G.CFrameQ = CFrame.new(61122.65, 18.50, 1569.40)
             _G.CFrameMon = CFrame.new(60844.11, 98.46, 1298.40)
         elseif lv <= 449 then
-            _G.Ms = "Fishman Commando"
-            _G.NameQuest = "FishmanQuest"
-            _G.QuestLv = 2
-            _G.NameMon = "Fishman Commando"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Fishman Commando", "FishmanQuest", 2, "Fishman Commando"
             _G.CFrameQ = CFrame.new(61122.65, 18.50, 1569.40)
             _G.CFrameMon = CFrame.new(61738.40, 64.21, 1433.84)
         elseif lv <= 474 then
-            _G.Ms = "God's Guard"
-            _G.NameQuest = "SkyExp1Quest"
-            _G.QuestLv = 1
-            _G.NameMon = "God's Guard"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "God's Guard", "SkyExp1Quest", 1, "God's Guard"
             _G.CFrameQ = CFrame.new(-4721.86, 845.30, -1953.85)
             _G.CFrameMon = CFrame.new(-4628.05, 866.93, -1931.24)
         elseif lv <= 524 then
-            _G.Ms = "Shanda"
-            _G.NameQuest = "SkyExp1Quest"
-            _G.QuestLv = 2
-            _G.NameMon = "Shanda"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Shanda", "SkyExp1Quest", 2, "Shanda"
             _G.CFrameQ = CFrame.new(-7863.16, 5545.52, -378.42)
             _G.CFrameMon = CFrame.new(-7685.15, 5601.08, -441.39)
         elseif lv <= 549 then
-            _G.Ms = "Royal Squad"
-            _G.NameQuest = "SkyExp2Quest"
-            _G.QuestLv = 1
-            _G.NameMon = "Royal Squad"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Royal Squad", "SkyExp2Quest", 1, "Royal Squad"
             _G.CFrameQ = CFrame.new(-7903.38, 5635.99, -1410.92)
             _G.CFrameMon = CFrame.new(-7654.25, 5637.11, -1407.76)
         elseif lv <= 624 then
-            _G.Ms = "Royal Soldier"
-            _G.NameQuest = "SkyExp2Quest"
-            _G.QuestLv = 2
-            _G.NameMon = "Royal Soldier"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Royal Soldier", "SkyExp2Quest", 2, "Royal Soldier"
             _G.CFrameQ = CFrame.new(-7903.38, 5635.99, -1410.92)
             _G.CFrameMon = CFrame.new(-7760.41, 5679.91, -1884.81)
         elseif lv <= 649 then
-            _G.Ms = "Galley Pirate"
-            _G.NameQuest = "FountainQuest"
-            _G.QuestLv = 1
-            _G.NameMon = "Galley Pirate"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Galley Pirate", "FountainQuest", 1, "Galley Pirate"
             _G.CFrameQ = CFrame.new(5258.28, 38.53, 4050.04)
             _G.CFrameMon = CFrame.new(5557.17, 152.33, 3998.78)
         else
-            _G.Ms = "Galley Captain"
-            _G.NameQuest = "FountainQuest"
-            _G.QuestLv = 2
-            _G.NameMon = "Galley Captain"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Galley Captain", "FountainQuest", 2, "Galley Captain"
             _G.CFrameQ = CFrame.new(5258.28, 38.53, 4050.04)
             _G.CFrameMon = CFrame.new(5677.68, 92.79, 4966.63)
         end
     elseif Sea2 then
         if lv <= 724 then
-            _G.Ms = "Raider"
-            _G.NameQuest = "Area1Quest"
-            _G.QuestLv = 1
-            _G.NameMon = "Raider"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Raider", "Area1Quest", 1, "Raider"
             _G.CFrameQ = CFrame.new(-427.73, 73.00, 1835.94)
             _G.CFrameMon = CFrame.new(68.87, 93.64, 2429.68)
         elseif lv <= 774 then
-            _G.Ms = "Mercenary"
-            _G.NameQuest = "Area1Quest"
-            _G.QuestLv = 2
-            _G.NameMon = "Mercenary"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Mercenary", "Area1Quest", 2, "Mercenary"
             _G.CFrameQ = CFrame.new(-427.73, 73.00, 1835.94)
             _G.CFrameMon = CFrame.new(-864.85, 122.47, 1453.15)
         elseif lv <= 799 then
-            _G.Ms = "Swan Pirate"
-            _G.NameQuest = "Area2Quest"
-            _G.QuestLv = 1
-            _G.NameMon = "Swan Pirate"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Swan Pirate", "Area2Quest", 1, "Swan Pirate"
             _G.CFrameQ = CFrame.new(635.61, 73.10, 917.81)
             _G.CFrameMon = CFrame.new(1065.37, 137.64, 1324.38)
         elseif lv <= 874 then
-            _G.Ms = "Factory Staff"
-            _G.NameQuest = "Area2Quest"
-            _G.QuestLv = 2
-            _G.NameMon = "Factory Staff"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Factory Staff", "Area2Quest", 2, "Factory Staff"
             _G.CFrameQ = CFrame.new(635.61, 73.10, 917.81)
             _G.CFrameMon = CFrame.new(533.22, 128.47, 355.63)
         elseif lv <= 899 then
-            _G.Ms = "Marine Lieutenant"
-            _G.NameQuest = "MarineQuest3"
-            _G.QuestLv = 1
-            _G.NameMon = "Marine Lieutenant"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Marine Lieutenant", "MarineQuest3", 1, "Marine Lieutenant"
             _G.CFrameQ = CFrame.new(-2440.99, 73.04, -3217.71)
             _G.CFrameMon = CFrame.new(-2489.26, 84.61, -3151.88)
         elseif lv <= 949 then
-            _G.Ms = "Marine Captain"
-            _G.NameQuest = "MarineQuest3"
-            _G.QuestLv = 2
-            _G.NameMon = "Marine Captain"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Marine Captain", "MarineQuest3", 2, "Marine Captain"
             _G.CFrameQ = CFrame.new(-2440.99, 73.04, -3217.71)
             _G.CFrameMon = CFrame.new(-2335.20, 79.79, -3245.87)
         elseif lv <= 974 then
-            _G.Ms = "Zombie"
-            _G.NameQuest = "ZombieQuest"
-            _G.QuestLv = 1
-            _G.NameMon = "Zombie"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Zombie", "ZombieQuest", 1, "Zombie"
             _G.CFrameQ = CFrame.new(-5494.34, 48.51, -794.59)
             _G.CFrameMon = CFrame.new(-5536.50, 101.09, -835.59)
         elseif lv <= 999 then
-            _G.Ms = "Vampire"
-            _G.NameQuest = "ZombieQuest"
-            _G.QuestLv = 2
-            _G.NameMon = "Vampire"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Vampire", "ZombieQuest", 2, "Vampire"
             _G.CFrameQ = CFrame.new(-5494.34, 48.51, -794.59)
             _G.CFrameMon = CFrame.new(-5806.11, 16.72, -1164.44)
         elseif lv <= 1049 then
-            _G.Ms = "Snow Trooper"
-            _G.NameQuest = "SnowMountainQuest"
-            _G.QuestLv = 1
-            _G.NameMon = "Snow Trooper"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Snow Trooper", "SnowMountainQuest", 1, "Snow Trooper"
             _G.CFrameQ = CFrame.new(607.06, 401.45, -5370.55)
             _G.CFrameMon = CFrame.new(535.21, 432.74, -5484.92)
         elseif lv <= 1099 then
-            _G.Ms = "Winter Warrior"
-            _G.NameQuest = "SnowMountainQuest"
-            _G.QuestLv = 2
-            _G.NameMon = "Winter Warrior"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Winter Warrior", "SnowMountainQuest", 2, "Winter Warrior"
             _G.CFrameQ = CFrame.new(607.06, 401.45, -5370.55)
             _G.CFrameMon = CFrame.new(1234.44, 456.95, -5174.13)
         elseif lv <= 1124 then
-            _G.Ms = "Lab Subordinate"
-            _G.NameQuest = "IceSideQuest"
-            _G.QuestLv = 1
-            _G.NameMon = "Lab Subordinate"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Lab Subordinate", "IceSideQuest", 1, "Lab Subordinate"
             _G.CFrameQ = CFrame.new(-6061.84, 15.93, -4902.04)
             _G.CFrameMon = CFrame.new(-5720.56, 63.31, -4784.61)
         elseif lv <= 1174 then
-            _G.Ms = "Horned Warrior"
-            _G.NameQuest = "IceSideQuest"
-            _G.QuestLv = 2
-            _G.NameMon = "Horned Warrior"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Horned Warrior", "IceSideQuest", 2, "Horned Warrior"
             _G.CFrameQ = CFrame.new(-6061.84, 15.93, -4902.04)
             _G.CFrameMon = CFrame.new(-6292.75, 91.18, -5502.65)
         elseif lv <= 1199 then
-            _G.Ms = "Magma Ninja"
-            _G.NameQuest = "FireSideQuest"
-            _G.QuestLv = 1
-            _G.NameMon = "Magma Ninja"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Magma Ninja", "FireSideQuest", 1, "Magma Ninja"
             _G.CFrameQ = CFrame.new(-5429.05, 15.98, -5297.96)
             _G.CFrameMon = CFrame.new(-5461.84, 130.36, -5836.47)
         elseif lv <= 1249 then
-            _G.Ms = "Lava Pirate"
-            _G.NameQuest = "FireSideQuest"
-            _G.QuestLv = 2
-            _G.NameMon = "Lava Pirate"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Lava Pirate", "FireSideQuest", 2, "Lava Pirate"
             _G.CFrameQ = CFrame.new(-5429.05, 15.98, -5297.96)
             _G.CFrameMon = CFrame.new(-5251.19, 55.16, -4774.41)
         elseif lv <= 1274 then
-            _G.Ms = "Ship Deckhand"
-            _G.NameQuest = "ShipQuest1"
-            _G.QuestLv = 1
-            _G.NameMon = "Ship Deckhand"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Ship Deckhand", "ShipQuest1", 1, "Ship Deckhand"
             _G.CFrameQ = CFrame.new(1040.29, 125.08, 32911.04)
             _G.CFrameMon = CFrame.new(921.12, 125.98, 33088.33)
         elseif lv <= 1299 then
-            _G.Ms = "Ship Engineer"
-            _G.NameQuest = "ShipQuest1"
-            _G.QuestLv = 2
-            _G.NameMon = "Ship Engineer"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Ship Engineer", "ShipQuest1", 2, "Ship Engineer"
             _G.CFrameQ = CFrame.new(1040.29, 125.08, 32911.04)
             _G.CFrameMon = CFrame.new(886.28, 40.48, 32800.83)
         elseif lv <= 1324 then
-            _G.Ms = "Ship Steward"
-            _G.NameQuest = "ShipQuest2"
-            _G.QuestLv = 1
-            _G.NameMon = "Ship Steward"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Ship Steward", "ShipQuest2", 1, "Ship Steward"
             _G.CFrameQ = CFrame.new(971.42, 125.08, 33245.54)
             _G.CFrameMon = CFrame.new(943.86, 129.58, 33444.37)
         elseif lv <= 1349 then
-            _G.Ms = "Ship Officer"
-            _G.NameQuest = "ShipQuest2"
-            _G.QuestLv = 2
-            _G.NameMon = "Ship Officer"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Ship Officer", "ShipQuest2", 2, "Ship Officer"
             _G.CFrameQ = CFrame.new(971.42, 125.08, 33245.54)
             _G.CFrameMon = CFrame.new(955.38, 181.08, 33331.89)
         elseif lv <= 1374 then
-            _G.Ms = "Arctic Warrior"
-            _G.NameQuest = "FrostQuest"
-            _G.QuestLv = 1
-            _G.NameMon = "Arctic Warrior"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Arctic Warrior", "FrostQuest", 1, "Arctic Warrior"
             _G.CFrameQ = CFrame.new(5668.14, 28.20, -6484.60)
             _G.CFrameMon = CFrame.new(5935.45, 77.26, -6472.76)
         elseif lv <= 1424 then
-            _G.Ms = "Snow Lurker"
-            _G.NameQuest = "FrostQuest"
-            _G.QuestLv = 2
-            _G.NameMon = "Snow Lurker"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Snow Lurker", "FrostQuest", 2, "Snow Lurker"
             _G.CFrameQ = CFrame.new(5668.14, 28.20, -6484.60)
             _G.CFrameMon = CFrame.new(5628.48, 57.57, -6618.35)
         elseif lv <= 1449 then
-            _G.Ms = "Sea Soldier"
-            _G.NameQuest = "ForgottenQuest"
-            _G.QuestLv = 1
-            _G.NameMon = "Sea Soldier"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Sea Soldier", "ForgottenQuest", 1, "Sea Soldier"
             _G.CFrameQ = CFrame.new(-3054.58, 236.87, -10147.79)
             _G.CFrameMon = CFrame.new(-3185.02, 58.79, -9663.61)
         else
-            _G.Ms = "Water Fighter"
-            _G.NameQuest = "ForgottenQuest"
-            _G.QuestLv = 2
-            _G.NameMon = "Water Fighter"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Water Fighter", "ForgottenQuest", 2, "Water Fighter"
             _G.CFrameQ = CFrame.new(-3054.58, 236.87, -10147.79)
             _G.CFrameMon = CFrame.new(-3262.93, 298.69, -10552.53)
         end
     elseif Sea3 then
         if lv <= 1524 then
-            _G.Ms = "Pirate Millionaire"
-            _G.NameQuest = "PiratePortQuest"
-            _G.QuestLv = 1
-            _G.NameMon = "Pirate Millionaire"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Pirate Millionaire", "PiratePortQuest", 1, "Pirate Millionaire"
             _G.CFrameQ = CFrame.new(-450.10, 107.68, 5950.73)
             _G.CFrameMon = CFrame.new(-193.99, 56.13, 5755.79)
         elseif lv <= 1574 then
-            _G.Ms = "Pistol Billionaire"
-            _G.NameQuest = "PiratePortQuest"
-            _G.QuestLv = 2
-            _G.NameMon = "Pistol Billionaire"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Pistol Billionaire", "PiratePortQuest", 2, "Pistol Billionaire"
             _G.CFrameQ = CFrame.new(-450.10, 107.68, 5950.73)
             _G.CFrameMon = CFrame.new(-188.14, 84.50, 6337.04)
         elseif lv <= 1599 then
-            _G.Ms = "Dragon Crew Warrior"
-            _G.NameQuest = "DragonCrewQuest"
-            _G.QuestLv = 1
-            _G.NameMon = "Dragon Crew Warrior"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Dragon Crew Warrior", "DragonCrewQuest", 1, "Dragon Crew Warrior"
             _G.CFrameQ = CFrame.new(6735.11, 126.99, -711.10)
             _G.CFrameMon = CFrame.new(6615.23, 50.85, -978.93)
         elseif lv <= 1624 then
-            _G.Ms = "Dragon Crew Archer"
-            _G.NameQuest = "DragonCrewQuest"
-            _G.QuestLv = 2
-            _G.NameMon = "Dragon Crew Archer"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Dragon Crew Archer", "DragonCrewQuest", 2, "Dragon Crew Archer"
             _G.CFrameQ = CFrame.new(6735.11, 126.99, -711.10)
             _G.CFrameMon = CFrame.new(6818.59, 483.72, 512.73)
         elseif lv <= 1649 then
-            _G.Ms = "Hydra Enforcer"
-            _G.NameQuest = "VenomCrewQuest"
-            _G.QuestLv = 1
-            _G.NameMon = "Hydra Enforcer"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Hydra Enforcer", "VenomCrewQuest", 1, "Hydra Enforcer"
             _G.CFrameQ = CFrame.new(5446.88, 601.63, 749.46)
             _G.CFrameMon = CFrame.new(4547.12, 1001.60, 334.20)
         elseif lv <= 1699 then
-            _G.Ms = "Venomous Assailant"
-            _G.NameQuest = "VenomCrewQuest"
-            _G.QuestLv = 2
-            _G.NameMon = "Venomous Assailant"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Venomous Assailant", "VenomCrewQuest", 2, "Venomous Assailant"
             _G.CFrameQ = CFrame.new(5446.88, 601.63, 749.46)
             _G.CFrameMon = CFrame.new(4637.89, 1077.86, 882.42)
         elseif lv <= 1724 then
-            _G.Ms = "Marine Commodore"
-            _G.NameQuest = "MarineTreeIsland"
-            _G.QuestLv = 1
-            _G.NameMon = "Marine Commodore"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Marine Commodore", "MarineTreeIsland", 1, "Marine Commodore"
             _G.CFrameQ = CFrame.new(2179.99, 28.73, -6740.06)
             _G.CFrameMon = CFrame.new(2198.01, 128.71, -7109.50)
         elseif lv <= 1774 then
-            _G.Ms = "Marine Rear Admiral"
-            _G.NameQuest = "MarineTreeIsland"
-            _G.QuestLv = 2
-            _G.NameMon = "Marine Rear Admiral"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Marine Rear Admiral", "MarineTreeIsland", 2, "Marine Rear Admiral"
             _G.CFrameQ = CFrame.new(2179.99, 28.73, -6740.06)
             _G.CFrameMon = CFrame.new(3294.31, 385.41, -7048.63)
         elseif lv <= 1799 then
-            _G.Ms = "Fishman Raider"
-            _G.NameQuest = "DeepForestIsland3"
-            _G.QuestLv = 1
-            _G.NameMon = "Fishman Raider"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Fishman Raider", "DeepForestIsland3", 1, "Fishman Raider"
             _G.CFrameQ = CFrame.new(-10582.76, 331.79, -8757.67)
             _G.CFrameMon = CFrame.new(-10553.27, 521.38, -8176.95)
         elseif lv <= 1824 then
-            _G.Ms = "Fishman Captain"
-            _G.NameQuest = "DeepForestIsland3"
-            _G.QuestLv = 2
-            _G.NameMon = "Fishman Captain"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Fishman Captain", "DeepForestIsland3", 2, "Fishman Captain"
             _G.CFrameQ = CFrame.new(-10583.10, 331.79, -8759.46)
             _G.CFrameMon = CFrame.new(-10789.40, 427.19, -9131.44)
         elseif lv <= 1849 then
-            _G.Ms = "Forest Pirate"
-            _G.NameQuest = "DeepForestIsland"
-            _G.QuestLv = 1
-            _G.NameMon = "Forest Pirate"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Forest Pirate", "DeepForestIsland", 1, "Forest Pirate"
             _G.CFrameQ = CFrame.new(-13232.66, 332.40, -7626.48)
             _G.CFrameMon = CFrame.new(-13489.40, 400.30, -7770.25)
         elseif lv <= 1899 then
-            _G.Ms = "Mythological Pirate"
-            _G.NameQuest = "DeepForestIsland"
-            _G.QuestLv = 2
-            _G.NameMon = "Mythological Pirate"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Mythological Pirate", "DeepForestIsland", 2, "Mythological Pirate"
             _G.CFrameQ = CFrame.new(-13232.66, 332.40, -7626.48)
             _G.CFrameMon = CFrame.new(-13508.62, 582.46, -6985.30)
         elseif lv <= 1924 then
-            _G.Ms = "Jungle Pirate"
-            _G.NameQuest = "DeepForestIsland2"
-            _G.QuestLv = 1
-            _G.NameMon = "Jungle Pirate"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Jungle Pirate", "DeepForestIsland2", 1, "Jungle Pirate"
             _G.CFrameQ = CFrame.new(-12682.10, 390.89, -9902.12)
             _G.CFrameMon = CFrame.new(-12267.10, 459.75, -10277.20)
         elseif lv <= 1974 then
-            _G.Ms = "Musketeer Pirate"
-            _G.NameQuest = "DeepForestIsland2"
-            _G.QuestLv = 2
-            _G.NameMon = "Musketeer Pirate"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Musketeer Pirate", "DeepForestIsland2", 2, "Musketeer Pirate"
             _G.CFrameQ = CFrame.new(-12682.10, 390.89, -9902.12)
             _G.CFrameMon = CFrame.new(-13291.51, 520.47, -9904.64)
         elseif lv <= 1999 then
-            _G.Ms = "Reborn Skeleton"
-            _G.NameQuest = "HauntedQuest1"
-            _G.QuestLv = 1
-            _G.NameMon = "Reborn Skeleton"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Reborn Skeleton", "HauntedQuest1", 1, "Reborn Skeleton"
             _G.CFrameQ = CFrame.new(-9480.81, 142.13, 5566.37)
             _G.CFrameMon = CFrame.new(-8761.77, 183.43, 6168.33)
         elseif lv <= 2024 then
-            _G.Ms = "Living Zombie"
-            _G.NameQuest = "HauntedQuest1"
-            _G.QuestLv = 2
-            _G.NameMon = "Living Zombie"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Living Zombie", "HauntedQuest1", 2, "Living Zombie"
             _G.CFrameQ = CFrame.new(-9480.81, 142.13, 5566.37)
             _G.CFrameMon = CFrame.new(-10103.75, 238.57, 6179.76)
         elseif lv <= 2049 then
-            _G.Ms = "Demonic Soul"
-            _G.NameQuest = "HauntedQuest2"
-            _G.QuestLv = 1
-            _G.NameMon = "Demonic Soul"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Demonic Soul", "HauntedQuest2", 1, "Demonic Soul"
             _G.CFrameQ = CFrame.new(-9516.99, 178.01, 6078.47)
             _G.CFrameMon = CFrame.new(-9712.03, 204.70, 6193.32)
         elseif lv <= 2074 then
-            _G.Ms = "Posessed Mummy"
-            _G.NameQuest = "HauntedQuest2"
-            _G.QuestLv = 2
-            _G.NameMon = "Posessed Mummy"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Posessed Mummy", "HauntedQuest2", 2, "Posessed Mummy"
             _G.CFrameQ = CFrame.new(-9516.99, 178.01, 6078.47)
             _G.CFrameMon = CFrame.new(-9545.78, 69.62, 6339.56)
         elseif lv <= 2099 then
-            _G.Ms = "Peanut Scout"
-            _G.NameQuest = "NutsIslandQuest"
-            _G.QuestLv = 1
-            _G.NameMon = "Peanut Scout"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Peanut Scout", "NutsIslandQuest", 1, "Peanut Scout"
             _G.CFrameQ = CFrame.new(-2105.53, 37.25, -10195.51)
             _G.CFrameMon = CFrame.new(-2150.59, 122.50, -10358.99)
         elseif lv <= 2124 then
-            _G.Ms = "Peanut President"
-            _G.NameQuest = "NutsIslandQuest"
-            _G.QuestLv = 2
-            _G.NameMon = "Peanut President"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Peanut President", "NutsIslandQuest", 2, "Peanut President"
             _G.CFrameQ = CFrame.new(-2105.53, 37.25, -10195.51)
             _G.CFrameMon = CFrame.new(-2150.59, 122.50, -10358.99)
         elseif lv <= 2149 then
-            _G.Ms = "Ice Cream Chef"
-            _G.NameQuest = "IceCreamIslandQuest"
-            _G.QuestLv = 1
-            _G.NameMon = "Ice Cream Chef"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Ice Cream Chef", "IceCreamIslandQuest", 1, "Ice Cream Chef"
             _G.CFrameQ = CFrame.new(-819.38, 64.93, -10967.28)
             _G.CFrameMon = CFrame.new(-789.94, 209.38, -11009.98)
         elseif lv <= 2199 then
-            _G.Ms = "Ice Cream Commander"
-            _G.NameQuest = "IceCreamIslandQuest"
-            _G.QuestLv = 2
-            _G.NameMon = "Ice Cream Commander"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Ice Cream Commander", "IceCreamIslandQuest", 2, "Ice Cream Commander"
             _G.CFrameQ = CFrame.new(-819.38, 64.93, -10967.28)
             _G.CFrameMon = CFrame.new(-789.94, 209.38, -11009.98)
         elseif lv <= 2224 then
-            _G.Ms = "Cookie Crafter"
-            _G.NameQuest = "CakeQuest1"
-            _G.QuestLv = 1
-            _G.NameMon = "Cookie Crafter"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Cookie Crafter", "CakeQuest1", 1, "Cookie Crafter"
             _G.CFrameQ = CFrame.new(-2022.30, 36.93, -12030.98)
             _G.CFrameMon = CFrame.new(-2321.71, 36.70, -12216.79)
         elseif lv <= 2249 then
-            _G.Ms = "Cake Guard"
-            _G.NameQuest = "CakeQuest1"
-            _G.QuestLv = 2
-            _G.NameMon = "Cake Guard"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Cake Guard", "CakeQuest1", 2, "Cake Guard"
             _G.CFrameQ = CFrame.new(-2022.30, 36.93, -12030.98)
             _G.CFrameMon = CFrame.new(-1418.11, 36.67, -12255.73)
         elseif lv <= 2274 then
-            _G.Ms = "Baking Staff"
-            _G.NameQuest = "CakeQuest2"
-            _G.QuestLv = 1
-            _G.NameMon = "Baking Staff"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Baking Staff", "CakeQuest2", 1, "Baking Staff"
             _G.CFrameQ = CFrame.new(-1928.32, 37.73, -12840.63)
             _G.CFrameMon = CFrame.new(-1980.44, 36.67, -12983.84)
         elseif lv <= 2299 then
-            _G.Ms = "Head Baker"
-            _G.NameQuest = "CakeQuest2"
-            _G.QuestLv = 2
-            _G.NameMon = "Head Baker"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Head Baker", "CakeQuest2", 2, "Head Baker"
             _G.CFrameQ = CFrame.new(-1928.32, 37.73, -12840.63)
             _G.CFrameMon = CFrame.new(-2251.58, 52.27, -13033.40)
         elseif lv <= 2324 then
-            _G.Ms = "Cocoa Warrior"
-            _G.NameQuest = "ChocQuest1"
-            _G.QuestLv = 1
-            _G.NameMon = "Cocoa Warrior"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Cocoa Warrior", "ChocQuest1", 1, "Cocoa Warrior"
             _G.CFrameQ = CFrame.new(231.75, 23.90, -12200.29)
             _G.CFrameMon = CFrame.new(167.98, 26.23, -12238.87)
         elseif lv <= 2349 then
-            _G.Ms = "Chocolate Bar Battler"
-            _G.NameQuest = "ChocQuest1"
-            _G.QuestLv = 2
-            _G.NameMon = "Chocolate Bar Battler"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Chocolate Bar Battler", "ChocQuest1", 2, "Chocolate Bar Battler"
             _G.CFrameQ = CFrame.new(231.75, 23.90, -12200.29)
             _G.CFrameMon = CFrame.new(701.31, 25.58, -12708.21)
         elseif lv <= 2374 then
-            _G.Ms = "Sweet Thief"
-            _G.NameQuest = "ChocQuest2"
-            _G.QuestLv = 1
-            _G.NameMon = "Sweet Thief"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Sweet Thief", "ChocQuest2", 1, "Sweet Thief"
             _G.CFrameQ = CFrame.new(151.20, 23.89, -12774.62)
             _G.CFrameMon = CFrame.new(-140.26, 25.58, -12652.31)
         elseif lv <= 2400 then
-            _G.Ms = "Candy Rebel"
-            _G.NameQuest = "ChocQuest2"
-            _G.QuestLv = 2
-            _G.NameMon = "Candy Rebel"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Candy Rebel", "ChocQuest2", 2, "Candy Rebel"
             _G.CFrameQ = CFrame.new(151.20, 23.89, -12774.62)
             _G.CFrameMon = CFrame.new(47.92, 25.58, -13029.24)
         elseif lv <= 2424 then
-            _G.Ms = "Candy Pirate"
-            _G.NameQuest = "CandyQuest1"
-            _G.QuestLv = 1
-            _G.NameMon = "Candy Pirate"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Candy Pirate", "CandyQuest1", 1, "Candy Pirate"
             _G.CFrameQ = CFrame.new(-1149.33, 13.58, -14445.61)
             _G.CFrameMon = CFrame.new(-1437.56, 17.15, -14385.69)
         elseif lv <= 2449 then
-            _G.Ms = "Snow Demon"
-            _G.NameQuest = "CandyQuest1"
-            _G.QuestLv = 2
-            _G.NameMon = "Snow Demon"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Snow Demon", "CandyQuest1", 2, "Snow Demon"
             _G.CFrameQ = CFrame.new(-1149.33, 13.58, -14445.61)
             _G.CFrameMon = CFrame.new(-916.22, 17.15, -14638.81)
         elseif lv <= 2474 then
-            _G.Ms = "Isle Outlaw"
-            _G.NameQuest = "TikiQuest1"
-            _G.QuestLv = 1
-            _G.NameMon = "Isle Outlaw"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Isle Outlaw", "TikiQuest1", 1, "Isle Outlaw"
             _G.CFrameQ = CFrame.new(-16549.89, 55.69, -179.91)
             _G.CFrameMon = CFrame.new(-16162.82, 11.69, -96.45)
         elseif lv <= 2499 then
-            _G.Ms = "Island Boy"
-            _G.NameQuest = "TikiQuest1"
-            _G.QuestLv = 2
-            _G.NameMon = "Island Boy"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Island Boy", "TikiQuest1", 2, "Island Boy"
             _G.CFrameQ = CFrame.new(-16549.89, 55.69, -179.91)
             _G.CFrameMon = CFrame.new(-16357.31, 20.63, 1005.65)
         elseif lv <= 2524 then
-            _G.Ms = "Sun-kissed Warrior"
-            _G.NameQuest = "TikiQuest2"
-            _G.QuestLv = 1
-            _G.NameMon = "Sun-kissed Warrior"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Sun-kissed Warrior", "TikiQuest2", 1, "Sun-kissed Warrior"
             _G.CFrameQ = CFrame.new(-16541.02, 54.77, 1051.46)
             _G.CFrameMon = CFrame.new(-16357.31, 20.63, 1005.65)
         elseif lv <= 2549 then
-            _G.Ms = "Isle Champion"
-            _G.NameQuest = "TikiQuest2"
-            _G.QuestLv = 2
-            _G.NameMon = "Isle Champion"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Isle Champion", "TikiQuest2", 2, "Isle Champion"
             _G.CFrameQ = CFrame.new(-16541.02, 54.77, 1051.46)
             _G.CFrameMon = CFrame.new(-16848.94, 21.69, 1041.45)
         elseif lv <= 2574 then
-            _G.Ms = "Serpent Hunter"
-            _G.NameQuest = "TikiQuest3"
-            _G.QuestLv = 1
-            _G.NameMon = "Serpent Hunter"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Serpent Hunter", "TikiQuest3", 1, "Serpent Hunter"
             _G.CFrameQ = CFrame.new(-16665.19, 104.60, 1579.69)
             _G.CFrameMon = CFrame.new(-16621.41, 121.41, 1290.69)
         else
-            _G.Ms = "Skull Slayer"
-            _G.NameQuest = "TikiQuest3"
-            _G.QuestLv = 2
-            _G.NameMon = "Skull Slayer"
+            _G.Ms, _G.NameQuest, _G.QuestLv, _G.NameMon = "Skull Slayer", "TikiQuest3", 2, "Skull Slayer"
             _G.CFrameQ = CFrame.new(-16665.19, 104.60, 1579.69)
             _G.CFrameMon = CFrame.new(-16811.57, 84.63, 1542.24)
         end
     end
-    
-    print("[CHECKLEVEL] Level:", lv, "| Mob:", _G.Ms, "| Quest:", _G.NameQuest)
 end
 
-print("[NEXUS] CheckLevel carregado com todos os níveis")
-
 -- ============================================================
--- SEÇÃO 13: AUTO FARM LOOP
+-- AUTO FARM LOOP (CORRIGIDO - SEM LOOP DE PULO)
 -- ============================================================
 task.spawn(function()
     print("[AUTO FARM] Loop iniciado")
     
-    while task.wait(0.1) do
+    while task.wait(0.05) do
         if not _G.AutoFarm then 
             task.wait(1)
             continue 
@@ -1030,7 +658,6 @@ task.spawn(function()
         pcall(function()
             CheckLevel()
             
-            -- Verificar se tem quest ativa
             local hasQuest = false
             pcall(function()
                 local main = Player.PlayerGui:FindFirstChild("Main")
@@ -1051,96 +678,80 @@ task.spawn(function()
                 end
             end)
             
-            -- Pegar quest se necessário
             if not hasQuest and _G.AutoQuest then
-                print("[AUTO FARM] Pegando quest:", _G.NameQuest)
                 local remote = GetRemote()
                 if remote then
                     remote:InvokeServer("AbandonQuest")
                     task.wait(0.3)
                     TweenTP(_G.CFrameQ)
                     task.wait(1)
-                    
                     if _G.CFrameQ and Player.Character and Player.Character:FindFirstChild("HumanoidRootPart") then
                         local dist = (_G.CFrameQ.Position - Player.Character.HumanoidRootPart.Position).Magnitude
                         if dist <= 15 then
                             remote:InvokeServer("StartQuest", _G.NameQuest, _G.QuestLv)
-                            print("[AUTO FARM] Quest iniciada!")
                         end
                     end
                 end
                 return
             end
             
-            -- Farmar mobs
             if hasQuest or not _G.AutoQuest then
                 EquipWeapon()
                 
-                -- Auto Haki
                 if _G.AutoHaki then
                     pcall(function()
                         if not Player.Character:FindFirstChild("HasBuso") then
                             local remote = GetRemote()
-                            if remote then 
-                                remote:InvokeServer("Buso") 
-                            end
+                            if remote then remote:InvokeServer("Buso") end
                         end
                     end)
                 end
                 
-                -- Procurar e atacar mobs
-                local foundMob = false
+                local closestMob = nil
+                local closestDistance = _G.Range
                 local enemiesFolder = Workspace:FindFirstChild("Enemies")
+                local myPos = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
                 
-                if enemiesFolder then
-                    local myPos = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-                    
-                    if myPos then
-                        for _, enemy in pairs(enemiesFolder:GetChildren()) do
-                            if foundMob then break end
-                            
-                            if enemy:IsA("Model") and enemy.Name == _G.Ms then
-                                local hum = enemy:FindFirstChild("Humanoid")
-                                if hum and hum.Health > 0 then
-                                    local hrp = enemy:FindFirstChild("HumanoidRootPart")
-                                    if hrp then
-                                        foundMob = true
-                                        
-                                        -- Bring Mob ou ir até o mob
-                                        if _G.BringMob then
-                                            hrp.CFrame = myPos.CFrame * CFrame.new(0, 5, 5)
-                                            hum.WalkSpeed = 0
-                                            hum.JumpPower = 0
-                                        else
-                                            local distance = (hrp.Position - myPos.Position).Magnitude
-                                            if distance > 15 then
-                                                TP(hrp.Position)
-                                                task.wait(0.3)
-                                            end
-                                        end
-                                        
-                                        -- Atacar até matar
-                                        for attackCount = 1, 30 do
-                                            if not _G.AutoFarm then break end
-                                            if hum.Health <= 0 then break end
-                                            
-                                            if _G.FastAttack then
-                                                FastAttack()
-                                            else
-                                                Attack()
-                                            end
-                                            task.wait(0.15)
-                                        end
-                                    end
+                if enemiesFolder and myPos then
+                    for _, enemy in pairs(enemiesFolder:GetChildren()) do
+                        if enemy:IsA("Model") and enemy.Name == _G.Ms then
+                            local hum = enemy:FindFirstChild("Humanoid")
+                            local hrp = enemy:FindFirstChild("HumanoidRootPart")
+                            if hum and hum.Health > 0 and hrp then
+                                local dist = (hrp.Position - myPos.Position).Magnitude
+                                if dist < closestDistance then
+                                    closestDistance = dist
+                                    closestMob = enemy
                                 end
                             end
                         end
                     end
                 end
                 
-                -- Se não achou mob, vai para área de spawn
-                if not foundMob then
-                    print("[AUTO FARM] Indo para área de spawn:", _G.NameMon)
+                if closestMob then
+                    local hum = closestMob:FindFirstChild("Humanoid")
+                    local hrp = closestMob:FindFirstChild("HumanoidRootPart")
+                    
+                    if hum and hrp and hum.Health > 0 then
+                        if _G.BringMob then
+                            hrp.CFrame = myPos.CFrame * CFrame.new(0, 5, 5)
+                            hrp.Velocity = Vector3.new(0, 0, 0)
+                            hrp.RotVelocity = Vector3.new(0, 0, 0)
+                            hum.WalkSpeed = 0
+                            hum.JumpPower = 0
+                        else
+                            if closestDistance > 10 then
+                                TP(hrp.Position)
+                            end
+                        end
+                        
+                        if _G.FastAttack then
+                            FastAttack()
+                        else
+                            Attack()
+                        end
+                    end
+                else
                     TweenTP(_G.CFrameMon)
                     task.wait(1)
                 end
@@ -1150,12 +761,12 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- SEÇÃO 14: AUTO BOSS LOOP
+-- AUTO BOSS LOOP (CORRIGIDO)
 -- ============================================================
 task.spawn(function()
     print("[AUTO BOSS] Loop iniciado")
     
-    while task.wait(0.5) do
+    while task.wait(0.05) do
         if not _G.AutoBoss or _G.SelectBoss == "" then 
             task.wait(1)
             continue 
@@ -1165,26 +776,36 @@ task.spawn(function()
         pcall(function()
             local boss = FindBoss(_G.SelectBoss)
             if boss then
-                local bossHrp = boss:FindFirstChild("HumanoidRootPart")
-                if bossHrp then
+                local hum = boss:FindFirstChild("Humanoid")
+                local hrp = boss:FindFirstChild("HumanoidRootPart")
+                
+                if hum and hrp and hum.Health > 0 then
                     local myPos = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-                    if myPos and (bossHrp.Position - myPos.Position).Magnitude > 15 then
-                        TP(bossHrp.Position)
-                    end
                     
-                    if _G.AutoHaki and not Player.Character:FindFirstChild("HasBuso") then
-                        local remote = GetRemote()
-                        if remote then 
-                            remote:InvokeServer("Buso") 
+                    if myPos then
+                        local dist = (hrp.Position - myPos.Position).Magnitude
+                        if dist > 10 then
+                            TP(hrp.Position)
                         end
-                    end
-                    
-                    EquipWeapon()
-                    
-                    if _G.FastAttack then
-                        FastAttack()
-                    else
-                        Attack()
+                        
+                        hrp.CFrame = myPos.CFrame * CFrame.new(0, 5, 5)
+                        hrp.Velocity = Vector3.new(0, 0, 0)
+                        hrp.RotVelocity = Vector3.new(0, 0, 0)
+                        hum.WalkSpeed = 0
+                        hum.JumpPower = 0
+                        
+                        if _G.AutoHaki and not Player.Character:FindFirstChild("HasBuso") then
+                            local remote = GetRemote()
+                            if remote then remote:InvokeServer("Buso") end
+                        end
+                        
+                        EquipWeapon()
+                        
+                        if _G.FastAttack then
+                            FastAttack()
+                        else
+                            Attack()
+                        end
                     end
                 end
             end
@@ -1193,7 +814,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- SEÇÃO 15: GOD MODE
+-- GOD MODE
 -- ============================================================
 task.spawn(function()
     while task.wait(0.3) do
@@ -1208,7 +829,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- SEÇÃO 16: AUTO STATS
+-- AUTO STATS
 -- ============================================================
 task.spawn(function()
     while task.wait(60) do
@@ -1219,23 +840,21 @@ task.spawn(function()
                 for i = 1, 3 do
                     remote:InvokeServer("AddPoint", "Melee", 1)
                 end
-                print("[AUTO STATS] Pontos adicionados")
             end
         end)
     end
 end)
 
 -- ============================================================
--- SEÇÃO 17: FRUIT SNIPER
+-- FRUIT SNIPER (PROTEGIDO)
 -- ============================================================
 task.spawn(function()
-    while task.wait(3) do
+    while task.wait(5) do
         if not _G.FruitSniper then continue end
         pcall(function()
             for _, obj in pairs(Workspace:GetDescendants()) do
-                if obj:IsA("BasePart") and obj.Name:lower():find("fruit", 1, true) then
+                if obj:IsA("BasePart") and obj.Name:lower():find("fruit") then
                     if obj.Parent and obj.Parent:FindFirstChild("Handle") then
-                        print("[FRUIT] Fruta encontrada!")
                         TP(obj.Position)
                         task.wait(0.5)
                         break
@@ -1247,10 +866,10 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- SEÇÃO 18: AUTO STORE
+-- AUTO STORE (PROTEGIDO)
 -- ============================================================
 task.spawn(function()
-    while task.wait(10) do
+    while task.wait(15) do
         if not _G.AutoStore then continue end
         pcall(function()
             local data = Player:FindFirstChild("Data")
@@ -1260,7 +879,6 @@ task.spawn(function()
                     local remote = GetRemote()
                     if remote then
                         remote:InvokeServer("StoreFruit", fruit.Value)
-                        print("[AUTO STORE] Fruta armazenada:", fruit.Value)
                     end
                 end
             end
@@ -1269,7 +887,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- SEÇÃO 19: AUTO ROLL
+-- AUTO ROLL
 -- ============================================================
 task.spawn(function()
     while task.wait(30) do
@@ -1278,14 +896,13 @@ task.spawn(function()
             local remote = GetRemote()
             if remote then
                 remote:InvokeServer("FruitGacha", "Roll")
-                print("[AUTO ROLL] Roll realizado")
             end
         end)
     end
 end)
 
 -- ============================================================
--- SEÇÃO 20: NOCLIP AUTOMÁTICO
+-- NOCLIP
 -- ============================================================
 RunService.Stepped:Connect(function()
     if not _G.AutoFarm and not _G.AutoBoss then return end
@@ -1301,7 +918,7 @@ RunService.Stepped:Connect(function()
 end)
 
 -- ============================================================
--- SEÇÃO 21: ANTI-KNOCKBACK
+-- ANTI-KNOCKBACK
 -- ============================================================
 task.spawn(function()
     while task.wait(0.5) do
@@ -1326,97 +943,33 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- SEÇÃO 22: ANTI-STUN
+-- UI
 -- ============================================================
-task.spawn(function()
-    while task.wait(0.1) do
-        pcall(function()
-            if Player.Character then
-                local stun = Player.Character:FindFirstChild("Stun")
-                if stun then
-                    stun.Value = 0
-                end
-            end
-        end)
-    end
-end)
+local win = DiscordLib:Window("NEXUS v11.0 FINAL")
+local serv = win:Server("Blox Fruits", "")
 
--- ============================================================
--- SEÇÃO 23: INTERFACE DO USUÁRIO
--- ============================================================
-print("[NEXUS] Criando interface...")
-
-local win = DiscordLib:Window("NEXUS SUPREMO v11.0")
-local serv = win:Server("Blox Fruits", "http://www.roblox.com/asset/?id=6031075938")
-
--- Canal: Auto Farm
 local farmChannel = serv:Channel("⚔️ Auto Farm")
-farmChannel:Toggle("Auto Farm Level", false, function(v) 
-    _G.AutoFarm = v 
-    print("[UI] Auto Farm:", v and "ATIVADO" or "DESATIVADO")
-end)
-farmChannel:Toggle("Auto Quest", true, function(v) 
-    _G.AutoQuest = v 
-end)
-farmChannel:Toggle("Bring Mob", true, function(v) 
-    _G.BringMob = v 
-end)
-farmChannel:Toggle("Fast Attack", false, function(v) 
-    _G.FastAttack = v 
-end)
-farmChannel:Toggle("Auto Haki", false, function(v) 
-    _G.AutoHaki = v 
-end)
-farmChannel:Toggle("God Mode", false, function(v) 
-    _G.GodMode = v 
-end)
-farmChannel:Dropdown("Select Weapon", {"Melee", "Sword", "Blox Fruit"}, function(v) 
-    _G.SelectWeapon = v 
-    print("[UI] Arma:", v)
-end)
-farmChannel:Slider("Attack Range", 50, 500, 300, function(v) 
-    _G.Range = v 
-end)
+farmChannel:Toggle("Auto Farm Level", false, function(v) _G.AutoFarm = v end)
+farmChannel:Toggle("Auto Quest", true, function(v) _G.AutoQuest = v end)
+farmChannel:Toggle("Bring Mob", true, function(v) _G.BringMob = v end)
+farmChannel:Toggle("Fast Attack", false, function(v) _G.FastAttack = v end)
+farmChannel:Toggle("Auto Haki", false, function(v) _G.AutoHaki = v end)
+farmChannel:Toggle("God Mode", false, function(v) _G.GodMode = v end)
+farmChannel:Dropdown("Select Weapon", {"Melee", "Sword", "Blox Fruit"}, function(v) _G.SelectWeapon = v end)
+farmChannel:Slider("Attack Range", 50, 500, 300, function(v) _G.Range = v end)
 
--- Canal: Auto Boss
 local bossChannel = serv:Channel("💀 Auto Boss")
-bossChannel:Toggle("Auto Boss", false, function(v) 
-    _G.AutoBoss = v 
-    print("[UI] Auto Boss:", v and "ATIVADO" or "DESATIVADO")
-end)
-bossChannel:Dropdown("Select Boss", BossList, function(v) 
-    _G.SelectBoss = v 
-    print("[UI] Boss:", v)
-end)
+bossChannel:Toggle("Auto Boss", false, function(v) _G.AutoBoss = v end)
+bossChannel:Dropdown("Select Boss", BossList, function(v) _G.SelectBoss = v end)
 
--- Canal: Frutas
 local fruitChannel = serv:Channel("🍎 Frutas")
-fruitChannel:Toggle("Fruit Sniper", false, function(v) 
-    _G.FruitSniper = v 
-end)
-fruitChannel:Toggle("Auto Store", false, function(v) 
-    _G.AutoStore = v 
-end)
-fruitChannel:Toggle("Auto Roll", false, function(v) 
-    _G.AutoRoll = v 
-end)
+fruitChannel:Toggle("Fruit Sniper", false, function(v) _G.FruitSniper = v end)
+fruitChannel:Toggle("Auto Store", false, function(v) _G.AutoStore = v end)
+fruitChannel:Toggle("Auto Roll", false, function(v) _G.AutoRoll = v end)
 
--- Canal: Configurações
-local settingsChannel = serv:Channel("⚙️ Configurações")
-settingsChannel:Toggle("Auto Stats (Melee)", false, function(v) 
-    _G.AutoStats = v 
-end)
-settingsChannel:Slider("Attack Delay (ms)", 0, 500, 100, function(v) 
-    _G.Fast_Delay = v / 1000 
-end)
-settingsChannel:Button("🔄 Refresh Status", function()
-    local lv = Player.Data.Level.Value
-    local sea = Sea1 and "1" or Sea2 and "2" or Sea3 and "3" or "?"
-    DiscordLib:Notification("NEXUS SUPREMO", 
-        "Sea: " .. sea .. " | Level: " .. lv .. " | Weapon: " .. (_G.WeaponName or "None"), 
-        "OK")
-end)
-settingsChannel:Button("🛑 Stop Everything", function()
+local settingsChannel = serv:Channel("⚙️ Config")
+settingsChannel:Toggle("Auto Stats (Melee)", false, function(v) _G.AutoStats = v end)
+settingsChannel:Button("🛑 PARAR TUDO", function()
     _G.AutoFarm = false
     _G.AutoBoss = false
     _G.GodMode = false
@@ -1424,34 +977,12 @@ settingsChannel:Button("🛑 Stop Everything", function()
     _G.AutoStore = false
     _G.AutoRoll = false
     _G.AutoStats = false
-    _G.StopTween = true
-    task.wait(0.5)
-    _G.StopTween = false
-    DiscordLib:Notification("NEXUS SUPREMO", "Todos os sistemas PARADOS!", "OK")
-    print("[UI] Todos os sistemas parados")
 end)
-settingsChannel:Label("NEXUS SUPREMO v11.0")
-settingsChannel:Label("Delta Executor Edition")
-settingsChannel:Label("Otimizado para todos devices")
+settingsChannel:Label("NEXUS v11.0 - Final Stable")
+settingsChannel:Label("Proteções: Nil | Memória | FastAttack")
 
--- ============================================================
--- SEÇÃO 24: NOTIFICAÇÃO FINAL
--- ============================================================
 print("[NEXUS] =========================================")
-print("[NEXUS] Script carregado com sucesso!")
+print("[NEXUS] PRONTO - Script carregado com sucesso!")
 print("[NEXUS] Level:", Player.Data.Level.Value)
-print("[NEXUS] Sea:", Sea1 and "1" or Sea2 and "2" or Sea3 and "3")
+print("[NEXUS] Memória: GC ativado a cada 5min")
 print("[NEXUS] =========================================")
-
-DiscordLib:Notification("NEXUS SUPREMO DELTA", 
-    "Script carregado com sucesso!\n\n" ..
-    "⚔️ Auto Farm - Completo\n" ..
-    "💀 Auto Boss - Todas as Seas\n" ..
-    "🍎 Frutas - Sniper/Store/Roll\n" ..
-    "⚙️ Configurações - Customizável\n\n" ..
-    "Level atual: " .. Player.Data.Level.Value .. "\n" ..
-    "Sea: " .. (Sea1 and "1" or Sea2 and "2" or Sea3 and "3"), 
-    "🚀 INICIAR!"
-)
-
-print("[NEXUS] PRONTO - Ative 'Auto Farm Level' para começar!")
