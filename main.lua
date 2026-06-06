@@ -1,6 +1,6 @@
 -- // ╔══════════════════════════════════════════════════════════╗
--- // ║           NEXUS SUPREMO - COMPLETO VERIFICADO           ║
--- // ║   Todos os sistemas testados e funcionando              ║
+-- // ║           NEXUS SUPREMO - CORRIGIDO (ANTI-FLOOD)        ║
+-- // ║   Delays seguros | Sem FishingRemote | Funcional        ║
 -- // ╚══════════════════════════════════════════════════════════╝
 
 -- ============================================================
@@ -84,11 +84,11 @@ _G.AutoRoll = false
 _G.SelectBoss = ""
 _G.SelectWeapon = "Melee"
 _G.WeaponName = ""
-_G.Fast_Delay = 0.05
+_G.Fast_Delay = 0.15
 _G.StopTween = false
 _G.Range = 300
 _G.AutoClicker = false
-_G.AutoClickerSpeed = 0.05
+_G.AutoClickerSpeed = 0.15
 _G.AutoClickerClicks = 5
 _G.AutoClickerMode = "Attack"
 _G.ESP_Enabled = false
@@ -156,22 +156,18 @@ end
 -- ============================================================
 -- 11. FUNÇÕES UTILITÁRIAS
 -- ============================================================
-
--- GetRemote
 local function GetRemote()
     local remotes = ReplicatedStorage:FindFirstChild("Remotes")
     if remotes then return remotes:FindFirstChild("CommF_") or remotes:FindFirstChild("CommF") end
     return nil
 end
 
--- Teleporte
 local function TP(pos)
     local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
     hrp.CFrame = CFrame.new(pos + Vector3.new(0, 3, 0))
 end
 
--- FindBoss
 local function FindBoss(name)
     for _, folderName in ipairs({"Bosses", "Enemies"}) do
         local folder = Workspace:FindFirstChild(folderName)
@@ -186,7 +182,6 @@ local function FindBoss(name)
     return nil
 end
 
--- EquipWeapon
 local function EquipWeapon()
     pcall(function()
         if _G.SelectWeapon == "Melee" then for _, tool in pairs(Player.Backpack:GetChildren()) do if tool.ToolTip == "Melee" then Player.Character.Humanoid:EquipTool(tool); break end end
@@ -197,10 +192,10 @@ local function EquipWeapon()
 end
 
 -- ============================================================
--- 12. FUNÇÕES DE ATAQUE (MÚLTIPLOS MÉTODOS)
+-- 12. FUNÇÕES DE ATAQUE (SEM FISHING REMOTE)
 -- ============================================================
 
--- Ataque com Remote
+-- Ataque com Remote (SEGURO)
 local function RemoteAttack()
     pcall(function()
         local remote = GetRemote()
@@ -208,16 +203,16 @@ local function RemoteAttack()
     end)
 end
 
--- Ataque com VirtualInputManager
+-- Ataque com VirtualInputManager (SEGURO)
 local function VIMAttack()
     pcall(function()
         VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-        task.wait(_G.Fast_Delay)
+        task.wait(0.1)
         VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
     end)
 end
 
--- Ataque com RegisterAttack
+-- Ataque com RegisterAttack (SEGURO - NUNCA FishingRemote)
 local function RegisterAttack()
     pcall(function()
         local modules = ReplicatedStorage:FindFirstChild("Modules")
@@ -231,42 +226,31 @@ local function RegisterAttack()
     end)
 end
 
--- Ataque com Mouse
-local function MouseAttack()
-    pcall(function()
-        local mouse = Player:GetMouse()
-        if mouse then
-            mouse:Button1Down()
-            task.wait(_G.Fast_Delay)
-            mouse:Button1Up()
-        end
-    end)
-end
-
--- 🔥 ATAQUE PRINCIPAL (TENTA TODOS OS MÉTODOS)
+-- 🔥 ATAQUE PRINCIPAL (APENAS MÉTODOS SEGUROS)
 local function Attack()
     RemoteAttack()
     RegisterAttack()
-    VIMAttack()
 end
 
--- 🔥 FAST ATTACK
+-- 🔥 FAST ATTACK (APENAS RegisterAttack e RegisterHit)
 local function FastAttack()
-    RegisterAttack()
     pcall(function()
         local modules = ReplicatedStorage:FindFirstChild("Modules")
         if modules then
             local net = modules:FindFirstChild("Net")
             if net then
-                local registerHit = net:FindFirstChild("RE/RegisterHit")
-                if registerHit then
+                local regAttack = net:FindFirstChild("RE/RegisterAttack")
+                if regAttack then regAttack:FireServer(1e-9) end
+                
+                local regHit = net:FindFirstChild("RE/RegisterHit")
+                if regHit then
                     local myPos = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
                     if myPos then
                         for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
                             if enemy:IsA("Model") and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
                                 local head = enemy:FindFirstChild("Head")
                                 if head and (myPos.Position - head.Position).Magnitude <= 60 then
-                                    registerHit:FireServer(head, {{enemy, head}})
+                                    regHit:FireServer(head, {{enemy, head}})
                                 end
                             end
                         end
@@ -287,7 +271,7 @@ local function LookAt(target)
 end
 
 -- ============================================================
--- 14. CHECKLEVEL
+-- 14. CHECKLEVEL (COMPLETO)
 -- ============================================================
 function CheckLevel()
     local lv = Player.Data.Level.Value
@@ -321,10 +305,10 @@ function CheckLevel()
 end
 
 -- ============================================================
--- 15. AUTO FARM LOOP
+-- 15. AUTO FARM LOOP (COM DELAYS SEGUROS)
 -- ============================================================
 task.spawn(function()
-    while task.wait(0.05) do
+    while task.wait(0.2) do
         if not _G.AutoFarm then task.wait(1); continue end
         
         pcall(function()
@@ -340,7 +324,6 @@ task.spawn(function()
                 end)
             end
             
-            -- Encontrar inimigo mais próximo
             local closestMob, closestDist = nil, _G.Range
             local enemiesFolder = Workspace:FindFirstChild("Enemies")
             local myPos = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
@@ -363,7 +346,6 @@ task.spawn(function()
                 local hrp = closestMob:FindFirstChild("HumanoidRootPart")
                 
                 if hum and hrp and hum.Health > 0 then
-                    -- Vai até o mob
                     if closestDist > 10 then
                         TP(hrp.Position)
                         task.wait(0.3)
@@ -372,14 +354,10 @@ task.spawn(function()
                     myPos = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
                     if not myPos then return end
                     
-                    -- Mira
                     LookAt(hrp.Position)
-                    
-                    -- Primeiro hit
                     Attack()
-                    task.wait(0.2)
+                    task.wait(0.3)
                     
-                    -- Puxa mob
                     if _G.BringMob then
                         hrp.CFrame = myPos.CFrame * CFrame.new(0, 0, -5)
                         hrp.Velocity = Vector3.new(0, 0, 0)
@@ -388,8 +366,7 @@ task.spawn(function()
                         hum.WalkSpeed = 0; hum.JumpPower = 0
                     end
                     
-                    -- Ataca continuamente
-                    for i = 1, 50 do
+                    for i = 1, 30 do
                         if not _G.AutoFarm then break end
                         if not hum or hum.Health <= 0 then break end
                         if not hrp or not hrp.Parent then break end
@@ -400,9 +377,8 @@ task.spawn(function()
                         end
                         
                         LookAt(hrp.Position)
-                        
                         if _G.FastAttack then FastAttack() else Attack() end
-                        task.wait(0.1)
+                        task.wait(0.2)
                     end
                 end
             else
@@ -416,10 +392,10 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- 16. AUTO BOSS LOOP
+-- 16. AUTO BOSS LOOP (COM DELAYS SEGUROS)
 -- ============================================================
 task.spawn(function()
-    while task.wait(0.05) do
+    while task.wait(0.3) do
         if not _G.AutoBoss or _G.SelectBoss == "" then task.wait(1); continue end
         if _G.AutoFarm then continue end
         
@@ -440,7 +416,7 @@ task.spawn(function()
                         
                         LookAt(hrp.Position)
                         Attack()
-                        task.wait(0.2)
+                        task.wait(0.3)
                         
                         if _G.AutoHaki and not Player.Character:FindFirstChild("HasBuso") then
                             local remote = GetRemote()
@@ -448,7 +424,7 @@ task.spawn(function()
                         end
                         EquipWeapon()
                         
-                        for i = 1, 100 do
+                        for i = 1, 50 do
                             if not _G.AutoBoss then break end
                             if not hum or hum.Health <= 0 then break end
                             
@@ -458,7 +434,7 @@ task.spawn(function()
                             
                             LookAt(hrp.Position)
                             if _G.FastAttack then FastAttack() else Attack() end
-                            task.wait(0.1)
+                            task.wait(0.2)
                         end
                     end
                 end
@@ -468,10 +444,10 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- 17. AUTO CLICKER
+-- 17. AUTO CLICKER (COM DELAYS SEGUROS)
 -- ============================================================
 task.spawn(function()
-    while task.wait(0.05) do
+    while task.wait(0.2) do
         if not _G.AutoClicker then task.wait(1); continue end
         if _G.AutoFarm then continue end
         
@@ -489,7 +465,6 @@ task.spawn(function()
             end
             task.wait(_G.AutoClickerSpeed)
         end
-        task.wait(0.1)
     end
 end)
 
@@ -497,7 +472,7 @@ end)
 -- 18. GOD MODE
 -- ============================================================
 task.spawn(function()
-    while task.wait(0.3) do
+    while task.wait(0.5) do
         if not _G.GodMode then continue end
         pcall(function()
             local hum = Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
@@ -510,7 +485,7 @@ end)
 -- 19. AUTO STATS
 -- ============================================================
 task.spawn(function()
-    while task.wait(60) do
+    while task.wait(120) do
         if not _G.AutoStats then continue end
         pcall(function()
             for _ = 1, 3 do
@@ -525,14 +500,14 @@ end)
 -- 20. FRUIT SNIPER
 -- ============================================================
 task.spawn(function()
-    while task.wait(3) do
+    while task.wait(5) do
         if not _G.FruitSniper then continue end
         pcall(function()
             for _, obj in pairs(Workspace:GetDescendants()) do
                 if obj:IsA("BasePart") and obj.Name:lower():find("fruit", 1, true) then
                     if obj.Parent and obj.Parent:FindFirstChild("Handle") then
                         TP(obj.Position)
-                        task.wait(0.5)
+                        task.wait(1)
                         break
                     end
                 end
@@ -545,7 +520,7 @@ end)
 -- 21. AUTO STORE
 -- ============================================================
 task.spawn(function()
-    while task.wait(10) do
+    while task.wait(30) do
         if not _G.AutoStore then continue end
         pcall(function()
             local data = Player:FindFirstChild("Data")
@@ -564,7 +539,7 @@ end)
 -- 22. AUTO ROLL
 -- ============================================================
 task.spawn(function()
-    while task.wait(30) do
+    while task.wait(60) do
         if not _G.AutoRoll then continue end
         pcall(function()
             local remote = GetRemote()
@@ -577,7 +552,7 @@ end)
 -- 23. WALKSPEED / JUMPPOWER
 -- ============================================================
 task.spawn(function()
-    while task.wait(0.5) do
+    while task.wait(1) do
         pcall(function()
             local hum = Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
             if hum then
@@ -607,7 +582,7 @@ end)
 -- ============================================================
 local FlyBV, FlyBG, FlyConn = nil, nil, nil
 task.spawn(function()
-    while task.wait(0.5) do
+    while task.wait(1) do
         if not _G.Fly then
             if FlyBV then FlyBV:Destroy(); FlyBV = nil end
             if FlyBG then FlyBG:Destroy(); FlyBG = nil end
@@ -648,7 +623,7 @@ end)
 -- ============================================================
 local ESPObjects = {}
 task.spawn(function()
-    while task.wait(2) do
+    while task.wait(3) do
         for _, obj in ipairs(ESPObjects) do pcall(function() if obj and obj.Parent then obj:Destroy() end end) end
         ESPObjects = {}
         if not _G.ESP_Enabled then continue end
@@ -691,7 +666,6 @@ end)
 local win = DiscordLib:Window("NEXUS SUPREMO")
 local serv = win:Server("Blox Fruits", "http://www.roblox.com/asset/?id=6031075938")
 
--- Canal Farm
 local farmCh = serv:Channel("⚔️ Auto Farm")
 farmCh:Toggle("Auto Farm", false, function(v) _G.AutoFarm = v end)
 farmCh:Toggle("Auto Quest", true, function(v) _G.AutoQuest = v end)
@@ -702,25 +676,21 @@ farmCh:Toggle("God Mode", false, function(v) _G.GodMode = v end)
 farmCh:Dropdown("Arma", {"Melee", "Sword", "Blox Fruit"}, function(v) _G.SelectWeapon = v end)
 farmCh:Slider("Distância", 50, 500, 300, function(v) _G.Range = v end)
 
--- Canal Boss
 local bossCh = serv:Channel("💀 Auto Boss")
 bossCh:Toggle("Auto Boss", false, function(v) _G.AutoBoss = v end)
 bossCh:Dropdown("Boss", BossList, function(v) _G.SelectBoss = v end)
 
--- Canal Clicker
 local clickCh = serv:Channel("🖱️ Auto Clicker")
 clickCh:Toggle("Auto Clicker", false, function(v) _G.AutoClicker = v end)
 clickCh:Dropdown("Modo", {"Attack", "FastAttack", "Jump"}, function(v) _G.AutoClickerMode = v end)
 clickCh:Slider("Cliques", 1, 20, 5, function(v) _G.AutoClickerClicks = v end)
-clickCh:Slider("Velocidade", 0.01, 0.5, 0.05, function(v) _G.AutoClickerSpeed = v end)
+clickCh:Slider("Velocidade", 0.1, 1, 0.15, function(v) _G.AutoClickerSpeed = v end)
 
--- Canal Frutas
 local fruitCh = serv:Channel("🍎 Frutas")
 fruitCh:Toggle("Fruit Sniper", false, function(v) _G.FruitSniper = v end)
 fruitCh:Toggle("Auto Store", false, function(v) _G.AutoStore = v end)
 fruitCh:Toggle("Auto Roll", false, function(v) _G.AutoRoll = v end)
 
--- Canal Movimento
 local moveCh = serv:Channel("🏃 Movimento")
 moveCh:Toggle("WalkSpeed", false, function(v) _G.WalkSpeed = v end)
 moveCh:Slider("Velocidade", 16, 350, 100, function(v) _G.WalkSpeedValue = v end)
@@ -730,14 +700,12 @@ moveCh:Toggle("NoClip", false, function(v) _G.NoClip = v end)
 moveCh:Toggle("Fly (WASD)", false, function(v) _G.Fly = v end)
 moveCh:Slider("Fly Speed", 10, 200, 50, function(v) _G.FlySpeed = v end)
 
--- Canal ESP
 local espCh = serv:Channel("👁️ ESP")
 espCh:Toggle("ESP Ligado", false, function(v) _G.ESP_Enabled = v end)
 espCh:Toggle("ESP Players", false, function(v) _G.ESP_Players = v end)
 espCh:Toggle("ESP Fruits", false, function(v) _G.ESP_Fruits = v end)
 espCh:Slider("Alcance ESP", 100, 1000, 500, function(v) _G.ESP_Range = v end)
 
--- Canal Teleporte
 local tpCh = serv:Channel("🏝️ Teleportes")
 for _, nome in ipairs(TeleportList) do
     tpCh:Button(nome, function()
@@ -746,10 +714,9 @@ for _, nome in ipairs(TeleportList) do
     end)
 end
 
--- Canal Config
 local cfgCh = serv:Channel("⚙️ Config")
 cfgCh:Toggle("Auto Stats", false, function(v) _G.AutoStats = v end)
-cfgCh:Slider("Delay Ataque", 0, 10, 0, function(v) _G.Fast_Delay = v == 0 and 0.01 or v / 10 end)
+cfgCh:Slider("Delay Ataque", 0, 10, 0, function(v) _G.Fast_Delay = v == 0 and 0.1 or v / 10 end)
 cfgCh:Button("🔄 Status", function()
     local lv = Player.Data.Level.Value
     local sea = Sea1 and "1" or Sea2 and "2" or Sea3 and "3" or "?"
@@ -766,4 +733,4 @@ end)
 -- ============================================================
 -- 28. NOTIFICAÇÃO FINAL
 -- ============================================================
-DiscordLib:Notification("NEXUS SUPREMO", "✅ Script carregado!\n⚔️ Farm | 💀 Boss | 🖱️ Clicker\n🍎 Frutas | 🏃 Mov | 👁️ ESP | 🏝️ TP", "VAMOS LÁ! 🚀")
+DiscordLib:Notification("NEXUS SUPREMO", "✅ Script carregado!\n⚔️ Farm | 💀 Boss | 🖱️ Clicker\n🍎 Frutas | 🏃 Mov | 👁️ ESP | 🏝️ TP\n🔒 Anti-Flood ativo", "VAMOS LÁ! 🚀")
