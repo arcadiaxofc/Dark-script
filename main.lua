@@ -1,52 +1,15 @@
 -- // ╔══════════════════════════════════════════════════════════╗
--- // ║     NEXUS SUPREMO - VERSÃO FINAL                         ║
--- // ║   Delta Mobile | 7 Métodos de Ataque | Save/Load        ║
+-- // ║     NEXUS - 99 NOITES NA FLORESTA (COMPLETO)            ║
+-- // ║   Auto Madeira | Comida | Gemas | Fogueira | Defesa     ║
 -- // ╚══════════════════════════════════════════════════════════╝
-
--- ============================================================
--- VERIFICAÇÕES INICIAIS
--- ============================================================
-local PlaceId = game.PlaceId
-local ValidPlaces = {2753915549, 4442272183, 7449423635}
-local IsValid = false
-for _, id in ipairs(ValidPlaces) do
-    if PlaceId == id then IsValid = true break end
-end
-if not IsValid then
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "NEXUS SUPREMO", Text = "Script exclusivo para Blox Fruits!", Duration = 5
-    })
-    return
-end
-
--- ============================================================
--- CARREGAMENTO DA UI
--- ============================================================
-local DiscordLib = nil
-local UIs = {
-    "https://raw.githubusercontent.com/bloodball/-back-ups-for-libs/main/discord",
-}
-for _, url in ipairs(UIs) do
-    if not DiscordLib then
-        pcall(function()
-            DiscordLib = loadstring(game:HttpGet(url))()
-        end)
-    end
-end
-if not DiscordLib then return end
 
 -- ============================================================
 -- SERVIÇOS
 -- ============================================================
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
-local Lighting = game:GetService("Lighting")
-local CoreGui = game:GetService("CoreGui")
-local HttpService = game:GetService("HttpService")
+local UIS = game:GetService("UserInputService")
+local VIM = game:GetService("VirtualInputManager")
 local Player = Players.LocalPlayer
 local Camera = Workspace.CurrentCamera
 
@@ -58,358 +21,118 @@ repeat task.wait(0.3) until Player.Character
 task.wait(1)
 
 -- ============================================================
--- OTIMIZAÇÕES
+-- FLAGS
 -- ============================================================
-pcall(function() settings().Rendering.QualityLevel = 1 end)
-Lighting.GlobalShadows = false
-Lighting.Brightness = 1.5
+_G.AutoWood = false
+_G.AutoFood = false
+_G.AutoGems = false
+_G.AutoFire = false
+_G.AutoCollect = false
+_G.AutoDefense = false
+_G.Range = 50
 
 -- ============================================================
--- ANTI-AFK
+-- FUNÇÕES DE TOQUE (MOBILE)
 -- ============================================================
-pcall(function()
-    local connections = getconnections and getconnections(Player.Idled) or {}
-    for _, conn in ipairs(connections) do
-        pcall(function() conn:Disable() end)
-    end
-end)
-
--- ============================================================
--- SISTEMA DE CONFIGURAÇÃO (SAVE/LOAD)
--- ============================================================
-local ConfigFolder = "NexusSupremo"
-local ConfigFile = ConfigFolder .. "/config.json"
-
-local function SaveConfig()
-    if not isfolder or not writefile then return end
-    if not isfolder(ConfigFolder) then makefolder(ConfigFolder) end
-    local config = {
-        AutoFarm = _G.AutoFarm, BringMob = _G.BringMob, FastAttack = _G.FastAttack,
-        AutoHaki = _G.AutoHaki, GodMode = _G.GodMode, SelectWeapon = _G.SelectWeapon,
-        Range = _G.Range, AutoBoss = _G.AutoBoss, SelectBoss = _G.SelectBoss,
-        FruitSniper = _G.FruitSniper, AutoStore = _G.AutoStore, AutoRoll = _G.AutoRoll,
-        AutoStats = _G.AutoStats,
-    }
-    pcall(function() writefile(ConfigFile, HttpService:JSONEncode(config)) end)
+local function TapScreen(x, y)
+    x = x or 200
+    y = y or 300
+    pcall(function()
+        UIS.TouchStarted:Fire({
+            UserInputType = Enum.UserInputType.Touch,
+            UserInputState = Enum.UserInputState.Begin,
+            Position = Vector3.new(x, y, 0),
+        }, false)
+        task.wait(0.05)
+        UIS.TouchEnded:Fire({
+            UserInputType = Enum.UserInputType.Touch,
+            UserInputState = Enum.UserInputState.End,
+            Position = Vector3.new(x, y, 0),
+        }, false)
+    end)
 end
 
-local function LoadConfig()
-    if not isfolder or not isfile then return end
-    if not isfile(ConfigFile) then return end
-    local success, json = pcall(function() return readfile(ConfigFile) end)
-    if not success then return end
-    local success2, config = pcall(function() return HttpService:JSONDecode(json) end)
-    if not success2 then return end
-    for k, v in pairs(config) do
-        if _G[k] ~= nil then _G[k] = v end
-    end
+local function HoldTap(duration, x, y)
+    x = x or 200
+    y = y or 300
+    pcall(function()
+        UIS.TouchStarted:Fire({
+            UserInputType = Enum.UserInputType.Touch,
+            UserInputState = Enum.UserInputState.Begin,
+            Position = Vector3.new(x, y, 0),
+        }, false)
+        task.wait(duration or 3)
+        UIS.TouchEnded:Fire({
+            UserInputType = Enum.UserInputType.Touch,
+            UserInputState = Enum.UserInputState.End,
+            Position = Vector3.new(x, y, 0),
+        }, false)
+    end)
 end
 
 -- ============================================================
--- FLAGS GLOBAIS
+-- TELEPORTE
 -- ============================================================
-_G.AutoFarm = false; _G.AutoQuest = true; _G.AutoBoss = false
-_G.AutoHaki = false; _G.GodMode = false; _G.BringMob = true
-_G.FastAttack = false; _G.AutoStats = false; _G.FruitSniper = false
-_G.AutoStore = false; _G.AutoRoll = false; _G.SelectBoss = ""
-_G.SelectWeapon = "Melee"; _G.Fast_Delay = 0.1; _G.Range = 300
-_G.WeaponName = "None"
-_G.Ms = ""; _G.NameQuest = ""; _G.QuestLv = 1; _G.NameMon = ""
-_G.CFrameQ = CFrame.new(0,0,0); _G.CFrameMon = CFrame.new(0,0,0)
-
-LoadConfig()
-
--- ============================================================
--- DETECÇÃO DE SEA
--- ============================================================
-local Sea1 = game.PlaceId == 2753915549
-local Sea2 = game.PlaceId == 4442272183
-local Sea3 = game.PlaceId == 7449423635
-
--- ============================================================
--- LISTA DE BOSSES
--- ============================================================
-local BossList = {}
-if Sea1 then BossList = {"Gorilla King","Bobby","Yeti","Mob Leader","Vice Admiral","Warden","Chief Warden","Saber Expert","Swan","Magma Admiral","Fishman Lord","Wysper","Thunder God","Cyborg","Ice Admiral"}
-elseif Sea2 then BossList = {"Diamond","Jeremy","Orbitus","Don Swan","Smoke Admiral","Awakened Ice Admiral","Tide Keeper"}
-elseif Sea3 then BossList = {"Cake Prince","Dough King","Soul Reaper","Rip Indra","Darkbeard","Stone","Island Empress","Hydra","Leviathan"} end
-
--- ============================================================
--- FUNÇÕES UTILITÁRIAS
--- ============================================================
-local function GetRemote()
-    local remotes = ReplicatedStorage:FindFirstChild("Remotes")
-    if remotes then return remotes:FindFirstChild("CommF_") or remotes:FindFirstChild("CommF") end
-    return nil
-end
-
 local function TP(pos)
     local hrp = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
     hrp.CFrame = CFrame.new(pos + Vector3.new(0, 3, 0))
 end
 
--- 🔥🔥🔥 ATAQUE MOBILE - 7 MÉTODOS 🔥🔥🔥
-local function Attack()
-    -- Método 1: TouchInputService (ESPECÍFICO MOBILE)
-    pcall(function()
-        local TIS = game:GetService("TouchInputService")
-        if TIS and TIS.SimulateTap then
-            TIS:SimulateTap(Vector2.new(0, 0))
-        end
-    end)
+-- ============================================================
+-- ENCONTRAR OBJETOS
+-- ============================================================
+local function FindNearest(keywords)
+    local myPos = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
+    if not myPos then return nil end
     
-    -- Método 2: VirtualInputManager TOUCH
-    pcall(function()
-        local VIM = game:GetService("VirtualInputManager")
-        VIM:SendMouseButtonEvent(0, 0, 0, true, Enum.UserInputType.Touch, false)
-        task.wait(0.05)
-        VIM:SendMouseButtonEvent(0, 0, 0, false, Enum.UserInputType.Touch, false)
-    end)
+    local closest = nil
+    local closestDist = _G.Range
     
-    -- Método 3: VirtualInputManager Mouse
-    pcall(function()
-        local VIM = game:GetService("VirtualInputManager")
-        VIM:SendMouseButtonEvent(0, 0, 0, true, game, 0)
-        task.wait(0.05)
-        VIM:SendMouseButtonEvent(0, 0, 0, false, game, 0)
-    end)
-    
-    -- Método 4: UIS Touch
-    pcall(function()
-        UserInputService:SendMouseButtonEvent(0, 0, 0, true, false, Enum.UserInputType.Touch, false)
-        task.wait(0.05)
-        UserInputService:SendMouseButtonEvent(0, 0, 0, false, false, Enum.UserInputType.Touch, false)
-    end)
-    
-    -- Método 5: TouchStarted (Toque real na tela)
-    pcall(function()
-        local touchData = {
-            UserInputType = Enum.UserInputType.Touch,
-            UserInputState = Enum.UserInputState.Begin,
-            Position = Vector3.new(100, 100, 0),
-        }
-        UserInputService.TouchStarted:Fire(touchData, false)
-        task.wait(0.05)
-        touchData.UserInputState = Enum.UserInputState.End
-        UserInputService.TouchEnded:Fire(touchData, false)
-    end)
-    
-    -- Método 6: Remote do jogo
-    pcall(function()
-        local remote = GetRemote()
-        if remote then remote:InvokeServer("Attack") end
-    end)
-    
-    -- Método 7: RegisterAttack
-    pcall(function()
-        local modules = ReplicatedStorage:FindFirstChild("Modules")
-        if modules then
-            local net = modules:FindFirstChild("Net")
-            if net then
-                local regAttack = net:FindFirstChild("RE/RegisterAttack")
-                if regAttack then regAttack:FireServer(0.01) end
+    for _, obj in pairs(Workspace:GetDescendants()) do
+        if obj:IsA("BasePart") or obj:IsA("Model") then
+            local name = obj.Name:lower()
+            local found = false
+            
+            for _, kw in ipairs(keywords) do
+                if name:find(kw:lower()) then
+                    found = true
+                    break
+                end
             end
-        end
-    end)
-end
-
-local function FastAttack()
-    pcall(function()
-        local modules = ReplicatedStorage:FindFirstChild("Modules")
-        if modules then
-            local net = modules:FindFirstChild("Net")
-            if net then
-                local regAttack = net:FindFirstChild("RE/RegisterAttack")
-                if regAttack then regAttack:FireServer(0.01) end
-                local regHit = net:FindFirstChild("RE/RegisterHit")
-                if regHit then
-                    local myPos = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-                    if myPos then
-                        for _, enemy in pairs(Workspace.Enemies:GetChildren()) do
-                            if enemy:IsA("Model") and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
-                                local head = enemy:FindFirstChild("Head")
-                                if head and (myPos.Position - head.Position).Magnitude <= 60 then
-                                    regHit:FireServer(head, {{enemy, head}})
-                                end
-                            end
-                        end
+            
+            if found then
+                local pos = obj:IsA("Model") and obj:GetPivot().Position or obj.Position
+                if pos then
+                    local dist = (pos - myPos.Position).Magnitude
+                    if dist < closestDist then
+                        closestDist = dist
+                        closest = obj
                     end
                 end
             end
         end
-    end)
-end
-
-local function EquipWeapon()
-    pcall(function()
-        for _, tool in pairs(Player.Backpack:GetChildren()) do
-            if tool.ToolTip == _G.SelectWeapon then
-                _G.WeaponName = tool.Name
-                Player.Character.Humanoid:EquipTool(tool)
-                return
-            end
-        end
-    end)
-end
-
-local function FindBoss(name)
-    for _, folderName in ipairs({"Bosses","Enemies"}) do
-        local folder = Workspace:FindFirstChild(folderName)
-        if folder then
-            for _, mob in ipairs(folder:GetChildren()) do
-                if mob:IsA("Model") and mob.Name:lower():find(name:lower(),1,true) then
-                    if mob:FindFirstChild("Humanoid") and mob.Humanoid.Health > 0 then return mob end
-                end
-            end
-        end
     end
-    return nil
+    
+    return closest
 end
 
 -- ============================================================
--- CHECKLEVEL
--- ============================================================
-function CheckLevel()
-    local lv = Player.Data.Level.Value
-    if Sea1 then
-        if lv <= 9 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Bandit","BanditQuest1",1,"Bandit";_G.CFrameQ=CFrame.new(1060.94,16.46,1547.78);_G.CFrameMon=CFrame.new(1038.55,41.30,1576.51)
-        elseif lv <= 14 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Monkey","JungleQuest",1,"Monkey";_G.CFrameQ=CFrame.new(-1601.66,36.85,153.39);_G.CFrameMon=CFrame.new(-1448.14,50.85,63.61)
-        elseif lv <= 29 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Gorilla","JungleQuest",2,"Gorilla";_G.CFrameQ=CFrame.new(-1601.66,36.85,153.39);_G.CFrameMon=CFrame.new(-1142.65,40.46,-515.39)
-        elseif lv <= 39 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Pirate","BuggyQuest1",1,"Pirate";_G.CFrameQ=CFrame.new(-1140.18,4.75,3827.41);_G.CFrameMon=CFrame.new(-1201.09,40.63,3857.60)
-        elseif lv <= 59 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Brute","BuggyQuest1",2,"Brute";_G.CFrameQ=CFrame.new(-1140.18,4.75,3827.41);_G.CFrameMon=CFrame.new(-1387.53,24.59,4100.96)
-        elseif lv <= 74 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Desert Bandit","DesertQuest",1,"Desert Bandit";_G.CFrameQ=CFrame.new(896.52,6.44,4390.15);_G.CFrameMon=CFrame.new(985.00,16.11,4417.91)
-        elseif lv <= 89 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Desert Officer","DesertQuest",2,"Desert Officer";_G.CFrameQ=CFrame.new(896.52,6.44,4390.15);_G.CFrameMon=CFrame.new(1547.15,14.45,4381.80)
-        elseif lv <= 99 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Snow Bandit","SnowQuest",1,"Snow Bandit";_G.CFrameQ=CFrame.new(1386.81,87.27,-1298.36);_G.CFrameMon=CFrame.new(1356.30,105.77,-1328.24)
-        elseif lv <= 119 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Snowman","SnowQuest",2,"Snowman";_G.CFrameQ=CFrame.new(1386.81,87.27,-1298.36);_G.CFrameMon=CFrame.new(1218.80,138.01,-1488.03)
-        elseif lv <= 149 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Chief Petty Officer","MarineQuest2",1,"Chief Petty Officer";_G.CFrameQ=CFrame.new(-5035.50,28.68,4324.18);_G.CFrameMon=CFrame.new(-4931.16,65.79,4121.84)
-        elseif lv <= 174 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Sky Bandit","SkyQuest",1,"Sky Bandit";_G.CFrameQ=CFrame.new(-4842.14,717.70,-2623.05);_G.CFrameMon=CFrame.new(-4955.64,365.46,-2908.19)
-        elseif lv <= 209 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Prisoner","PrisonerQuest",1,"Prisoner";_G.CFrameQ=CFrame.new(5310.61,0.35,474.95);_G.CFrameMon=CFrame.new(4937.32,0.33,649.57)
-        elseif lv <= 249 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Dangerous Prisoner","PrisonerQuest",2,"Dangerous Prisoner";_G.CFrameQ=CFrame.new(5310.61,0.35,474.95);_G.CFrameMon=CFrame.new(5099.66,0.35,1055.76)
-        elseif lv <= 274 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Toga Warrior","ColosseumQuest",1,"Toga Warrior";_G.CFrameQ=CFrame.new(-1577.79,7.42,-2984.48);_G.CFrameMon=CFrame.new(-1872.52,49.08,-2913.81)
-        elseif lv <= 299 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Gladiator","ColosseumQuest",2,"Gladiator";_G.CFrameQ=CFrame.new(-1577.79,7.42,-2984.48);_G.CFrameMon=CFrame.new(-1521.37,81.20,-3066.31)
-        elseif lv <= 324 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Military Soldier","MagmaQuest",1,"Military Soldier";_G.CFrameQ=CFrame.new(-5316.12,12.26,8517.00);_G.CFrameMon=CFrame.new(-5369.00,61.24,8556.49)
-        elseif lv <= 374 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Military Spy","MagmaQuest",2,"Military Spy";_G.CFrameQ=CFrame.new(-5316.12,12.26,8517.00);_G.CFrameMon=CFrame.new(-5787.00,75.83,8651.70)
-        elseif lv <= 399 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Fishman Warrior","FishmanQuest",1,"Fishman Warrior";_G.CFrameQ=CFrame.new(61122.65,18.50,1569.40);_G.CFrameMon=CFrame.new(60844.11,98.46,1298.40)
-        elseif lv <= 449 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Fishman Commando","FishmanQuest",2,"Fishman Commando";_G.CFrameQ=CFrame.new(61122.65,18.50,1569.40);_G.CFrameMon=CFrame.new(61738.40,64.21,1433.84)
-        elseif lv <= 474 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="God's Guard","SkyExp1Quest",1,"God's Guard";_G.CFrameQ=CFrame.new(-4721.86,845.30,-1953.85);_G.CFrameMon=CFrame.new(-4628.05,866.93,-1931.24)
-        elseif lv <= 524 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Shanda","SkyExp1Quest",2,"Shanda";_G.CFrameQ=CFrame.new(-7863.16,5545.52,-378.42);_G.CFrameMon=CFrame.new(-7685.15,5601.08,-441.39)
-        elseif lv <= 549 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Royal Squad","SkyExp2Quest",1,"Royal Squad";_G.CFrameQ=CFrame.new(-7903.38,5635.99,-1410.92);_G.CFrameMon=CFrame.new(-7654.25,5637.11,-1407.76)
-        elseif lv <= 624 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Royal Soldier","SkyExp2Quest",2,"Royal Soldier";_G.CFrameQ=CFrame.new(-7903.38,5635.99,-1410.92);_G.CFrameMon=CFrame.new(-7760.41,5679.91,-1884.81)
-        elseif lv <= 649 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Galley Pirate","FountainQuest",1,"Galley Pirate";_G.CFrameQ=CFrame.new(5258.28,38.53,4050.04);_G.CFrameMon=CFrame.new(5557.17,152.33,3998.78)
-        else _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Galley Captain","FountainQuest",2,"Galley Captain";_G.CFrameQ=CFrame.new(5258.28,38.53,4050.04);_G.CFrameMon=CFrame.new(5677.68,92.79,4966.63) end
-    elseif Sea2 then
-        if lv <= 724 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Raider","Area1Quest",1,"Raider";_G.CFrameQ=CFrame.new(-427.73,73.00,1835.94);_G.CFrameMon=CFrame.new(68.87,93.64,2429.68)
-        elseif lv <= 774 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Mercenary","Area1Quest",2,"Mercenary";_G.CFrameQ=CFrame.new(-427.73,73.00,1835.94);_G.CFrameMon=CFrame.new(-864.85,122.47,1453.15)
-        elseif lv <= 799 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Swan Pirate","Area2Quest",1,"Swan Pirate";_G.CFrameQ=CFrame.new(635.61,73.10,917.81);_G.CFrameMon=CFrame.new(1065.37,137.64,1324.38)
-        elseif lv <= 874 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Factory Staff","Area2Quest",2,"Factory Staff";_G.CFrameQ=CFrame.new(635.61,73.10,917.81);_G.CFrameMon=CFrame.new(533.22,128.47,355.63)
-        elseif lv <= 899 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Marine Lieutenant","MarineQuest3",1,"Marine Lieutenant";_G.CFrameQ=CFrame.new(-2440.99,73.04,-3217.71);_G.CFrameMon=CFrame.new(-2489.26,84.61,-3151.88)
-        elseif lv <= 949 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Marine Captain","MarineQuest3",2,"Marine Captain";_G.CFrameQ=CFrame.new(-2440.99,73.04,-3217.71);_G.CFrameMon=CFrame.new(-2335.20,79.79,-3245.87)
-        elseif lv <= 974 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Zombie","ZombieQuest",1,"Zombie";_G.CFrameQ=CFrame.new(-5494.34,48.51,-794.59);_G.CFrameMon=CFrame.new(-5536.50,101.09,-835.59)
-        elseif lv <= 999 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Vampire","ZombieQuest",2,"Vampire";_G.CFrameQ=CFrame.new(-5494.34,48.51,-794.59);_G.CFrameMon=CFrame.new(-5806.11,16.72,-1164.44)
-        elseif lv <= 1049 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Snow Trooper","SnowMountainQuest",1,"Snow Trooper";_G.CFrameQ=CFrame.new(607.06,401.45,-5370.55);_G.CFrameMon=CFrame.new(535.21,432.74,-5484.92)
-        elseif lv <= 1099 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Winter Warrior","SnowMountainQuest",2,"Winter Warrior";_G.CFrameQ=CFrame.new(607.06,401.45,-5370.55);_G.CFrameMon=CFrame.new(1234.44,456.95,-5174.13)
-        elseif lv <= 1124 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Lab Subordinate","IceSideQuest",1,"Lab Subordinate";_G.CFrameQ=CFrame.new(-6061.84,15.93,-4902.04);_G.CFrameMon=CFrame.new(-5720.56,63.31,-4784.61)
-        elseif lv <= 1174 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Horned Warrior","IceSideQuest",2,"Horned Warrior";_G.CFrameQ=CFrame.new(-6061.84,15.93,-4902.04);_G.CFrameMon=CFrame.new(-6292.75,91.18,-5502.65)
-        elseif lv <= 1199 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Magma Ninja","FireSideQuest",1,"Magma Ninja";_G.CFrameQ=CFrame.new(-5429.05,15.98,-5297.96);_G.CFrameMon=CFrame.new(-5461.84,130.36,-5836.47)
-        elseif lv <= 1249 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Lava Pirate","FireSideQuest",2,"Lava Pirate";_G.CFrameQ=CFrame.new(-5429.05,15.98,-5297.96);_G.CFrameMon=CFrame.new(-5251.19,55.16,-4774.41)
-        elseif lv <= 1274 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Ship Deckhand","ShipQuest1",1,"Ship Deckhand";_G.CFrameQ=CFrame.new(1040.29,125.08,32911.04);_G.CFrameMon=CFrame.new(921.12,125.98,33088.33)
-        elseif lv <= 1299 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Ship Engineer","ShipQuest1",2,"Ship Engineer";_G.CFrameQ=CFrame.new(1040.29,125.08,32911.04);_G.CFrameMon=CFrame.new(886.28,40.48,32800.83)
-        elseif lv <= 1324 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Ship Steward","ShipQuest2",1,"Ship Steward";_G.CFrameQ=CFrame.new(971.42,125.08,33245.54);_G.CFrameMon=CFrame.new(943.86,129.58,33444.37)
-        elseif lv <= 1349 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Ship Officer","ShipQuest2",2,"Ship Officer";_G.CFrameQ=CFrame.new(971.42,125.08,33245.54);_G.CFrameMon=CFrame.new(955.38,181.08,33331.89)
-        elseif lv <= 1374 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Arctic Warrior","FrostQuest",1,"Arctic Warrior";_G.CFrameQ=CFrame.new(5668.14,28.20,-6484.60);_G.CFrameMon=CFrame.new(5935.45,77.26,-6472.76)
-        elseif lv <= 1424 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Snow Lurker","FrostQuest",2,"Snow Lurker";_G.CFrameQ=CFrame.new(5668.14,28.20,-6484.60);_G.CFrameMon=CFrame.new(5628.48,57.57,-6618.35)
-        elseif lv <= 1449 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Sea Soldier","ForgottenQuest",1,"Sea Soldier";_G.CFrameQ=CFrame.new(-3054.58,236.87,-10147.79);_G.CFrameMon=CFrame.new(-3185.02,58.79,-9663.61)
-        else _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Water Fighter","ForgottenQuest",2,"Water Fighter";_G.CFrameQ=CFrame.new(-3054.58,236.87,-10147.79);_G.CFrameMon=CFrame.new(-3262.93,298.69,-10552.53) end
-    elseif Sea3 then
-        if lv <= 1524 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Pirate Millionaire","PiratePortQuest",1,"Pirate Millionaire";_G.CFrameQ=CFrame.new(-450.10,107.68,5950.73);_G.CFrameMon=CFrame.new(-193.99,56.13,5755.79)
-        elseif lv <= 1574 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Pistol Billionaire","PiratePortQuest",2,"Pistol Billionaire";_G.CFrameQ=CFrame.new(-450.10,107.68,5950.73);_G.CFrameMon=CFrame.new(-188.14,84.50,6337.04)
-        elseif lv <= 1599 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Dragon Crew Warrior","DragonCrewQuest",1,"Dragon Crew Warrior";_G.CFrameQ=CFrame.new(6735.11,126.99,-711.10);_G.CFrameMon=CFrame.new(6615.23,50.85,-978.93)
-        elseif lv <= 1624 then _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Dragon Crew Archer","DragonCrewQuest",2,"Dragon Crew Archer";_G.CFrameQ=CFrame.new(6735.11,126.99,-711.10);_G.CFrameMon=CFrame.new(6818.59,483.72,512.73)
-        else _G.Ms,_G.NameQuest,_G.QuestLv,_G.NameMon="Hydra Enforcer","VenomCrewQuest",1,"Hydra Enforcer";_G.CFrameQ=CFrame.new(5446.88,601.63,749.46);_G.CFrameMon=CFrame.new(4547.12,1001.60,334.20) end
-    end
-end
-
--- ============================================================
--- AUTO FARM LOOP
+-- 🌳 AUTO FARM MADEIRA
 -- ============================================================
 task.spawn(function()
-    while task.wait(0.15) do
-        if not _G.AutoFarm then task.wait(1); continue end
-        pcall(function()
-            CheckLevel()
-            local hasQuest = false
-            pcall(function()
-                local main = Player.PlayerGui:FindFirstChild("Main")
-                if main then
-                    local quest = main:FindFirstChild("Quest")
-                    if quest and quest:FindFirstChild("Container") and quest.Container:FindFirstChild("QuestTitle") then
-                        local title = quest.Container.QuestTitle:FindFirstChild("Title")
-                        if title and title.Text and _G.NameMon and title.Text:find(_G.NameMon) then hasQuest = true end
-                    end
-                end
-            end)
-            if not hasQuest and _G.AutoQuest then
-                local remote = GetRemote()
-                if remote then remote:InvokeServer("AbandonQuest"); task.wait(0.5)
-                    TP(_G.CFrameQ.Position); task.wait(1)
-                    if (_G.CFrameQ.Position - Player.Character.HumanoidRootPart.Position).Magnitude <= 10 then
-                        remote:InvokeServer("StartQuest", _G.NameQuest, _G.QuestLv)
-                    end
-                end
-                return
-            end
-            if hasQuest or not _G.AutoQuest then
-                EquipWeapon()
-                if _G.AutoHaki and not Player.Character:FindFirstChild("HasBuso") then
-                    local remote = GetRemote(); if remote then remote:InvokeServer("Buso") end
-                end
-                local myPos = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-                if not myPos then return end
-                local enemiesFolder = Workspace:FindFirstChild("Enemies")
-                if not enemiesFolder then return end
-                for _, enemy in pairs(enemiesFolder:GetChildren()) do
-                    if enemy:IsA("Model") and enemy.Name == _G.Ms then
-                        local hum = enemy:FindFirstChild("Humanoid")
-                        local hrp = enemy:FindFirstChild("HumanoidRootPart")
-                        if hum and hum.Health > 0 and hrp then
-                            local dist = (hrp.Position - myPos.Position).Magnitude
-                            if _G.BringMob then
-                                hrp.CFrame = myPos.CFrame * CFrame.new(0,0,-5)
-                                hrp.Velocity = Vector3.zero
-                                hum.WalkSpeed = 0; hum.JumpPower = 0
-                            elseif dist > 10 then TP(hrp.Position); task.wait(0.3) end
-                            if _G.FastAttack then FastAttack() else Attack() end
-                            break
-                        end
-                    end
-                end
-            end
-        end)
-    end
-end)
-
--- ============================================================
--- AUTO BOSS LOOP
--- ============================================================
-task.spawn(function()
+    print("[99 NOITES] Farm Madeira iniciado")
     while task.wait(0.3) do
-        if not _G.AutoBoss or _G.SelectBoss == "" then task.wait(1); continue end
-        if _G.AutoFarm then continue end
+        if not _G.AutoWood then continue end
+        
         pcall(function()
-            local boss = FindBoss(_G.SelectBoss)
-            if boss then
-                local hrp = boss:FindFirstChild("HumanoidRootPart")
-                if hrp then
-                    local myPos = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-                    if myPos then
-                        if (hrp.Position - myPos.Position).Magnitude > 10 then TP(hrp.Position); task.wait(0.3) end
-                        if _G.AutoHaki and not Player.Character:FindFirstChild("HasBuso") then
-                            local remote = GetRemote(); if remote then remote:InvokeServer("Buso") end
-                        end
-                        EquipWeapon()
-                        if _G.FastAttack then FastAttack() else Attack() end
-                    end
+            local tree = FindNearest({"tree", "wood", "árvore", "madeira", "log", "tronco", "pine", "oak", "birch"})
+            if tree then
+                local pos = tree:IsA("Model") and tree:GetPivot().Position or tree.Position
+                if pos then
+                    TP(pos)
+                    task.wait(0.5)
+                    HoldTap(3) -- Segura 3s para quebrar árvore
                 end
             end
         end)
@@ -417,206 +140,225 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- GOD MODE
+-- 🍖 AUTO FARM COMIDA (CAÇA)
 -- ============================================================
 task.spawn(function()
-    while task.wait(0.3) do
-        if not _G.GodMode then continue end
-        pcall(function()
-            local hum = Player.Character and Player.Character:FindFirstChildOfClass("Humanoid")
-            if hum and hum.Health > 0 then hum.Health = hum.MaxHealth end
-        end)
-    end
-end)
-
--- ============================================================
--- AUTO STATS
--- ============================================================
-task.spawn(function()
-    while task.wait(60) do
-        if not _G.AutoStats then continue end
-        pcall(function()
-            local remote = GetRemote()
-            if remote then for _=1,3 do remote:InvokeServer("AddPoint","Melee",1) end end
-        end)
-    end
-end)
-
--- ============================================================
--- FRUIT SNIPER
--- ============================================================
-task.spawn(function()
-    while task.wait(3) do
-        if not _G.FruitSniper then continue end
-        pcall(function()
-            for _, obj in pairs(Workspace:GetDescendants()) do
-                if obj:IsA("BasePart") and obj.Name:lower():find("fruit",1,true) then
-                    if obj.Parent and obj.Parent:FindFirstChild("Handle") then
-                        TP(obj.Position); task.wait(0.5); break
-                    end
-                end
-            end
-        end)
-    end
-end)
-
--- ============================================================
--- AUTO STORE
--- ============================================================
-task.spawn(function()
-    while task.wait(10) do
-        if not _G.AutoStore then continue end
-        pcall(function()
-            local data = Player:FindFirstChild("Data")
-            if data then
-                local fruit = data:FindFirstChild("Fruit")
-                if fruit and fruit.Value ~= "" then
-                    local remote = GetRemote()
-                    if remote then remote:InvokeServer("StoreFruit",fruit.Value) end
-                end
-            end
-        end)
-    end
-end)
-
--- ============================================================
--- AUTO ROLL
--- ============================================================
-task.spawn(function()
-    while task.wait(30) do
-        if not _G.AutoRoll then continue end
-        pcall(function()
-            local remote = GetRemote()
-            if remote then remote:InvokeServer("FruitGacha","Roll") end
-        end)
-    end
-end)
-
--- ============================================================
--- NOCLIP AUTOMÁTICO
--- ============================================================
-RunService.Stepped:Connect(function()
-    if not _G.AutoFarm and not _G.AutoBoss then return end
-    pcall(function()
-        if Player.Character then
-            for _, part in pairs(Player.Character:GetDescendants()) do
-                if part:IsA("BasePart") then part.CanCollide = false end
-            end
-        end
-    end)
-end)
-
--- ============================================================
--- ANTI-KNOCKBACK
--- ============================================================
-task.spawn(function()
+    print("[99 NOITES] Farm Comida iniciado")
     while task.wait(0.5) do
+        if not _G.AutoFood then continue end
+        
         pcall(function()
-            if (_G.AutoFarm or _G.AutoBoss) and Player.Character then
-                local hrp = Player.Character:FindFirstChild("HumanoidRootPart")
-                if hrp and not hrp:FindFirstChild("BodyClip") then
-                    local bv = Instance.new("BodyVelocity")
-                    bv.Name = "BodyClip"; bv.Parent = hrp
-                    bv.MaxForce = Vector3.new(100000,100000,100000)
-                    bv.Velocity = Vector3.new(0,0,0)
+            local animal = FindNearest({"deer", "boar", "rabbit", "bird", "wolf", "bear", "veado", "coelho", "porco", "lobo", "urso", "animal"})
+            if animal then
+                local pos = animal:IsA("Model") and animal:GetPivot().Position or animal.Position
+                if pos then
+                    TP(pos)
+                    task.wait(0.3)
+                    -- Ataca várias vezes para matar
+                    for i = 1, 5 do
+                        TapScreen()
+                        task.wait(0.2)
+                    end
                 end
-            elseif Player.Character then
-                local hrp = Player.Character:FindFirstChild("HumanoidRootPart")
-                if hrp and hrp:FindFirstChild("BodyClip") then hrp.BodyClip:Destroy() end
             end
         end)
     end
 end)
 
 -- ============================================================
--- ANTI-STUN
+-- 💎 AUTO FARM GEMAS
 -- ============================================================
 task.spawn(function()
-    while task.wait(0.1) do
+    print("[99 NOITES] Farm Gemas iniciado")
+    while task.wait(0.5) do
+        if not _G.AutoGems then continue end
+        
         pcall(function()
-            if Player.Character then
-                local stun = Player.Character:FindFirstChild("Stun")
-                if stun then stun.Value = 0 end
+            local gem = FindNearest({"gem", "diamond", "crystal", "gema", "diamante", "ruby", "emerald", "sapphire"})
+            if gem then
+                local pos = gem:IsA("Model") and gem:GetPivot().Position or gem.Position
+                if pos then
+                    TP(pos)
+                    task.wait(0.3)
+                    HoldTap(2) -- Segura para minerar
+                end
             end
         end)
     end
 end)
 
 -- ============================================================
--- STATUS
+-- 📦 AUTO COLETAR ITENS
 -- ============================================================
-local function GetStatus()
-    local s = {}
-    if _G.AutoFarm then s[#s+1] = "⚔️Farm" end
-    if _G.AutoBoss then s[#s+1] = "💀Boss" end
-    if _G.GodMode then s[#s+1] = "🛡️God" end
-    if _G.FastAttack then s[#s+1] = "⚡Fast" end
-    if _G.FruitSniper then s[#s+1] = "🍎Fruit" end
-    if _G.AutoStats then s[#s+1] = "📊Stats" end
-    if #s == 0 then return "😴 Nada ativo" end
-    return table.concat(s," ")
-end
+task.spawn(function()
+    print("[99 NOITES] Auto Coleta iniciado")
+    while task.wait(1) do
+        if not _G.AutoCollect then continue end
+        
+        pcall(function()
+            local loot = FindNearest({"drop", "item", "meat", "wood", "gem", "carne", "madeira", "skin", "leather", "stick", "stone"})
+            if loot then
+                local pos = loot:IsA("Model") and loot:GetPivot().Position or loot.Position
+                if pos then
+                    TP(pos)
+                    task.wait(0.3)
+                    TapScreen()
+                end
+            end
+        end)
+    end
+end)
+
+-- ============================================================
+-- 🔥 AUTO ALIMENTAR FOGUEIRA
+-- ============================================================
+task.spawn(function()
+    print("[99 NOITES] Auto Fogueira iniciado")
+    while task.wait(5) do
+        if not _G.AutoFire then continue end
+        
+        pcall(function()
+            local fire = FindNearest({"fire", "campfire", "fogueira", "bonfire", "camp", "base"})
+            if fire then
+                local pos = fire:IsA("Model") and fire:GetPivot().Position or fire.Position
+                if pos then
+                    TP(pos)
+                    task.wait(0.5)
+                    TapScreen()
+                    task.wait(0.5)
+                    TapScreen()
+                end
+            end
+        end)
+    end
+end)
+
+-- ============================================================
+-- 🛡️ AUTO DEFESA (CONTRA INIMIGOS)
+-- ============================================================
+task.spawn(function()
+    print("[99 NOITES] Auto Defesa iniciado")
+    while task.wait(0.5) do
+        if not _G.AutoDefense then continue end
+        
+        pcall(function()
+            local enemy = FindNearest({"night", "deer", "wolf", "bear", "spirit", "monster", "cervo", "lobo", "urso", "espírito"})
+            if enemy then
+                local pos = enemy:IsA("Model") and enemy:GetPivot().Position or enemy.Position
+                if pos then
+                    local myPos = Player.Character.HumanoidRootPart.Position
+                    local dist = (pos - myPos).Magnitude
+                    
+                    if dist < 20 then
+                        -- Inimigo está perto! Atacar!
+                        for i = 1, 8 do
+                            TapScreen()
+                            task.wait(0.15)
+                        end
+                    end
+                end
+            end
+        end)
+    end
+end)
 
 -- ============================================================
 -- UI
 -- ============================================================
-local win = DiscordLib:Window("NEXUS SUPREMO")
-local serv = win:Server("Blox Fruits", "http://www.roblox.com/asset/?id=6031075938")
+local gui = Instance.new("ScreenGui")
+gui.Name = "Nexus99"
+gui.ResetOnSpawn = false
+gui.Parent = game.CoreGui
 
-local fCh = serv:Channel("⚔️ Auto Farm")
-fCh:Toggle("Auto Farm", _G.AutoFarm, function(v) _G.AutoFarm = v end)
-fCh:Toggle("Auto Quest", _G.AutoQuest, function(v) _G.AutoQuest = v end)
-fCh:Toggle("Bring Mob", _G.BringMob, function(v) _G.BringMob = v end)
-fCh:Toggle("Fast Attack", _G.FastAttack, function(v) _G.FastAttack = v end)
-fCh:Toggle("Auto Haki", _G.AutoHaki, function(v) _G.AutoHaki = v end)
-fCh:Toggle("God Mode", _G.GodMode, function(v) _G.GodMode = v end)
-fCh:Dropdown("Arma", {"Melee","Sword","Blox Fruit"}, function(v) _G.SelectWeapon = v end)
-fCh:Slider("Distância", 50, 500, _G.Range, function(v) _G.Range = v end)
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 240, 0, 220)
+frame.Position = UDim2.new(0.5, -120, 0.5, -110)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+frame.BorderSizePixel = 0
+frame.Parent = gui
 
-local bCh = serv:Channel("💀 Auto Boss")
-bCh:Toggle("Auto Boss", _G.AutoBoss, function(v) _G.AutoBoss = v end)
-bCh:Dropdown("Boss", BossList, function(v) _G.SelectBoss = v end)
+local corner = Instance.new("UICorner", frame)
+corner.CornerRadius = UDim.new(0, 10)
 
-local frCh = serv:Channel("🍎 Frutas")
-frCh:Toggle("Fruit Sniper", _G.FruitSniper, function(v) _G.FruitSniper = v end)
-frCh:Toggle("Auto Store", _G.AutoStore, function(v) _G.AutoStore = v end)
-frCh:Toggle("Auto Roll", _G.AutoRoll, function(v) _G.AutoRoll = v end)
+local stroke = Instance.new("UIStroke", frame)
+stroke.Color = Color3.fromRGB(0, 200, 100)
+stroke.Thickness = 1.5
 
-local cfgCh = serv:Channel("⚙️ Configurações")
-cfgCh:Toggle("Auto Stats", _G.AutoStats, function(v) _G.AutoStats = v end)
-cfgCh:Slider("Delay Ataque (ms)", 0, 500, _G.Fast_Delay*1000, function(v) _G.Fast_Delay = v/1000 end)
-cfgCh:Button("💾 Salvar Config", function() SaveConfig(); DiscordLib:Notification("CONFIG","💾 Salvo!","OK") end)
-cfgCh:Button("📂 Carregar Config", function() LoadConfig(); DiscordLib:Notification("CONFIG","📂 Carregado!","OK") end)
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 28)
+title.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+title.Text = "🌳 NEXUS - 99 NOITES"
+title.TextColor3 = Color3.fromRGB(0, 255, 100)
+title.Font = Enum.Font.GothamBold
+title.TextSize = 12
+title.Parent = frame
 
-local stCh = serv:Channel("📊 Status")
-local statusLabel = stCh:Label("😴 Nada ativo")
-task.spawn(function()
-    while task.wait(1) do
-        pcall(function()
-            local status = GetStatus()
-            local lv = Player.Data.Level.Value
-            local sea = Sea1 and "1" or Sea2 and "2" or Sea3 and "3" or "?"
-            statusLabel.Text = string.format("%s | Lv.%d | Sea %s", status, lv, sea)
-        end)
-    end
-end)
-stCh:Button("🛑 Parar Tudo", function()
-    _G.AutoFarm = false; _G.AutoBoss = false; _G.GodMode = false
-    _G.FruitSniper = false; _G.AutoStore = false; _G.AutoRoll = false; _G.AutoStats = false
-    SaveConfig()
-    DiscordLib:Notification("NEXUS","🛑 Tudo parado!","OK")
+local titleCorner = Instance.new("UICorner", title)
+titleCorner.CornerRadius = UDim.new(0, 10)
+
+local function CreateToggle(y, text, flag, emoji)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 200, 0, 26)
+    btn.Position = UDim2.new(0.5, -100, 0, y)
+    btn.BackgroundColor3 = Color3.fromRGB(50, 30, 30)
+    btn.Text = emoji .. " " .. text .. " (OFF)"
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.Gotham
+    btn.TextSize = 10
+    btn.BorderSizePixel = 0
+    btn.Parent = frame
+    
+    local btnCorner = Instance.new("UICorner", btn)
+    btnCorner.CornerRadius = UDim.new(0, 5)
+    
+    local on = false
+    btn.MouseButton1Click:Connect(function()
+        on = not on
+        _G[flag] = on
+        btn.BackgroundColor3 = on and Color3.fromRGB(0, 100, 30) or Color3.fromRGB(50, 30, 30)
+        btn.Text = emoji .. " " .. text .. (on and " (ON)" or " (OFF)")
+    end)
+end
+
+CreateToggle(32, "Madeira", "AutoWood", "🌳")
+CreateToggle(62, "Comida/Caça", "AutoFood", "🍖")
+CreateToggle(92, "Gemas", "AutoGems", "💎")
+CreateToggle(122, "Coletar Itens", "AutoCollect", "📦")
+CreateToggle(152, "Alimentar Fogueira", "AutoFire", "🔥")
+CreateToggle(182, "Defesa (Inimigos)", "AutoDefense", "🛡️")
+
+-- Botão Parar Tudo
+local stopBtn = Instance.new("TextButton")
+stopBtn.Size = UDim2.new(0, 200, 0, 22)
+stopBtn.Position = UDim2.new(0.5, -100, 0, 212)
+stopBtn.BackgroundColor3 = Color3.fromRGB(150, 30, 30)
+stopBtn.Text = "🛑 PARAR TUDO"
+stopBtn.TextColor3 = Color3.new(1, 1, 1)
+stopBtn.Font = Enum.Font.GothamBold
+stopBtn.TextSize = 10
+stopBtn.BorderSizePixel = 0
+stopBtn.Parent = frame
+
+local stopCorner = Instance.new("UICorner", stopBtn)
+stopCorner.CornerRadius = UDim.new(0, 5)
+
+stopBtn.MouseButton1Click:Connect(function()
+    _G.AutoWood = false
+    _G.AutoFood = false
+    _G.AutoGems = false
+    _G.AutoCollect = false
+    _G.AutoFire = false
+    _G.AutoDefense = false
 end)
 
 -- ============================================================
--- NOTIFICAÇÃO INICIAL
+-- NOTIFICAÇÃO
 -- ============================================================
-local lv = Player.Data.Level.Value
-local sea = Sea1 and "1" or Sea2 and "2" or Sea3 and "3" or "?"
-DiscordLib:Notification("NEXUS SUPREMO", 
-    "✅ Script carregado!\n\n" ..
-    "⚔️ Farm | 💀 Boss | 🍎 Frutas\n" ..
-    "💾 Save/Load | 📊 Status\n" ..
-    "📱 7 Métodos de Ataque\n\n" ..
-    "Sea: " .. sea .. " | Level: " .. lv, 
-    "🚀 VAMOS LÁ!"
-)
+game:GetService("StarterGui"):SetCore("SendNotification", {
+    Title = "NEXUS 99 NOITES",
+    Text = "🌳 Script carregado!\nAtive as funções nos botões!",
+    Duration = 5
+})
+
+print("[99 NOITES] Script completo carregado!")
+print("[99 NOITES] Use os botões na tela para ativar!")
