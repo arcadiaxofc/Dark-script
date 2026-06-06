@@ -1,10 +1,10 @@
--- // ╔══════════════════════════════════════════════════════════╗
--- // ║     NEXUS - 99 NOITES NA FLORESTA (COMPLETO)            ║
--- // ║   Auto Madeira | Comida | Gemas | Fogueira | Defesa     ║
--- // ╚══════════════════════════════════════════════════════════╝
+-- ============================================================
+-- NEXUS - 99 NOITES NA FLORESTA (REVISADO)
+-- Todos os comentarios estao com -- (CORRETO)
+-- ============================================================
 
 -- ============================================================
--- SERVIÇOS
+-- SERVICOS
 -- ============================================================
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
@@ -32,7 +32,7 @@ _G.AutoDefense = false
 _G.Range = 50
 
 -- ============================================================
--- FUNÇÕES DE TOQUE (MOBILE)
+-- FUNCOES DE TOQUE (MOBILE)
 -- ============================================================
 local function TapScreen(x, y)
     x = x or 200
@@ -118,7 +118,7 @@ local function FindNearest(keywords)
 end
 
 -- ============================================================
--- 🌳 AUTO FARM MADEIRA
+-- AUTO FARM MADEIRA
 -- ============================================================
 task.spawn(function()
     print("[99 NOITES] Farm Madeira iniciado")
@@ -126,13 +126,13 @@ task.spawn(function()
         if not _G.AutoWood then continue end
         
         pcall(function()
-            local tree = FindNearest({"tree", "wood", "árvore", "madeira", "log", "tronco", "pine", "oak", "birch"})
+            local tree = FindNearest({"tree", "wood", "arvore", "madeira", "log", "tronco", "pine", "oak", "birch"})
             if tree then
                 local pos = tree:IsA("Model") and tree:GetPivot().Position or tree.Position
                 if pos then
                     TP(pos)
                     task.wait(0.5)
-                    HoldTap(3) -- Segura 3s para quebrar árvore
+                    HoldTap(3)
                 end
             end
         end)
@@ -140,7 +140,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- 🍖 AUTO FARM COMIDA (CAÇA)
+-- AUTO FARM COMIDA (CACA)
 -- ============================================================
 task.spawn(function()
     print("[99 NOITES] Farm Comida iniciado")
@@ -154,7 +154,6 @@ task.spawn(function()
                 if pos then
                     TP(pos)
                     task.wait(0.3)
-                    -- Ataca várias vezes para matar
                     for i = 1, 5 do
                         TapScreen()
                         task.wait(0.2)
@@ -166,7 +165,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- 💎 AUTO FARM GEMAS
+-- AUTO FARM GEMAS
 -- ============================================================
 task.spawn(function()
     print("[99 NOITES] Farm Gemas iniciado")
@@ -180,7 +179,7 @@ task.spawn(function()
                 if pos then
                     TP(pos)
                     task.wait(0.3)
-                    HoldTap(2) -- Segura para minerar
+                    HoldTap(2)
                 end
             end
         end)
@@ -188,7 +187,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- 📦 AUTO COLETAR ITENS
+-- AUTO COLETAR ITENS
 -- ============================================================
 task.spawn(function()
     print("[99 NOITES] Auto Coleta iniciado")
@@ -210,7 +209,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- 🔥 AUTO ALIMENTAR FOGUEIRA
+-- AUTO ALIMENTAR FOGUEIRA
 -- ============================================================
 task.spawn(function()
     print("[99 NOITES] Auto Fogueira iniciado")
@@ -234,7 +233,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- 🛡️ AUTO DEFESA (CONTRA INIMIGOS)
+-- AUTO DEFESA (CONTRA INIMIGOS)
 -- ============================================================
 task.spawn(function()
     print("[99 NOITES] Auto Defesa iniciado")
@@ -242,7 +241,7 @@ task.spawn(function()
         if not _G.AutoDefense then continue end
         
         pcall(function()
-            local enemy = FindNearest({"night", "deer", "wolf", "bear", "spirit", "monster", "cervo", "lobo", "urso", "espírito"})
+            local enemy = FindNearest({"night", "deer", "wolf", "bear", "spirit", "monster", "cervo", "lobo", "urso", "espirito"})
             if enemy then
                 local pos = enemy:IsA("Model") and enemy:GetPivot().Position or enemy.Position
                 if pos then
@@ -250,7 +249,6 @@ task.spawn(function()
                     local dist = (pos - myPos).Magnitude
                     
                     if dist < 20 then
-                        -- Inimigo está perto! Atacar!
                         for i = 1, 8 do
                             TapScreen()
                             task.wait(0.15)
@@ -263,7 +261,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- UI
+-- UI SIMPLES
 -- ============================================================
 local gui = Instance.new("ScreenGui")
 gui.Name = "Nexus99"
@@ -287,7 +285,7 @@ stroke.Thickness = 1.5
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 28)
 title.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-title.Text = "🌳 NEXUS - 99 NOITES"
+title.Text = "NEXUS - 99 NOITES"
 title.TextColor3 = Color3.fromRGB(0, 255, 100)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 12
@@ -320,19 +318,19 @@ local function CreateToggle(y, text, flag, emoji)
     end)
 end
 
-CreateToggle(32, "Madeira", "AutoWood", "🌳")
-CreateToggle(62, "Comida/Caça", "AutoFood", "🍖")
-CreateToggle(92, "Gemas", "AutoGems", "💎")
-CreateToggle(122, "Coletar Itens", "AutoCollect", "📦")
-CreateToggle(152, "Alimentar Fogueira", "AutoFire", "🔥")
-CreateToggle(182, "Defesa (Inimigos)", "AutoDefense", "🛡️")
+CreateToggle(32, "Madeira", "AutoWood", "")
+CreateToggle(62, "Comida/Caca", "AutoFood", "")
+CreateToggle(92, "Gemas", "AutoGems", "")
+CreateToggle(122, "Coletar Itens", "AutoCollect", "")
+CreateToggle(152, "Alimentar Fogueira", "AutoFire", "")
+CreateToggle(182, "Defesa (Inimigos)", "AutoDefense", "")
 
--- Botão Parar Tudo
+-- Botao Parar Tudo
 local stopBtn = Instance.new("TextButton")
 stopBtn.Size = UDim2.new(0, 200, 0, 22)
 stopBtn.Position = UDim2.new(0.5, -100, 0, 212)
 stopBtn.BackgroundColor3 = Color3.fromRGB(150, 30, 30)
-stopBtn.Text = "🛑 PARAR TUDO"
+stopBtn.Text = "PARAR TUDO"
 stopBtn.TextColor3 = Color3.new(1, 1, 1)
 stopBtn.Font = Enum.Font.GothamBold
 stopBtn.TextSize = 10
@@ -352,13 +350,13 @@ stopBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
--- NOTIFICAÇÃO
+-- NOTIFICACAO
 -- ============================================================
 game:GetService("StarterGui"):SetCore("SendNotification", {
     Title = "NEXUS 99 NOITES",
-    Text = "🌳 Script carregado!\nAtive as funções nos botões!",
+    Text = "Script carregado! Ative as funcoes!",
     Duration = 5
 })
 
 print("[99 NOITES] Script completo carregado!")
-print("[99 NOITES] Use os botões na tela para ativar!")
+print("[99 NOITES] Use os botoes na tela para ativar!")
