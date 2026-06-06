@@ -18,7 +18,7 @@ if not IsValid then
 end
 
 -- // ==================== [ CARREGAMENTO DA NEXUSUI ] ====================
-local NexusUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/nexus-onix/nexus-hub/main/NexusUI.lua"))()
+local NexusUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/nexus-onix/nexus-hub/main/ui.lua"))()
 
 -- // ==================== [ SERVIÇOS ] ====================
 local Players = game:GetService("Players")
