@@ -1,7 +1,6 @@
 -- // ╔══════════════════════════════════════════════════════════╗
 -- // ║              NEXUS v11.0 - FINAL STABLE                 ║
--- // ║  Corrigido: Jump Loop | HTTP 404 | Frutas | Memória     ║
--- // ║  Proteções: Nil Value | FastAttack | Garbage Collector  ║
+-- // ║  Mob na Frente | Ataque com Dano | Sem Pulo | GC Ativo  ║
 -- // ╚══════════════════════════════════════════════════════════╝
 
 print("[NEXUS] =========================================")
@@ -37,16 +36,17 @@ local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
 local UserInputService = game:GetService("UserInputService")
 local Player = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
 
 -- ============================================================
--- 🔧 PROTEÇÃO 1: AGUARDAR DADOS DO JOGADOR (Evita Nil Value)
+-- AGUARDAR DADOS DO JOGADOR
 -- ============================================================
 print("[NEXUS] Aguardando dados do jogador...")
 repeat task.wait(0.5) until Player:FindFirstChild("Data") and Player.Data:FindFirstChild("Level")
 print("[NEXUS] Dados carregados! Level:", Player.Data.Level.Value)
 
 -- ============================================================
--- UI (FALLBACK - EVITA HTTP 404)
+-- UI (FALLBACK)
 -- ============================================================
 local DiscordLib = nil
 local success, result = pcall(function()
@@ -57,7 +57,7 @@ if success and result then
     DiscordLib = result
     print("[NEXUS] UI carregada")
 else
-    print("[NEXUS] UI fallback - sem erros HTTP")
+    print("[NEXUS] UI fallback")
     DiscordLib = {
         Window = function(_, title) 
             return { 
@@ -97,7 +97,7 @@ pcall(function() Lighting.Brightness = 1.5 end)
 pcall(function() Lighting.FogEnd = 5000 end)
 
 -- ============================================================
--- ANTI-AFK (SEM LOOP DE PULO)
+-- ANTI-AFK (SEM PULO)
 -- ============================================================
 pcall(function()
     local connections = getconnections and getconnections(Player.Idled) or {}
@@ -129,11 +129,11 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- 🔧 PROTEÇÃO 3: GARBAGE COLLECTOR (Limpeza de memória)
+-- GARBAGE COLLECTOR (Limpeza de memória a cada 5min)
 -- ============================================================
 task.spawn(function()
     while true do
-        task.wait(300) -- A cada 5 minutos
+        task.wait(300)
         collectgarbage("collect")
         print("[NEXUS] Memória limpa (GC)")
     end
@@ -214,23 +214,8 @@ local function TweenTP(pos)
     return tween
 end
 
-local function Attack()
-    pcall(function()
-        local mouse = Player:GetMouse()
-        if mouse and mouse.Target then
-            mouse:Button1Down()
-            task.wait(_G.Fast_Delay)
-            mouse:Button1Up()
-        end
-        local remote = GetRemote()
-        if remote then remote:InvokeServer("Attack") end
-    end)
-end
-
--- 🔧 PROTEÇÃO 2: FastAttack com verificação extra
 local function FastAttack()
-    if not _G.FastAttack then return end -- Proteção extra
-    
+    if not _G.FastAttack then return end
     pcall(function()
         local net = ReplicatedStorage:FindFirstChild("Modules")
         if net then net = net:FindFirstChild("Net") end
@@ -289,7 +274,7 @@ local function FindBoss(name)
 end
 
 -- ============================================================
--- CHECKLEVEL (COMPLETO - SEA 1, 2 E 3)
+-- CHECKLEVEL (COMPLETO)
 -- ============================================================
 function CheckLevel()
     local lv = Player.Data.Level.Value
@@ -644,7 +629,7 @@ function CheckLevel()
 end
 
 -- ============================================================
--- AUTO FARM LOOP (CORRIGIDO - SEM LOOP DE PULO)
+-- AUTO FARM LOOP (MOB NA FRENTE + ATAQUE NA CABEÇA)
 -- ============================================================
 task.spawn(function()
     print("[AUTO FARM] Loop iniciado")
@@ -728,27 +713,55 @@ task.spawn(function()
                     end
                 end
                 
-                if closestMob then
+                if closestMob and myPos then
                     local hum = closestMob:FindFirstChild("Humanoid")
                     local hrp = closestMob:FindFirstChild("HumanoidRootPart")
+                    local head = closestMob:FindFirstChild("Head")
                     
                     if hum and hrp and hum.Health > 0 then
+                        -- Puxar mob para FRENTE do personagem
                         if _G.BringMob then
-                            hrp.CFrame = myPos.CFrame * CFrame.new(0, 5, 5)
+                            local frente = myPos.CFrame * CFrame.new(0, 0, -5)
+                            hrp.CFrame = frente
                             hrp.Velocity = Vector3.new(0, 0, 0)
                             hrp.RotVelocity = Vector3.new(0, 0, 0)
+                            hrp.Anchored = true
+                            task.wait(0.01)
+                            hrp.Anchored = false
                             hum.WalkSpeed = 0
                             hum.JumpPower = 0
                         else
                             if closestDistance > 10 then
                                 TP(hrp.Position)
+                                task.wait(0.2)
                             end
                         end
                         
+                        -- Virar para o mob
+                        myPos.CFrame = CFrame.new(myPos.Position, hrp.Position)
+                        
+                        -- Atacar
                         if _G.FastAttack then
                             FastAttack()
                         else
-                            Attack()
+                            pcall(function()
+                                local mouse = Player:GetMouse()
+                                if mouse and head then
+                                    local headPos, onScreen = Camera:WorldToScreenPoint(head.Position)
+                                    if onScreen then
+                                        mouse.Move(headPos.X, headPos.Y)
+                                        task.wait(0.01)
+                                    end
+                                    mouse:Button1Down()
+                                    task.wait(_G.Fast_Delay)
+                                    mouse:Button1Up()
+                                end
+                                
+                                local remote = GetRemote()
+                                if remote then
+                                    remote:InvokeServer("Attack")
+                                end
+                            end)
                         end
                     end
                 else
@@ -761,7 +774,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- AUTO BOSS LOOP (CORRIGIDO)
+-- AUTO BOSS LOOP (BOSS NA FRENTE)
 -- ============================================================
 task.spawn(function()
     print("[AUTO BOSS] Loop iniciado")
@@ -778,6 +791,7 @@ task.spawn(function()
             if boss then
                 local hum = boss:FindFirstChild("Humanoid")
                 local hrp = boss:FindFirstChild("HumanoidRootPart")
+                local head = boss:FindFirstChild("Head")
                 
                 if hum and hrp and hum.Health > 0 then
                     local myPos = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
@@ -786,13 +800,20 @@ task.spawn(function()
                         local dist = (hrp.Position - myPos.Position).Magnitude
                         if dist > 10 then
                             TP(hrp.Position)
+                            task.wait(0.2)
                         end
                         
-                        hrp.CFrame = myPos.CFrame * CFrame.new(0, 5, 5)
+                        local frente = myPos.CFrame * CFrame.new(0, 0, -5)
+                        hrp.CFrame = frente
                         hrp.Velocity = Vector3.new(0, 0, 0)
                         hrp.RotVelocity = Vector3.new(0, 0, 0)
+                        hrp.Anchored = true
+                        task.wait(0.01)
+                        hrp.Anchored = false
                         hum.WalkSpeed = 0
                         hum.JumpPower = 0
+                        
+                        myPos.CFrame = CFrame.new(myPos.Position, hrp.Position)
                         
                         if _G.AutoHaki and not Player.Character:FindFirstChild("HasBuso") then
                             local remote = GetRemote()
@@ -804,7 +825,24 @@ task.spawn(function()
                         if _G.FastAttack then
                             FastAttack()
                         else
-                            Attack()
+                            pcall(function()
+                                local mouse = Player:GetMouse()
+                                if mouse and head then
+                                    local headPos, onScreen = Camera:WorldToScreenPoint(head.Position)
+                                    if onScreen then
+                                        mouse.Move(headPos.X, headPos.Y)
+                                        task.wait(0.01)
+                                    end
+                                    mouse:Button1Down()
+                                    task.wait(_G.Fast_Delay)
+                                    mouse:Button1Up()
+                                end
+                                
+                                local remote = GetRemote()
+                                if remote then
+                                    remote:InvokeServer("Attack")
+                                end
+                            end)
                         end
                     end
                 end
@@ -846,7 +884,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- FRUIT SNIPER (PROTEGIDO)
+-- FRUIT SNIPER
 -- ============================================================
 task.spawn(function()
     while task.wait(5) do
@@ -866,7 +904,7 @@ task.spawn(function()
 end)
 
 -- ============================================================
--- AUTO STORE (PROTEGIDO)
+-- AUTO STORE
 -- ============================================================
 task.spawn(function()
     while task.wait(15) do
@@ -979,10 +1017,10 @@ settingsChannel:Button("🛑 PARAR TUDO", function()
     _G.AutoStats = false
 end)
 settingsChannel:Label("NEXUS v11.0 - Final Stable")
-settingsChannel:Label("Proteções: Nil | Memória | FastAttack")
+settingsChannel:Label("Mob na Frente | Ataque com Dano")
 
 print("[NEXUS] =========================================")
 print("[NEXUS] PRONTO - Script carregado com sucesso!")
 print("[NEXUS] Level:", Player.Data.Level.Value)
-print("[NEXUS] Memória: GC ativado a cada 5min")
+print("[NEXUS] Mob na FRENTE | Mouse na CABEÇA | Dano OK")
 print("[NEXUS] =========================================")
